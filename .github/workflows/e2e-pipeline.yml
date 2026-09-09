@@ -1,0 +1,44 @@
+name: Reusable E2E Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      backend_tag:
+        description: 'Tag for integrate-backend image'
+        required: false
+        type: string
+        default: 'main'
+      frontend_tag:
+        description: 'Tag for integrate-frontend image'
+        required: false
+        type: string
+        default: 'main'
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Spin Up Environment
+        env:
+          BACKEND_TAG: ${{ inputs.backend_tag }}
+          FRONTEND_TAG: ${{ inputs.frontend_tag }}
+        run: |
+          docker compose up -d
+          echo "Waiting for services..."
+          sleep 15
+
+      - name: Run Backend API Tests
+        run: |
+          cd backend-tests
+          npm ci
+          npm run test
+
+      - name: Run Frontend E2E Tests
+        run: |
+          cd frontend-tests
+          npm ci
+          npx playwright install --with-deps
+          npx playwright test
