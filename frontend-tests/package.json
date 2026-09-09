@@ -4,13 +4,14 @@
   "description": "Playwright E2E tests for the frontend",
   "scripts": {
     "test": "playwright test",
-    "cucumber": "cucumber-js"
+    "cucumber": "node node_modules/@cucumber/cucumber/bin/cucumber.js"
   },
   "devDependencies": {
-    "@cucumber/cucumber": "^13.2.1",
+    "@cucumber/cucumber": "^10.0.0",
     "@playwright/test": "^1.40.0",
     "@types/node": "^26.5.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   }
 }

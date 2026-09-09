@@ -1,5 +1,8 @@
-import { Given, When, Then, BeforeAll, AfterAll, After } from '@cucumber/cucumber';
+import { Given, When, Then, BeforeAll, AfterAll, After, setDefaultTimeout } from '@cucumber/cucumber';
 import { chromium, Browser, Page, expect } from '@playwright/test';
+
+// Increase default timeout to 60 seconds (useful for browser launch / network calls)
+setDefaultTimeout(60 * 1000);
 
 let browser: Browser;
 let page: Page;
