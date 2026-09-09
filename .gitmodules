@@ -1,0 +1,3 @@
+[submodule "frontend-tests/infrastructure"]
+	path = frontend-tests/infrastructure
+	url = https://github.com/7-3-N-3-7/infrastructure.git
