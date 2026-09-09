@@ -1,54 +1,48 @@
 import { Given, When, Then } from '@cucumber/cucumber';
-import { request, APIRequestContext, expect } from '@playwright/test';
-import { page } from './rbac.steps'; // reusing the page context if needed, but we'll use APIRequestContext for most
+import { expect } from '@playwright/test';
+import { CustomWorld } from '../support/CustomWorld';
 
-let apiContext: APIRequestContext;
-let response: any;
-let responseBody: any;
-
-Given('the infrastructure is deployed', async function () {
-  // Initialize the Playwright API request context for making HTTP calls without a browser
-  apiContext = await request.newContext();
+Given('the infrastructure is deployed', async function (this: CustomWorld) {
+  // We no longer need to initialize the apiContext here.
+  // The support/hooks.ts 'Before' hook does it automatically for every scenario!
 });
 
-When('I send a GET request to the ZITADEL health endpoint at {string}', async function (url: string) {
+When('I send a GET request to the ZITADEL health endpoint at {string}', async function (this: CustomWorld, url: string) {
   try {
-    response = await apiContext.get(url);
+    this.response = await this.apiContext!.get(url);
   } catch (error) {
-    // If the server isn't running, this will throw. We catch it so the assertion below handles the failure cleanly.
-    response = { status: () => 503, ok: () => false };
+    this.response = { status: () => 503, ok: () => false };
   }
 });
 
-When('I send a GET request to the Backend health endpoint at {string}', async function (url: string) {
+When('I send a GET request to the Backend health endpoint at {string}', async function (this: CustomWorld, url: string) {
   try {
-    response = await apiContext.get(url);
-    if (response.ok()) {
-      responseBody = await response.json();
+    this.response = await this.apiContext!.get(url);
+    if (this.response.ok()) {
+      this.responseBody = await this.response.json();
     }
   } catch (error) {
-    response = { status: () => 503, ok: () => false };
+    this.response = { status: () => 503, ok: () => false };
   }
 });
 
-Then('I should receive a {int} OK status', async function (expectedStatus: number) {
-  expect(response.status()).toBe(expectedStatus);
+Then('I should receive a {int} OK status', async function (this: CustomWorld, expectedStatus: number) {
+  expect(this.response.status()).toBe(expectedStatus);
 });
 
-Then('the response body should contain {string}', async function (expectedText: string) {
-  expect(JSON.stringify(responseBody)).toContain(expectedText);
+Then('the response body should contain {string}', async function (this: CustomWorld, expectedText: string) {
+  expect(JSON.stringify(this.responseBody)).toContain(expectedText);
 });
 
-When('I navigate to the frontend URL at {string}', async function (url: string) {
+When('I navigate to the frontend URL at {string}', async function (this: CustomWorld, url: string) {
   try {
-    // Using the global page object from the Playwright browser context
-    response = await page.goto(url);
+    this.response = await this.page!.goto(url);
   } catch (error) {
-    response = null;
+    this.response = null;
   }
 });
 
-Then('the page should load successfully', async function () {
-  expect(response).not.toBeNull();
-  expect(response.status()).toBe(200);
+Then('the page should load successfully', async function (this: CustomWorld) {
+  expect(this.response).not.toBeNull();
+  expect(this.response.status()).toBe(200);
 });

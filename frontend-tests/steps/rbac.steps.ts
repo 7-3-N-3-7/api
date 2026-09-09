@@ -1,46 +1,28 @@
-import { Given, When, Then, BeforeAll, AfterAll, After, setDefaultTimeout } from '@cucumber/cucumber';
-import { chromium, Browser, Page, expect } from '@playwright/test';
+import { Given, When, Then } from '@cucumber/cucumber';
+import { expect } from '@playwright/test';
+import { CustomWorld } from '../support/CustomWorld';
 
-// Increase default timeout to 60 seconds (useful for browser launch / network calls)
-setDefaultTimeout(60 * 1000);
-
-let browser: Browser;
-let page: Page;
 const FRONTEND_URL = 'http://localhost';
 
-BeforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
+// Note: Arrow functions '() =>' break the 'this' context in Javascript.
+// You MUST use 'function () {}' so Cucumber can bind 'this' to CustomWorld.
+
+Given('I navigate to the frontend application', async function (this: CustomWorld) {
+  await this.page!.goto(FRONTEND_URL);
 });
 
-AfterAll(async () => {
-  await browser.close();
-});
-
-After(async function () {
-  if (page) await page.close();
-});
-
-Given('I navigate to the frontend application', async () => {
-  page = await browser.newPage();
-  await page.goto(FRONTEND_URL);
-});
-
-When('I log in as {string} with password {string}', async (username, password) => {
-  await page.click('text="Login"');
-  await page.fill('input[name="loginName"]', username);
-  await page.click('button[type="submit"]:has-text("next")');
+When('I log in as {string} with password {string}', async function (this: CustomWorld, username, password) {
+  await this.page!.click('text="Login"');
+  await this.page!.fill('input[name="loginName"]', username);
+  await this.page!.click('button[type="submit"]:has-text("next")');
   
-  await page.fill('input[name="password"]', password);
-  await page.click('button[type="submit"]:has-text("next")');
+  await this.page!.fill('input[name="password"]', password);
+  await this.page!.click('button[type="submit"]:has-text("next")');
   
-  await page.waitForURL(FRONTEND_URL);
+  await this.page!.waitForURL(FRONTEND_URL);
 });
 
-Then('I should see the welcome message containing role {string}, organization {string}, and service {string}', async (role, organization, service) => {
-  // Extracting username from the scenario isn't directly passed here, 
-  // but we can assert the second half of the string.
-  // The expected format was: "welcome {username}, you have attributes, role: {role}, organization: {organization}, service: {service}"
-  
+Then('I should see the welcome message containing role {string}, organization {string}, and service {string}', async function (this: CustomWorld, role, organization, service) {
   const attributeString = `role: ${role}, organization: ${organization}, service: ${service}`;
-  await expect(page.getByText(new RegExp(`welcome .*, you have attributes, ${attributeString}`))).toBeVisible();
+  await expect(this.page!.getByText(new RegExp(`welcome .*, you have attributes, ${attributeString}`))).toBeVisible();
 });
