@@ -16,9 +16,8 @@ AfterAll(async () => {
   await browser.close();
 });
 
-After(async () => {
-  // Close the page context after each scenario to clear cookies/session
-  await page.close();
+After(async function () {
+  if (page) await page.close();
 });
 
 Given('I navigate to the frontend application', async () => {
