@@ -1,0 +1,29 @@
+name: TruffleHog Secret Scan
+
+on:
+  workflow_call:
+    # This allows any repository (backend, frontend, infrastructure) to call this centralized workflow
+    inputs:
+      fail_on_unverified:
+        description: 'Should the pipeline fail on unverified secrets?'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  scan:
+    name: Scan for Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # TruffleHog needs the full git history to scan previous commits!
+
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: ${{ inputs.fail_on_unverified == false && '--only-verified' || '' }}
