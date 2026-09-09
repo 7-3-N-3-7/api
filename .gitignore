@@ -1,0 +1,53 @@
+# =========================
+# Operating System Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDEs and Editors
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# Node.js (Frontend & Backend Tests)
+# =========================
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+
+# =========================
+# Environment Variables & Secrets
+# =========================
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.pem
+*.key
+
+# =========================
+# Test Reports & Output
+# =========================
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+
+# Cucumber
+cucumber-report.html
+*.xml
+*.json
+
+# Newman (Postman)
+newman/
+
+# =========================
+# Governance & TruffleHog
+# =========================
+trufflehog-report.json
