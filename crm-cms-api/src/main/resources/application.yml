@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: crm-cms-api
+  
+  # CRM Data Source (PostgreSQL)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/crm_db
+    username: crm_user
+    password: crm_password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # CMS Data Source (MongoDB)
+  data:
+    mongodb:
+      uri: mongodb://cms_user:cms_password@localhost:27017/cms_db?authSource=admin
+
+  # Security & IAM (Zitadel OAuth2 Resource Server)
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Replace this with your actual Zitadel instance URL (e.g., https://[your-domain].zitadel.cloud)
+          issuer-uri: https://your-zitadel-instance.com 
+          # Or if you have a specific JWKS endpoint:
+          # jwk-set-uri: https://your-zitadel-instance.com/oauth/v2/keys
+
+server:
+  port: 8080

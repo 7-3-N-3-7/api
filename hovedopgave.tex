@@ -1,0 +1,172 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[danish]{babel}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\title{Hovedopgave - Erhvervsakademi København \\ \Large Fra Monolitisk Lovable-app til Skalerbar Multi-Repo Arkitektur}
+\author{Jesper Kock}
+\date{September 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Denne hovedopgave omhandler restruktureringen af IFHI's kodebase. Projektet tager udgangspunkt i en tæt koblet ("sovset sammen") kodebase genereret via Lovable, og beskriver rejsen mod en moderne, adskilt multi-repo arkitektur. Gennem Blooms taksonomi (Huske, Forstå, Anvende, Analysere, Vurdere, Skabe) dokumenteres de tekniske og metodiske overvejelser, herunder implementering af adskilte test-miljøer (Playwright, Newman) og governance-værktøjer (TruffleHog), som blev indført for at sikre kodekvalitet og sikkerhed.
+\end{abstract}
+
+\pagebreak
+
+\tableofcontents
+
+\pagebreak
+
+\section{Introduction}
+På min praktikplads, i forbindelse med min hovedopgave, har jeg brugt den viden, jeg har lært i skolen, ude på arbejdsmarkedet. Først skulle jeg lære IFHI's kodebase at kende. Hvilket var svært på grund af, at jeg ikke er særlig god til JavaScript. Hele hjemmesiden startede som en Lovable-app, som senere blev downloadet, kun for at finde ud af, at frontend og backend er tæt sammenkoblet i én stor TypeScript kodebase.
+
+Dette skabte betydelige udfordringer i forhold til vedligeholdelse, testbarhed og videreudvikling. For at løse dette problem og fremtidssikre platformen, blev min hovedopgave at dekonstruere denne monolit og implementere en \textit{multi-repo arkitektur}.
+
+Jeg er i denne rapport gået igennem alle kompetenceniveauerne i Blooms taksonomi for at reflektere over min læringsproces og de tekniske løsninger, der blev udviklet.
+
+\pagebreak
+
+\section{Huske}
+Det var en stor overraskelse, da jeg skulle se IFHI's kodebase, fordi deres backend og frontend var "sovset sammen". I starten handlede det i høj grad om at trække på min teoretiske viden fra Erhvervsakademiet for overhovedet at kunne identificere problemerne i den eksisterende struktur.
+
+\subsection{Arkitekturmønstre}
+Jeg skulle huske koncepterne bag forskellige softwarearkitekturer:
+\begin{itemize}
+    \item \textbf{Monolitisk arkitektur:} Hvor alt kører i samme proces og deler samme kodebase. Dette var tilfældet for IFHI's Lovable-genererede kode.
+    \item \textbf{Separation of Concerns (SoC):} Et designprincip, der foreskriver, at et computerprogram bør opdeles i adskilte sektioner, så hver sektion adresserer et specifikt ansvarsområde.
+    \item \textbf{RESTful API'er:} Hvordan en klient (frontend) bør kommunikere med en server (backend) via standardiserede HTTP-protokoller, i stedet for direkte funktionskald inde i samme kodebase.
+\end{itemize}
+
+\subsection{Værktøjer og Sprog}
+Da koden var skrevet i TypeScript og JavaScript, måtte jeg genopfriske syntaks, asynkron programmering (Promises, async/await) og brugen af Node.js miljøet. Samtidig skulle jeg huske versionsstyring med Git, hvilket ville blive essentielt, når koden skulle deles op i flere repositories.
+
+\pagebreak
+\section{Forstå}
+Efter at have identificeret problemet, var næste skridt at forstå \textit{hvorfor} det var et problem, og \textit{hvordan} det kunne løses.
+
+\subsection{Begrænsninger ved Lovable-arkitekturen}
+Lovable er fantastisk til hurtig prototyping, men den eksporterede kode har ofte en struktur, der prioriterer "time-to-market" over langsigtet vedligeholdelse. Jeg forstod hurtigt, at når databasekald (backend) og UI-logik (frontend) ligger i de samme filer, bliver det næsten umuligt at:
+\begin{enumerate}
+    \item \textbf{Skalere teamet:} Udviklere kan ikke arbejde uafhængigt på frontend og backend uden at skabe merge conflicts.
+    \item \textbf{Teste effektivt:} Man kan ikke isolere backend-logik fra frontend-logik, hvilket gør unit tests og integrationstests unødigt komplekse.
+    \item \textbf{Sikre applikationen:} Database-credentials og API-nøgler risikerer at blive eksponeret i frontend-koden.
+\end{enumerate}
+
+\subsection{Multi-Repo Konceptet}
+Jeg forstod, at en multi-repo (eller poly-repo) tilgang, hvor API'et ligger i sit eget repository og frontenden i et andet, ville fremtvinge en naturlig adskillelse (decoupling). Det ville kræve definerede kontrakter (f.eks. JSON over HTTP) mellem de to systemer.
+
+\pagebreak
+\section{Anvende}
+Med teorien på plads og en dybdegående forståelse af problemet, begyndte jeg den praktiske implementering. Dette involverede ikke blot refaktorering af koden, men også opsætning af en helt ny infrastruktur og test-kultur i virksomheden.
+
+\subsection{Fysisk adskillelse af koden}
+Det første praktiske skridt var at oprette to nye Git repositories. Logikken blev minutiøst pillet fra hinanden. Backend-endpoints blev isoleret i et Node.js/Express-lignende miljø, mens React/Frontend-komponenterne fik deres eget hjem.
+
+\subsection{Implementering af Testmiljøer}
+For at sikre, at adskillelsen ikke ødelagde eksisterende funktionalitet, anvendte jeg specialiserede testværktøjer til hver deres ansvarsområde:
+
+\textbf{Backend Tests:}
+Jeg opsatte et \texttt{backend-tests} miljø ved hjælp af Postman og Newman. Dette tillod os at køre automatiserede integrationstests af API'et via kommandolinjen (\texttt{npm test}).
+\begin{lstlisting}[language=bash, caption=Eksekvering af backend tests via Newman]
+$ newman run collection.json
+\end{lstlisting}
+
+\textbf{Frontend Tests (BDD):}
+For frontenden etablerede jeg et \texttt{frontend-tests} miljø med Playwright og Cucumber. Dette tillod Behaviour-Driven Development (BDD), hvor tests skrives i letlæseligt sprog (Gherkin), og eksekveres via TypeScript (\texttt{test:ui} og \texttt{test:infra}).
+
+\pagebreak
+\section{Analysere}
+Efter implementeringen var det nødvendigt at analysere resultatet af den nye arkitektur og de nye processer.
+
+\subsection{Dataflow og Performance}
+Jeg analyserede, hvordan dataflowet havde ændret sig. Hvor koden før kommunikerede via interne memory-kald, var der nu netværkskald (HTTP requests) mellem frontend og backend. Selvom dette introducerede en lille smule latency, viste min analyse, at fordelene ved \textit{separation of concerns} langt oversteg ulemperne.
+
+\subsection{Sikkerhedsanalyse (Governance)}
+Under adskillelsen af koden analyserede jeg også projektets sikkerhedspostur. Når man har flere repositories, stiger risikoen for at lække hemmeligheder (API-nøgler, database passwords) ved en fejl. 
+
+Derfor analyserede jeg behovet for en governance-struktur og implementerede en løsning i mappen \texttt{governance}. Her opsatte jeg et Git \texttt{pre-commit} hook, som kører en Docker-baseret version af \textbf{TruffleHog}. Før en udvikler overhovedet kan foretage et commit, scannes koden for hemmeligheder. Dette var et direkte svar på min analyse af de nye sårbarheder, en multi-repo struktur kan medføre.
+
+\pagebreak
+\section{Vurdere}
+På dette niveau skulle jeg forholde mig kritisk til de valg, der blev truffet i projektet, og vurdere den samlede værdi.
+
+\subsection{Fordele ved Multi-repo arkitekturen}
+Min vurdering er, at skiftet fra Lovable-monolitten til en multi-repo arkitektur var en massiv succes for IFHI af følgende årsager:
+\begin{itemize}
+    \item \textbf{Øget testbarhed:} Med Newman og Playwright opdelt i deres respektive repos, ved vi præcis, hvor fejlen ligger, når en test fejler.
+    \item \textbf{Færre konflikter:} Teamet kan nu udvikle frontend-features uden at røre backend-koden.
+    \item \textbf{Sikkerhed:} TruffleHog-implementeringen sikrer en proaktiv (shift-left) tilgang til sikkerhed.
+\end{itemize}
+
+\subsection{Ulemper og Trade-offs}
+Jeg vurderer dog også, at der har været udfordringer:
+\begin{itemize}
+    \item \textbf{Kompleksitet i det lokale miljø:} Udviklere skal nu starte to forskellige servere for at køre applikationen lokalt.
+    \item \textbf{JavaScript udfordringer:} Da jeg personligt ikke var stærk til JS/TS, var selve refaktoreringen meget tidskrævende, og jeg måtte bruge mange ressourcer på at læse dokumentation for værktøjer som Playwright og TypeScript.
+\end{itemize}
+
+\pagebreak
+\section{Skabe}
+Det højeste niveau i Blooms taksonomi er "Skabe". Gennem dette forløb har jeg ikke blot omstruktureret gammel kode; jeg har skabt et helt nyt fundament for IFHI's fremtidige softwareudvikling.
+
+\subsection{Det endelige produkt}
+Jeg har skabt en moderne pipeline og arkitektur bestående af:
+\begin{enumerate}
+    \item Et adskilt RESTful API (Backend).
+    \item En uafhængig Frontend-applikation.
+    \item Et automatiseret test-setup, der bygger bro mellem forretningskrav (Cucumber BDD) og teknisk implementering (Playwright/Newman).
+    \item Et sikkerhedsnet for udviklerne via automatiske TruffleHog-scanninger på pre-commit niveau.
+\end{enumerate}
+
+Samlet set har jeg transformeret en "sovset" prototype til et enterprise-klart udviklingsmiljø, og i processen har jeg løftet mine egne kompetencer inden for JavaScript, TypeScript og systemarkitektur betydeligt.
+
+\pagebreak
+\section{Konklusion}
+(Her kan tilføjes en samlet konklusion på projektet).
+
+\pagebreak
+\section{Litteraturliste}
+\begin{itemize}
+    \item \textit{Clean Architecture} af Robert C. Martin.
+    \item Playwright Dokumentation (https://playwright.dev/)
+    \item Postman/Newman Dokumentation
+    \item Blooms Taksonomi - Teori og praksis.
+\end{itemize}
+
+\end{document}

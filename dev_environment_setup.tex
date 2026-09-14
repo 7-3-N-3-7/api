@@ -1,0 +1,28 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+
+\title{Praktik rapport - Erhvervsakademi København}
+\author{Jesper Oti Vase Kock}
+\date{September 2026}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\pagebreak
+
+\section{Introduction}
+This report outlines the development environment and foundational tooling established within the project repository. The environment is structured to ensure high-quality code delivery and secure collaboration, consisting of three main pillars: backend API testing, frontend end-to-end testing, and repository governance.
+
+\section{Dare}
+To confidently build, innovate, and deploy new features, a robust backend testing suite has been established. The \texttt{backend-tests} directory utilizes Postman and Newman to execute integration tests against the API. Tests are defined within a \texttt{collection.json} file and can be run systematically to ensure backend endpoints are functioning as expected before any release, daring the team to deploy frequently with confidence.
+
+\section{Share}
+A shared understanding between technical and business stakeholders is crucial for frontend development. The \texttt{frontend-tests} directory is dedicated to end-to-end (E2E) testing using Playwright combined with Cucumber for Behavior-Driven Development (BDD). Written in TypeScript, this setup uses human-readable feature files and step definitions to create clear test scenarios. It generates detailed HTML reports (\texttt{cucumber-report.html}), making it easy to share test results and application behavior with the wider organization.
+
+\section{Care}
+Caring for the security and integrity of the codebase is paramount. The \texttt{governance} directory introduces enterprise security controls designed specifically to prevent credential leaks. A custom \texttt{install-hooks.sh} script installs a Git \texttt{pre-commit} hook that leverages a Dockerized instance of TruffleHog. This setup ensures that every staged file is automatically scanned for verified secrets, proactively blocking commits if any sensitive data is detected and protecting the project's intellectual property and access controls.
+
+\end{document}
