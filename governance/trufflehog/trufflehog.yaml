@@ -1,6 +1,0 @@
-# TruffleHog configuration
-# Ignore specific dummy secrets used in testing
-ignore:
-  - "a-32-byte-long-secret-key-change"
-  - "zitadel_password"
-  - "mongo_password"
