@@ -4,6 +4,3 @@
 [submodule "frontend-tests"]
 	path = frontend
 	url = https://github.com/7-3-N-3-7/frontend.git
-[submodule "infrastructure"]
-	path = infrastructure
-	url = https://github.com/7-3-N-3-7/infrastructure.git
