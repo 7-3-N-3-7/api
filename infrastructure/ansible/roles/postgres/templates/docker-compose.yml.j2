@@ -1,0 +1,24 @@
+services:
+  # Patroni cluster wrapper for Postgres
+  patroni:
+    image: zalando/spilo-15:3.0-p1
+    environment:
+      - ETCD_HOST=${ETCD_HOST}
+      - PGPASSWORD_SUPERUSER=${PG_SUPERUSER_PASSWORD}
+      - PGPASSWORD_ADMIN=${PG_ADMIN_PASSWORD}
+      - PGPASSWORD_STANDBY=${PG_STANDBY_PASSWORD}
+    ports:
+      - "5432:5432"
+      - "8008:8008" # Patroni REST API
+    volumes:
+      - pgdata:/home/postgres/pgdata
+    restart: always
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+
+networks:
+  internal:
+    driver: bridge
