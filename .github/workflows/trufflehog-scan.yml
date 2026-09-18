@@ -24,6 +24,4 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
           extra_args: ${{ inputs.fail_on_unverified == false && '--only-verified' || '' }}
