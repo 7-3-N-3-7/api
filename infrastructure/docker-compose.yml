@@ -12,9 +12,18 @@ volumes:
   auth_db_data:
   business_db_data:
   mongo_data:
-  minio_data:
   redis_data:
   traefik_certs:
+
+secrets:
+  auth_db_password:
+    environment: "AUTH_DB_PASSWORD"
+  zitadel_masterkey:
+    environment: "ZITADEL_MASTERKEY"
+  business_db_password:
+    environment: "BUSINESS_DB_PASSWORD"
+  mongo_password:
+    environment: "MONGO_PASSWORD"
 
 services:
   # -------------------------------------------------------------------
@@ -38,7 +47,7 @@ services:
       # Let's encrypt configuration
       - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
       - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.myresolver.acme.email=admin@157.180.43.151.nip.io"
+      - "--certificatesresolvers.myresolver.acme.email=${TRAEFIK_ACME_EMAIL}"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
@@ -57,15 +66,17 @@ services:
     container_name: auth-db
     restart: always
     environment:
-      POSTGRES_DB: zitadel_auth
-      POSTGRES_USER: zitadel_user
-      POSTGRES_PASSWORD: zitadel_password
+      POSTGRES_DB: ${AUTH_DB_NAME}
+      POSTGRES_USER: ${AUTH_DB_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/auth_db_password
+    secrets:
+      - auth_db_password
     volumes:
       - auth_db_data:/var/lib/postgresql/data
     networks:
       - zitadel-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U zitadel_user -d zitadel_auth"]
+      test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER} -d ${AUTH_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -77,21 +88,24 @@ services:
     image: ghcr.io/zitadel/zitadel:v2.50.0
     container_name: zitadel
     restart: always
-    command: start-from-init --masterkey "a-32-byte-long-secret-key-change" --tlsMode disabled
+    command: start-from-init --tlsMode external
     environment:
-      ZITADEL_MASTERKEY: "a-32-byte-long-secret-key-change"
+      ZITADEL_MASTERKEY_FILE: /run/secrets/zitadel_masterkey
       ZITADEL_DATABASE_POSTGRES_HOST: "auth-db"
       ZITADEL_DATABASE_POSTGRES_PORT: "5432"
-      ZITADEL_DATABASE_POSTGRES_DATABASE: "zitadel_auth"
-      ZITADEL_DATABASE_POSTGRES_USER_USERNAME: "zitadel_user"
-      ZITADEL_DATABASE_POSTGRES_USER_PASSWORD: "zitadel_password"
+      ZITADEL_DATABASE_POSTGRES_DATABASE: ${AUTH_DB_NAME}
+      ZITADEL_DATABASE_POSTGRES_USER_USERNAME: ${AUTH_DB_USER}
+      ZITADEL_DATABASE_POSTGRES_USER_PASSWORD_FILE: /run/secrets/auth_db_password
       ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE: "disable"
-      ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: "zitadel_user"
-      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: "zitadel_password"
+      ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: ${AUTH_DB_USER}
+      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD_FILE: /run/secrets/auth_db_password
       ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: "disable"
       ZITADEL_EXTERNALSECURE: "true"
       ZITADEL_EXTERNALDOMAIN: "auth.157.180.43.151.nip.io"
       ZITADEL_EXTERNALPORT: "443"
+    secrets:
+      - zitadel_masterkey
+      - auth_db_password
     depends_on:
       auth-db:
         condition: service_healthy
@@ -114,9 +128,11 @@ services:
     container_name: business-db
     restart: always
     environment:
-      POSTGRES_DB: business_db
-      POSTGRES_USER: app_user
-      POSTGRES_PASSWORD: app_password
+      POSTGRES_DB: ${BUSINESS_DB_NAME}
+      POSTGRES_USER: ${BUSINESS_DB_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/business_db_password
+    secrets:
+      - business_db_password
     ports:
       - "5432:5432"
     volumes:
@@ -124,7 +140,7 @@ services:
     networks:
       - backend-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app_user -d business_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${BUSINESS_DB_USER} -d ${BUSINESS_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -137,45 +153,16 @@ services:
     container_name: mongodb
     restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: mongo_user
-      MONGO_INITDB_ROOT_PASSWORD: mongo_password
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_password
+    secrets:
+      - mongo_password
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
     networks:
       - backend-net
-
-  # -------------------------------------------------------------------
-  # 5. MINIO (Object Storage for Images, Media & User Content)
-  # -------------------------------------------------------------------
-  minio:
-    image: quay.io/minio/minio:RELEASE.2024-05-10T01-41-38Z
-    container_name: minio
-    restart: always
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minio_admin
-      MINIO_ROOT_PASSWORD: minio_password
-    volumes:
-      - minio_data:/data
-    networks:
-      - public-net
-      - backend-net
-    labels:
-      - "traefik.enable=true"
-      # MinIO API
-      - "traefik.http.routers.minio-api.rule=Host(`s3.157.180.43.151.nip.io`)"
-      - "traefik.http.routers.minio-api.entrypoints=websecure"
-      - "traefik.http.routers.minio-api.tls.certresolver=myresolver"
-      - "traefik.http.routers.minio-api.service=minio-api"
-      - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
-      # MinIO Console
-      - "traefik.http.routers.minio-console.rule=Host(`storage.157.180.43.151.nip.io`)"
-      - "traefik.http.routers.minio-console.entrypoints=websecure"
-      - "traefik.http.routers.minio-console.tls.certresolver=myresolver"
-      - "traefik.http.routers.minio-console.service=minio-console"
-      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
 
   # -------------------------------------------------------------------
   # 6. REDIS (Redisson Hibernate L2 Cache)
