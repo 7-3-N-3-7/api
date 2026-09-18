@@ -24,6 +24,8 @@ services:
     image: traefik:v3.1
     container_name: traefik
     restart: always
+    environment:
+      - DOCKER_API_VERSION=1.41
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -166,11 +168,13 @@ services:
       - "traefik.http.routers.minio-api.rule=Host(`s3.157.180.43.151.nip.io`)"
       - "traefik.http.routers.minio-api.entrypoints=websecure"
       - "traefik.http.routers.minio-api.tls.certresolver=myresolver"
+      - "traefik.http.routers.minio-api.service=minio-api"
       - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
       # MinIO Console
       - "traefik.http.routers.minio-console.rule=Host(`storage.157.180.43.151.nip.io`)"
       - "traefik.http.routers.minio-console.entrypoints=websecure"
       - "traefik.http.routers.minio-console.tls.certresolver=myresolver"
+      - "traefik.http.routers.minio-console.service=minio-console"
       - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
 
   # -------------------------------------------------------------------
