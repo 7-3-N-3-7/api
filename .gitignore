@@ -80,9 +80,11 @@ Thumbs.db
 node_modules
 
 # frontend
-frontend/
+frontend
+frontend/*
 
 #backend
-backend/
+backend
+backend/*
 
 .env
