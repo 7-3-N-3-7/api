@@ -21,7 +21,7 @@ services:
   # 0. TRAEFIK (Reverse Proxy & Let's Encrypt SSL)
   # -------------------------------------------------------------------
   traefik:
-    image: traefik:v2.10
+    image: traefik:v3.1
     container_name: traefik
     restart: always
     command:
@@ -237,6 +237,8 @@ services:
     image: ghcr.io/7-3-n-3-7/backend:latest
     container_name: backend
     restart: always
+    env_file:
+      - .env
     networks:
       - public-net
       - backend-net
