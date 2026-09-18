@@ -18,10 +18,22 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code with submodules
+      - name: Checkout API Repository
+        uses: actions/checkout@v4
+
+      - name: Checkout Backend Repository
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          repository: 7-3-N-3-7/backend
+          path: backend
+          token: ${{ secrets.GH_PAT || github.token }}
+
+      - name: Checkout Frontend Repository
+        uses: actions/checkout@v4
+        with:
+          repository: 7-3-N-3-7/frontend
+          path: frontend
+          token: ${{ secrets.GH_PAT || github.token }}
 
       - name: Spin Up Environment
         env:

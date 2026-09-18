@@ -17,10 +17,23 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout API Repository
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Checkout Backend Repository
+        uses: actions/checkout@v4
+        with:
+          repository: 7-3-N-3-7/backend
+          path: backend
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Checkout Frontend Repository
+        uses: actions/checkout@v4
+        with:
+          repository: 7-3-N-3-7/frontend
+          path: frontend
           token: ${{ secrets.GH_PAT }}
       - name: Log in to the Container registry
         uses: docker/login-action@v3
