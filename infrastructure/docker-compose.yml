@@ -181,5 +181,32 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.docker/config.json:/config.json
     # Checks for updates every 24 hours (86400 seconds)
     command: --interval 86400
+
+  # -------------------------------------------------------------------
+  # 9. BACKEND API
+  # -------------------------------------------------------------------
+  backend:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-7-3-N-3-7}/backend:latest
+    container_name: backend
+    restart: always
+    ports:
+      - "3000:3000"
+    networks:
+      - public-net
+      - backend-net
+      - kafka-net
+
+  # -------------------------------------------------------------------
+  # 10. FRONTEND UI
+  # -------------------------------------------------------------------
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-7-3-N-3-7}/frontend:latest
+    container_name: frontend
+    restart: always
+    ports:
+      - "80:80"
+    networks:
+      - public-net
