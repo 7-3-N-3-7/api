@@ -189,7 +189,7 @@ services:
   # 9. BACKEND API
   # -------------------------------------------------------------------
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-7-3-N-3-7}/backend:latest
+    image: ghcr.io/7-3-n-3-7/backend:latest
     container_name: backend
     restart: always
     ports:
@@ -203,7 +203,7 @@ services:
   # 10. FRONTEND UI
   # -------------------------------------------------------------------
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-7-3-N-3-7}/frontend:latest
+    image: ghcr.io/7-3-n-3-7/frontend:latest
     container_name: frontend
     restart: always
     ports:

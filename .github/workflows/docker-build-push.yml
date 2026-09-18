@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -31,7 +33,7 @@ jobs:
         id: meta-frontend
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/frontend
+          images: ${{ env.REGISTRY }}/7-3-n-3-7/frontend
           tags: |
             type=raw,value=latest
             type=sha
@@ -48,7 +50,7 @@ jobs:
         id: meta-backend
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/backend
+          images: ${{ env.REGISTRY }}/7-3-n-3-7/backend
           tags: |
             type=raw,value=latest
             type=sha
