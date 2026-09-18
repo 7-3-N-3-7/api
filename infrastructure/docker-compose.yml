@@ -14,8 +14,39 @@ volumes:
   mongo_data:
   minio_data:
   redis_data:
+  traefik_certs:
 
 services:
+  # -------------------------------------------------------------------
+  # 0. TRAEFIK (Reverse Proxy & Let's Encrypt SSL)
+  # -------------------------------------------------------------------
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: always
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Global HTTP -> HTTPS redirect
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      # Let's encrypt configuration
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=admin@157.180.43.151.nip.io"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_certs:/letsencrypt
+    networks:
+      - public-net
+
   # -------------------------------------------------------------------
   # 1. ZITADEL AUTH DATABASE (PostgreSQL - Auth Isolated)
   # -------------------------------------------------------------------
@@ -56,17 +87,22 @@ services:
       ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: "zitadel_user"
       ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: "zitadel_password"
       ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: "disable"
-      ZITADEL_EXTERNALSECURE: "false"
-      ZITADEL_EXTERNALDOMAIN: "localhost"
-      ZITADEL_EXTERNALPORT: "8080"
-    ports:
-      - "8080:8080"
+      ZITADEL_EXTERNALSECURE: "true"
+      ZITADEL_EXTERNALDOMAIN: "auth.157.180.43.151.nip.io"
+      ZITADEL_EXTERNALPORT: "443"
     depends_on:
       auth-db:
         condition: service_healthy
     networks:
       - public-net
       - zitadel-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.zitadel.rule=Host(`auth.157.180.43.151.nip.io`)"
+      - "traefik.http.routers.zitadel.entrypoints=websecure"
+      - "traefik.http.routers.zitadel.tls.certresolver=myresolver"
+      - "traefik.http.services.zitadel.loadbalancer.server.port=8080"
+      - "traefik.http.services.zitadel.loadbalancer.server.scheme=h2c"
 
   # -------------------------------------------------------------------
   # 3. BUSINESS DATABASE (PostgreSQL - Relational Data & Tests)
@@ -119,14 +155,23 @@ services:
     environment:
       MINIO_ROOT_USER: minio_admin
       MINIO_ROOT_PASSWORD: minio_password
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     volumes:
       - minio_data:/data
     networks:
       - public-net
       - backend-net
+    labels:
+      - "traefik.enable=true"
+      # MinIO API
+      - "traefik.http.routers.minio-api.rule=Host(`s3.157.180.43.151.nip.io`)"
+      - "traefik.http.routers.minio-api.entrypoints=websecure"
+      - "traefik.http.routers.minio-api.tls.certresolver=myresolver"
+      - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
+      # MinIO Console
+      - "traefik.http.routers.minio-console.rule=Host(`storage.157.180.43.151.nip.io`)"
+      - "traefik.http.routers.minio-console.entrypoints=websecure"
+      - "traefik.http.routers.minio-console.tls.certresolver=myresolver"
+      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
 
   # -------------------------------------------------------------------
   # 6. REDIS (Redisson Hibernate L2 Cache)
@@ -182,8 +227,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ~/.docker/config.json:/config.json
-    # Checks for updates every 24 hours (86400 seconds)
-    command: --interval 86400
+    # Checks for updates every 12 minutes (720 seconds)
+    command: --interval 720
 
   # -------------------------------------------------------------------
   # 9. BACKEND API
@@ -192,12 +237,16 @@ services:
     image: ghcr.io/7-3-n-3-7/backend:latest
     container_name: backend
     restart: always
-    ports:
-      - "3000:3000"
     networks:
       - public-net
       - backend-net
       - kafka-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.157.180.43.151.nip.io`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      - "traefik.http.services.backend.loadbalancer.server.port=3000"
 
   # -------------------------------------------------------------------
   # 10. FRONTEND UI
@@ -206,7 +255,11 @@ services:
     image: ghcr.io/7-3-n-3-7/frontend:latest
     container_name: frontend
     restart: always
-    ports:
-      - "80:80"
     networks:
       - public-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`157.180.43.151.nip.io`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
