@@ -78,3 +78,9 @@ out/
 ehthumbs.db
 Thumbs.db
 node_modules
+
+# frontend
+frontend/
+
+#backend
+backend/
