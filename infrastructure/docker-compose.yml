@@ -165,6 +165,40 @@ services:
       - backend-net
 
   # -------------------------------------------------------------------
+<<<<<<< HEAD
+=======
+  # 5. MINIO (Object Storage for Images, Media & User Content)
+  # -------------------------------------------------------------------
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-05-10T01-41-38Z
+    container_name: minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: minio_password
+    volumes:
+      - minio_data:/data
+    networks:
+      - public-net
+      - backend-net
+    labels:
+      - "traefik.enable=true"
+      # MinIO API
+      - "traefik.http.routers.minio-api.rule=Host(`s3.157.180.43.151.nip.io`)"
+      - "traefik.http.routers.minio-api.entrypoints=websecure"
+      - "traefik.http.routers.minio-api.tls.certresolver=myresolver"
+      - "traefik.http.routers.minio-api.service=minio-api"
+      - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
+      # MinIO Console
+      - "traefik.http.routers.minio-console.rule=Host(`storage.157.180.43.151.nip.io`)"
+      - "traefik.http.routers.minio-console.entrypoints=websecure"
+      - "traefik.http.routers.minio-console.tls.certresolver=myresolver"
+      - "traefik.http.routers.minio-console.service=minio-console"
+      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
+
+  # -------------------------------------------------------------------
+>>>>>>> 873b97a23878d02fa413cd639bec220ed6f5729c
   # 6. REDIS (Redisson Hibernate L2 Cache)
   # -------------------------------------------------------------------
   redis:
