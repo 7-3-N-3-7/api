@@ -76,7 +76,7 @@ jobs:
         run: |
           cd backend
           npm ci
-          npm --ignore-scripts run test
+          npx start-server-and-test start-backend http://localhost:8081/actuator/health 'node fetch-token.js'
 
       - name: Run Frontend E2E Tests
         run: |
