@@ -88,3 +88,4 @@ backend
 backend/*
 
 .env
+*.txt
