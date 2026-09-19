@@ -225,7 +225,7 @@ services:
   # 8. BACKEND API
   # -------------------------------------------------------------------
   backend:
-    image: ghcr.io/7-3-n-3-7/backend:latest
+    image: ghcr.io/7-3-n-3-7/backend:${BACKEND_TAG:-latest}
     container_name: backend
     restart: always
     env_file:
@@ -245,7 +245,7 @@ services:
   # 9. FRONTEND UI
   # -------------------------------------------------------------------
   frontend:
-    image: ghcr.io/7-3-n-3-7/frontend:latest
+    image: ghcr.io/7-3-n-3-7/frontend:${FRONTEND_TAG:-latest}
     container_name: frontend
     restart: always
     networks:
