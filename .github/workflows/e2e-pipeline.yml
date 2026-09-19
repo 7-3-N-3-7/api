@@ -20,6 +20,10 @@ jobs:
     steps:
       - name: Checkout API Repository
         uses: actions/checkout@v4
+        with:
+          repository: 7-3-N-3-7/api
+          path: api
+          token: ${{ secrets.GH_PAT || github.token }}
 
       - name: Checkout Backend Repository
         uses: actions/checkout@v4
@@ -40,6 +44,7 @@ jobs:
           BACKEND_TAG: ${{ inputs.backend_tag }}
           FRONTEND_TAG: ${{ inputs.frontend_tag }}
         run: |
+          cd api/infrastructure
           docker compose up -d
           echo "Waiting for services..."
           sleep 15
