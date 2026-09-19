@@ -4,12 +4,12 @@ on:
   workflow_call:
     inputs:
       backend_tag:
-        description: 'Tag for integrate-backend image'
+        description: 'Tag for backend image'
         required: false
         type: string
         default: 'main'
       frontend_tag:
-        description: 'Tag for integrate-frontend image'
+        description: 'Tag for frontend image'
         required: false
         type: string
         default: 'main'
@@ -39,22 +39,6 @@ jobs:
           path: frontend
           token: ${{ secrets.GH_PAT || github.token }}
           
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          # Use GH_PAT so it has permission to pull both backend and frontend private images
-          password: ${{ secrets.GH_PAT }}
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          # Use GH_PAT so it has permission to pull both backend and frontend private images
-          password: ${{ secrets.GH_PAT }}
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
