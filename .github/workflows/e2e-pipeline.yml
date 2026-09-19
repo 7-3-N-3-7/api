@@ -76,7 +76,7 @@ jobs:
         run: |
           cd backend
           npm ci
-          npm run test --ignore-scripts
+          npm --ignore-scripts run test
 
       - name: Run Frontend E2E Tests
         run: |
