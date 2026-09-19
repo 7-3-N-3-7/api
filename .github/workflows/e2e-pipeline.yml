@@ -105,4 +105,4 @@ jobs:
           cd frontend
           npm ci
           npx playwright install --with-deps
-          npx playwright test --pass-with-no-tests
+          npx cucumber-js
