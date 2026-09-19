@@ -38,7 +38,7 @@ jobs:
           repository: 7-3-N-3-7/frontend
           path: frontend
           token: ${{ secrets.GH_PAT || github.token }}
-          
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -76,7 +76,7 @@ jobs:
         run: |
           cd backend
           npm ci
-          npm run test
+          npm run test --ignore-scripts
 
       - name: Run Frontend E2E Tests
         run: |
