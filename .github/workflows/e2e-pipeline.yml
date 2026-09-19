@@ -47,6 +47,14 @@ jobs:
           # Use GH_PAT so it has permission to pull both backend and frontend private images
           password: ${{ secrets.GH_PAT }}
 
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          # Use GH_PAT so it has permission to pull both backend and frontend private images
+          password: ${{ secrets.GH_PAT }}
+
       - name: Spin Up Environment
         env:
           BACKEND_TAG: ${{ inputs.backend_tag }}
@@ -76,7 +84,7 @@ jobs:
         run: |
           cd backend
           npm ci
-          npm run test
+          npm run test --ignore-scripts
 
       - name: Run Frontend E2E Tests
         run: |
