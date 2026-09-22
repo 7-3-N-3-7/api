@@ -90,3 +90,4 @@ backend/*
 .env
 *.txt
 infrastructure/docker-compose.yml
+infrastructure/docker-compose.yml

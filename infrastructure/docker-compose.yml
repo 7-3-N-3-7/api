@@ -228,16 +228,24 @@ services:
     restart: always
     env_file:
       - .env
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://business-db:5432/${BUSINESS_DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${BUSINESS_DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${BUSINESS_DB_PASSWORD}
+      - SPRING_DATA_MONGODB_HOST=mongodb
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=https://login.157.180.43.151.nip.io/realms/master
     networks:
       - public-net
       - backend-net
       - kafka-net
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`server.157.180.43.151.nip.io`)"
+      - "traefik.http.routers.backend.rule=Host(`api.157.180.43.151.nip.io`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
-      - "traefik.http.services.backend.loadbalancer.server.port=3000"
+      - "traefik.http.services.backend.loadbalancer.server.port=8081"
       - "traefik.docker.network=infrastructure_public-net"
 
   # -------------------------------------------------------------------
@@ -251,7 +259,7 @@ services:
       - public-net
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`app.157.180.43.151.nip.io`)"
+      - "traefik.http.routers.frontend.rule=Host(`platform.157.180.43.151.nip.io`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
