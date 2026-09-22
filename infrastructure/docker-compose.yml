@@ -18,8 +18,8 @@ volumes:
 secrets:
   auth_db_password:
     environment: "AUTH_DB_PASSWORD"
-  zitadel_masterkey:
-    environment: "ZITADEL_MASTERKEY"
+  keycloak_admin_password:
+    environment: "KEYCLOAK_ADMIN_PASSWORD"
   business_db_password:
     environment: "BUSINESS_DB_PASSWORD"
   mongo_password:
@@ -59,7 +59,7 @@ services:
       - public-net
 
   # -------------------------------------------------------------------
-  # 1. ZITADEL AUTH DATABASE (PostgreSQL - Auth Isolated)
+  # 1. KEYCLOAK AUTH DATABASE (PostgreSQL - Auth Isolated)
   # -------------------------------------------------------------------
   auth-db:
     image: postgres:16-alpine
@@ -82,43 +82,20 @@ services:
       retries: 5
 
   # -------------------------------------------------------------------
-  # 2. ZITADEL IAM (Identity & Access Management)
+  # 2. KEYCLOAK IAM (Identity & Access Management)
   # -------------------------------------------------------------------
-  zitadel:
-    image: ghcr.io/zitadel/zitadel:v2.50.0
-    container_name: zitadel
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.4
+    container_name: keycloak
     restart: always
-    command: start-from-init --tlsMode external
     environment:
-      ZITADEL_MASTERKEY_FILE: /run/secrets/zitadel_masterkey
-      ZITADEL_DATABASE_POSTGRES_HOST: "auth-db"
-      ZITADEL_DATABASE_POSTGRES_PORT: "5432"
-      ZITADEL_DATABASE_POSTGRES_DATABASE: ${AUTH_DB_NAME}
-      ZITADEL_DATABASE_POSTGRES_USER_USERNAME: ${AUTH_DB_USER}
-      ZITADEL_DATABASE_POSTGRES_USER_PASSWORD_FILE: /run/secrets/auth_db_password
-      ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE: "disable"
-      ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: ${AUTH_DB_USER}
-      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD_FILE: /run/secrets/auth_db_password
-      ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: "disable"
-      ZITADEL_EXTERNALSECURE: "true"
-      ZITADEL_EXTERNALDOMAIN: "auth.157.180.43.151.nip.io"
-      ZITADEL_EXTERNALPORT: "443"
-    secrets:
-      - zitadel_masterkey
-      - auth_db_password
-    depends_on:
-      auth-db:
-        condition: service_healthy
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    command: start-dev
+    ports:
+      - "8080:8080"
     networks:
-      - public-net
-      - zitadel-net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.zitadel.rule=Host(`auth.157.180.43.151.nip.io`)"
-      - "traefik.http.routers.zitadel.entrypoints=websecure"
-      - "traefik.http.routers.zitadel.tls.certresolver=myresolver"
-      - "traefik.http.services.zitadel.loadbalancer.server.port=8080"
-      - "traefik.http.services.zitadel.loadbalancer.server.scheme=h2c"
+      - backend-net
 
   # -------------------------------------------------------------------
   # 3. BUSINESS DATABASE (PostgreSQL - Relational Data & Tests)
