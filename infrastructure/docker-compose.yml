@@ -20,8 +20,6 @@ secrets:
     environment: "AUTH_DB_PASSWORD"
   keycloak_admin_password:
     environment: "KEYCLOAK_ADMIN_PASSWORD"
-  keycloak_admin_password:
-    environment: "KEYCLOAK_ADMIN_PASSWORD"
   business_db_password:
     environment: "BUSINESS_DB_PASSWORD"
   mongo_password:
@@ -62,7 +60,6 @@ services:
 
   # -------------------------------------------------------------------
   # 1. KEYCLOAK AUTH DATABASE (PostgreSQL - Auth Isolated)
-  # 1. KEYCLOAK AUTH DATABASE (PostgreSQL - Auth Isolated)
   # -------------------------------------------------------------------
   auth-db:
     image: postgres:16-alpine
@@ -86,11 +83,7 @@ services:
 
   # -------------------------------------------------------------------
   # 2. KEYCLOAK IAM (Identity & Access Management)
-  # 2. KEYCLOAK IAM (Identity & Access Management)
   # -------------------------------------------------------------------
-  keycloak:
-    image: quay.io/keycloak/keycloak:24.0.4
-    container_name: keycloak
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.4
     container_name: keycloak
