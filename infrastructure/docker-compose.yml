@@ -91,11 +91,22 @@ services:
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      # Required for proxy environments like Traefik:
+      KC_PROXY_HEADERS: "xforwarded"
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: "auth.157.180.43.151.nip.io"
     command: start-dev
     ports:
       - "8080:8080"
     networks:
       - backend-net
+      - public-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`auth.157.180.43.151.nip.io`)"
+      - "traefik.http.routers.keycloak.entrypoints=websecure"
+      - "traefik.http.routers.keycloak.tls.certresolver=myresolver"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
 
   # -------------------------------------------------------------------
   # 3. BUSINESS DATABASE (PostgreSQL - Relational Data & Tests)
