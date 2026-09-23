@@ -65,7 +65,7 @@ jobs:
           BUSINESS_DB_PASSWORD=${{ secrets.BUSINESS_DB_PASSWORD }}
           MONGO_USER=${{ secrets.MONGO_USER }}
           MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}
-          ZITADEL_MASTERKEY=${{ secrets.ZITADEL_MASTERKEY }}
+          KEYCLOAK_ADMIN_PASSWORD=${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
           EOF
           
           docker compose up -d
