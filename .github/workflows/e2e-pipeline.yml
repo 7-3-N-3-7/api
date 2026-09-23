@@ -88,5 +88,4 @@ jobs:
         run: |
           cd frontend
           npm ci
-          npx playwright install --with-deps
           NODE_OPTIONS="--loader ts-node/esm" npx cucumber-js
