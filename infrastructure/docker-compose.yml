@@ -235,16 +235,17 @@ services:
       - SPRING_DATA_MONGODB_HOST=mongodb
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=https://login.157.180.43.151.nip.io/realms/master
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=https://login.157.180.43.151.nip.io/realms/platform-realm
     networks:
       - public-net
       - backend-net
       - kafka-net
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.157.180.43.151.nip.io`)"
+      - "traefik.http.routers.backend.rule=Host(`server.157.180.43.151.nip.io`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      - "traefik.http.routers.backend.middlewares=oauth-auth"
       - "traefik.http.services.backend.loadbalancer.server.port=8081"
       - "traefik.docker.network=infrastructure_public-net"
 
@@ -262,4 +263,44 @@ services:
       - "traefik.http.routers.frontend.rule=Host(`platform.157.180.43.151.nip.io`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+      - "traefik.http.routers.frontend.middlewares=oauth-auth"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      - "traefik.docker.network=infrastructure_public-net"
+
+  # -------------------------------------------------------------------
+  # 10. OAUTH2-PROXY
+  # -------------------------------------------------------------------
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    container_name: oauth2-proxy
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - OAUTH2_PROXY_PROVIDER=keycloak-oidc
+      - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}
+      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}
+      - OAUTH2_PROXY_OIDC_ISSUER_URL=${OAUTH2_PROXY_ISSUER_URL}
+      - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}
+      - OAUTH2_PROXY_COOKIE_DOMAINS=.157.180.43.151.nip.io
+      - OAUTH2_PROXY_COOKIE_SECURE=true
+      - OAUTH2_PROXY_EMAIL_DOMAINS=*
+      - OAUTH2_PROXY_PASS_ACCESS_TOKEN=true
+      - OAUTH2_PROXY_PASS_AUTHORIZATION_HEADER=true
+      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
+      - OAUTH2_PROXY_UPSTREAMS=static://200
+    networks:
+      - public-net
+    labels:
+      - "traefik.enable=true"
+      # Route for callback URLs
+      - "traefik.http.routers.oauth2-proxy.rule=Host(`platform.157.180.43.151.nip.io`, `server.157.180.43.151.nip.io`) && PathPrefix(`/oauth2/`)"
+      - "traefik.http.routers.oauth2-proxy.entrypoints=websecure"
+      - "traefik.http.routers.oauth2-proxy.tls.certresolver=myresolver"
+      - "traefik.http.services.oauth2-proxy.loadbalancer.server.port=4180"
+      
+      # ForwardAuth Middleware declaration
+      - "traefik.http.middlewares.oauth-auth.forwardauth.address=http://oauth2-proxy:4180/"
+      - "traefik.http.middlewares.oauth-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.oauth-auth.forwardauth.authResponseHeaders=Authorization,X-Forwarded-User,X-Forwarded-Access-Token"
+      - "traefik.docker.network=infrastructure_public-net"
