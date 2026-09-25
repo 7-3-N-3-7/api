@@ -1,0 +1,45 @@
+name: Sync Taiga BDD Features
+
+on:
+  repository_dispatch:
+    types: [taiga_story_update]
+
+jobs:
+  sync-bdd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse Payload & Generate Files
+        run: |
+          # 1. Determine directory based on tag
+          TAG="${{ github.event.client_payload.tag }}"
+          SLUG="${{ github.event.client_payload.story_slug }}"
+          
+          DIR="backend/tests/features"
+          if [[ "$TAG" == "frontend" ]]; then
+            DIR="frontend/e2e/features"
+          fi
+          
+          mkdir -p "$DIR"
+          
+          # 2. Save Gherkin to .feature
+          cat << 'EOF' > "$DIR/$SLUG.feature"
+          ${{ github.event.client_payload.gherkin_content }}
+          EOF
+          
+          # 3. Save Mermaid to .md if present
+          MERMAID="${{ github.event.client_payload.mermaid_content }}"
+          if [[ -n "$MERMAID" ]]; then
+            cat << 'EOF' > "$DIR/${SLUG}_diagram.md"
+          ```mermaid
+          ${{ github.event.client_payload.mermaid_content }}
+          ```
+          EOF
+          fi
+
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "test(bdd): sync feature and diagrams from Taiga [skip ci]"
+          file_pattern: "backend/tests/features/* frontend/e2e/features/*"
