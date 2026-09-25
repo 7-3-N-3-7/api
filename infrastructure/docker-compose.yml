@@ -96,7 +96,7 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME: "login.157.180.43.151.nip.io"
       # PostgreSQL Database configuration
-      KC_DB: postgres
+      KC_DB: ${AUTH_DB_NAME}
       KC_DB_URL: jdbc:postgresql://auth-db:5432/${AUTH_DB_NAME}
       KC_DB_USERNAME: ${AUTH_DB_USER}
       KC_DB_PASSWORD: ${AUTH_DB_PASSWORD}
@@ -235,17 +235,16 @@ services:
       - SPRING_DATA_MONGODB_HOST=mongodb
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=https://login.157.180.43.151.nip.io/realms/platform-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=https://login.157.180.43.151.nip.io/realms/master
     networks:
       - public-net
       - backend-net
       - kafka-net
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`server.157.180.43.151.nip.io`)"
+      - "traefik.http.routers.backend.rule=Host(`api.157.180.43.151.nip.io`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
-      - "traefik.http.routers.backend.middlewares=oauth-auth"
       - "traefik.http.services.backend.loadbalancer.server.port=8081"
       - "traefik.docker.network=infrastructure_public-net"
 
@@ -263,7 +262,7 @@ services:
       - "traefik.http.routers.frontend.rule=Host(`platform.157.180.43.151.nip.io`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
-      - "traefik.http.routers.frontend.middlewares=oauth-auth"
+- "traefik.http.routers.frontend.middlewares=oauth-auth"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
       - "traefik.docker.network=infrastructure_public-net"
 
