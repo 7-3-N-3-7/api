@@ -1,0 +1,75 @@
+@startuml
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2C3E50
+skinparam ArrowThickness 1.5
+
+skinparam activity {
+    BackgroundColor #FFFFFF
+    BorderColor #2C3E50
+    BorderThickness 1.5
+}
+
+skinparam partition {
+    BorderColor #7F8C8D
+    FontColor #2C3E50
+    FontStyle bold
+    FontSize 13
+}
+
+start
+
+partition "**Krav & Versionsstyring**" {
+    :<b>1. Taiga (Kravspecifikation)</b>
+    • User Story oprettes i backlog
+    • Acceptkriterier defineres for både API og UI;
+
+    :<b>2. GitHub Feature Branch</b>
+    • Opret branch: ""feature/tg-<id>-<navn>""
+    • Commit indledende "".feature""-filer (Gherkin);
+}
+
+partition "**Fase 1: Backend (Outside-In)**" #F8F9FA {
+    -[#B03A2E,dashed]->
+    #FADBD8:<b>3. Backend BDD (Outer Loop)</b>
+    • Implementer API-kald i Cucumber med **REST Assured**
+    • Eksekver: **Fejler (Rød)** //(fx HTTP 404)//;
+    
+    #D5F5E3:<b>4. Backend TDD (Inner Loop)</b>
+    • Skriv fejlende enhedstests (Controller/Service/Repo)
+    • Implementer logik, datalag og endpoints
+    • Eksekver enhedstests: **Bestået (Grøn)**;
+
+    #D5F5E3:<b>5. Backend Verifikation</b>
+    • Kør samlet **REST Assured** / Cucumber API-testsuite
+    • Kontrakt og forretningslogik: **Bestået (Grøn)**;
+}
+
+partition "**Fase 2: Frontend (Outside-In)**" #F4F6F7 {
+    -[#B03A2E,dashed]->
+    #FADBD8:<b>6. Frontend BDD (Outer Loop)</b>
+    • Udarbejd UI-scenarier og **Playwright** trin
+    • Eksekver: **Fejler (Rød)** //(ruter/elementer mangler)//;
+
+    #D5F5E3:<b>7. Frontend TDD (Inner Loop)</b>
+    • Udvikl UI-komponenter, state og formularer
+    • Integrer mod det verificerede backend-API
+    • Eksekver komponenttests: **Bestået (Grøn)**;
+
+    #D5F5E3:<b>8. Systemverifikation (E2E)</b>
+    • Start fuldt miljø (backend + frontend)
+    • **Playwright** end-to-end-suite: **Bestået (Grøn)**;
+}
+
+partition "**Integration & Sporbarhed**" {
+    :<b>9. Pull Request & Afslutning</b>
+    • Push verificeret kodebase til GitHub
+    • Opret PR m. reference: ""Closes TG-<id>""
+    • Merge lukker automatisk historien (User Story) som **Done** i Taiga;
+
+}
+
+stop
+@enduml
