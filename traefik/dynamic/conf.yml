@@ -1,0 +1,17 @@
+http:
+  routers:
+    frontend:
+      rule: "Host(`127.0.0.1.nip.io`) || Host(`platform.127.0.0.1.nip.io`)"
+      service: frontend
+    backend:
+      rule: "Host(`api.127.0.0.1.nip.io`)"
+      service: backend
+  services:
+    frontend:
+      loadBalancer:
+        servers:
+          - url: "http://frontend:3000"
+    backend:
+      loadBalancer:
+        servers:
+          - url: "http://backend:8081"

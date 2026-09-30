@@ -16,6 +16,28 @@ volumes:
 
 services:
   # ----------------------------------------------------
+  # Reverse Proxy
+  # ----------------------------------------------------
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "./traefik/dynamic:/etc/traefik/dynamic:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - public-net
+
+  # ----------------------------------------------------
   # Application Services
   # ----------------------------------------------------
   frontend:
@@ -23,12 +45,23 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
-    ports:
-      - "80:80"
     networks:
       - public-net
     depends_on:
       - backend
+    environment:
+      - NEXTAUTH_URL=http://platform.127.0.0.1.nip.io
+      - NEXTAUTH_SECRET=my-super-secret-key-12345
+      - NODE_OPTIONS=--dns-result-order=ipv4first
+      - KEYCLOAK_CLIENT_ID=platform-frontend
+      - KEYCLOAK_CLIENT_SECRET=VFbnGPXmCy8Cf9KwAbcy4ulLig3MzraN
+      - KEYCLOAK_ISSUER=https://login.157.180.43.151.nip.io/realms/EduJournal
+      - KEYCLOAK_ADMIN_CLIENT_ID=platform-admin
+      - KEYCLOAK_ADMIN_CLIENT_SECRET=Eksf3Rd4uJtV1oW9eOrolcrvI3i4fxcg
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN:-127.0.0.1.nip.io}`) || Host(`platform.${DOMAIN:-127.0.0.1.nip.io}`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
   backend:
     build:
@@ -52,6 +85,10 @@ services:
       - mongodb
       - redis
       - kafka
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN:-127.0.0.1.nip.io}`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=8081"
 
   # ----------------------------------------------------
   # Infrastructure Services
