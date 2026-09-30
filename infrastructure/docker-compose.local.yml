@@ -11,81 +11,157 @@ services:
     container_name: business-db-local
     restart: unless-stopped
     environment:
-      POSTGRES_DB: business
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+    - POSTGRES_DB_FILE=/run/secrets/postgres_db
+    - POSTGRES_USER_FILE=/run/secrets/postgres_user
+    - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
     ports:
-      - "5432:5432"
+    - "5432:5432"
     volumes:
-      - business_db_data_local:/var/lib/postgresql/data
+    - business_db_data_local:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d business"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+    secrets:
+    - postgres_db
+    - postgres_user
+    - postgres_password
+    - postgres_db_file
+    - postgres_user_file
+    - postgres_password_file
   mongodb:
     image: mongo:7.0
     container_name: mongodb-local
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: password
+    - MONGO_INITDB_ROOT_USERNAME_FILE=/run/secrets/mongo_initdb_root_username
+    - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/mongo_initdb_root_password
     ports:
-      - "27017:27017"
+    - "27017:27017"
     volumes:
-      - mongo_data_local:/data/db
+    - mongo_data_local:/data/db
 
+    secrets:
+    - mongo_initdb_root_username
+    - mongo_initdb_root_password
+    - mongo_initdb_root_username_file
+    - mongo_initdb_root_password_file
   redis:
     image: redis:7-alpine
     container_name: redis-local
     restart: unless-stopped
     ports:
-      - "6379:6379"
+    - "6379:6379"
     volumes:
-      - redis_data_local:/data
+    - redis_data_local:/data
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
     container_name: zookeeper-local
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "2181:2181"
+    - "2181:2181"
 
+    secrets:
+    - zookeeper_client_port
+    - zookeeper_tick_time
+    command: /bin/sh -c "export ZOOKEEPER_CLIENT_PORT=$(cat 
+      /run/secrets/zookeeper_client_port) && export ZOOKEEPER_TICK_TIME=$(cat 
+      /run/secrets/zookeeper_tick_time) && exec /etc/confluent/docker/run"
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     container_name: kafka-local
     depends_on:
-      - zookeeper
+    - zookeeper
     ports:
-      - "9092:9092"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
+    - "9092:9092"
+    secrets:
+    - kafka_broker_id
+    - kafka_zookeeper_connect
+    - kafka_advertised_listeners
+    - kafka_listener_security_protocol_map
+    - kafka_inter_broker_listener_name
+    - kafka_offsets_topic_replication_factor
+    command: /bin/sh -c "export KAFKA_BROKER_ID=$(cat 
+      /run/secrets/kafka_broker_id) && export KAFKA_ZOOKEEPER_CONNECT=$(cat 
+      /run/secrets/kafka_zookeeper_connect) && export 
+      KAFKA_ADVERTISED_LISTENERS=$(cat /run/secrets/kafka_advertised_listeners) 
+      && export KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=$(cat 
+      /run/secrets/kafka_listener_security_protocol_map) && export 
+      KAFKA_INTER_BROKER_LISTENER_NAME=$(cat 
+      /run/secrets/kafka_inter_broker_listener_name) && export 
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=$(cat 
+      /run/secrets/kafka_offsets_topic_replication_factor) && exec 
+      /etc/confluent/docker/run"
   oauth2-proxy-local:
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
     container_name: oauth2-proxy-local
-    environment:
-      - OAUTH2_PROXY_PROVIDER=keycloak-oidc
-      - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}
-      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}
-      - OAUTH2_PROXY_OIDC_ISSUER_URL=${OAUTH2_PROXY_ISSUER_URL}
-      - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}
-      - OAUTH2_PROXY_COOKIE_SECURE=false
-      - OAUTH2_PROXY_EMAIL_DOMAINS=*
-      - OAUTH2_PROXY_PASS_ACCESS_TOKEN=true
-      - OAUTH2_PROXY_PASS_AUTHORIZATION_HEADER=true
-      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
-      - OAUTH2_PROXY_UPSTREAMS=http://host.docker.internal:5173
-      - OAUTH2_PROXY_REDIRECT_URL=http://localhost:4180/oauth2/callback
     ports:
-      - "4180:4180"
+    - "4180:4180"
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+    - "host.docker.internal:host-gateway"
+    secrets:
+    - oauth2_proxy_provider
+    - oauth2_proxy_client_id
+    - oauth2_proxy_client_secret
+    - oauth2_proxy_oidc_issuer_url
+    - oauth2_proxy_cookie_secret
+    - oauth2_proxy_cookie_secure
+    - oauth2_proxy_email_domains
+    - oauth2_proxy_pass_access_token
+    - oauth2_proxy_pass_authorization_header
+    - oauth2_proxy_http_address
+    - oauth2_proxy_upstreams
+    - oauth2_proxy_redirect_url
+secrets:
+  oauth2_proxy_client_secret:
+    environment: OAUTH2_PROXY_CLIENT_SECRET
+  oauth2_proxy_pass_authorization_header:
+    environment: OAUTH2_PROXY_PASS_AUTHORIZATION_HEADER
+  kafka_listener_security_protocol_map:
+    environment: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+  mongo_initdb_root_username:
+    environment: MONGO_INITDB_ROOT_USERNAME
+  oauth2_proxy_email_domains:
+    environment: OAUTH2_PROXY_EMAIL_DOMAINS
+  oauth2_proxy_cookie_secret:
+    environment: OAUTH2_PROXY_COOKIE_SECRET
+  kafka_zookeeper_connect:
+    environment: KAFKA_ZOOKEEPER_CONNECT
+  kafka_broker_id:
+    environment: KAFKA_BROKER_ID
+  postgres_user:
+    environment: POSTGRES_USER
+  oauth2_proxy_cookie_secure:
+    environment: OAUTH2_PROXY_COOKIE_SECURE
+  kafka_offsets_topic_replication_factor:
+    environment: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+  postgres_db:
+    environment: POSTGRES_DB
+  kafka_inter_broker_listener_name:
+    environment: KAFKA_INTER_BROKER_LISTENER_NAME
+  oauth2_proxy_redirect_url:
+    environment: OAUTH2_PROXY_REDIRECT_URL
+  oauth2_proxy_oidc_issuer_url:
+    environment: OAUTH2_PROXY_OIDC_ISSUER_URL
+  oauth2_proxy_provider:
+    environment: OAUTH2_PROXY_PROVIDER
+  oauth2_proxy_client_id:
+    environment: OAUTH2_PROXY_CLIENT_ID
+  kafka_advertised_listeners:
+    environment: KAFKA_ADVERTISED_LISTENERS
+  zookeeper_tick_time:
+    environment: ZOOKEEPER_TICK_TIME
+  oauth2_proxy_pass_access_token:
+    environment: OAUTH2_PROXY_PASS_ACCESS_TOKEN
+  postgres_password:
+    environment: POSTGRES_PASSWORD
+  oauth2_proxy_upstreams:
+    environment: OAUTH2_PROXY_UPSTREAMS
+  zookeeper_client_port:
+    environment: ZOOKEEPER_CLIENT_PORT
+  mongo_initdb_root_password:
+    environment: MONGO_INITDB_ROOT_PASSWORD
+  oauth2_proxy_http_address:
+    environment: OAUTH2_PROXY_HTTP_ADDRESS
