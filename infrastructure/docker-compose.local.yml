@@ -1,19 +1,17 @@
 version: '3.8'
-
 volumes:
   business_db_data_local:
   mongo_data_local:
   redis_data_local:
-
 services:
   business-db:
     image: postgres:16-alpine
     container_name: business-db-local
     restart: unless-stopped
     environment:
-    - POSTGRES_DB_FILE=/run/secrets/postgres_db
-    - POSTGRES_USER_FILE=/run/secrets/postgres_user
-    - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+    =/run/secrets/postgres_db
+    =/run/secrets/postgres_user
+    =/run/secrets/postgres_password
     ports:
     - "5432:5432"
     volumes:
@@ -23,31 +21,24 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
     secrets:
     - postgres_db
     - postgres_user
     - postgres_password
-    - postgres_db_file
-    - postgres_user_file
-    - postgres_password_file
   mongodb:
     image: mongo:7.0
     container_name: mongodb-local
     restart: unless-stopped
     environment:
-    - MONGO_INITDB_ROOT_USERNAME_FILE=/run/secrets/mongo_initdb_root_username
-    - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/mongo_initdb_root_password
+    =/run/secrets/mongo_initdb_root_username
+    =/run/secrets/mongo_initdb_root_password
     ports:
     - "27017:27017"
     volumes:
     - mongo_data_local:/data/db
-
     secrets:
     - mongo_initdb_root_username
     - mongo_initdb_root_password
-    - mongo_initdb_root_username_file
-    - mongo_initdb_root_password_file
   redis:
     image: redis:7-alpine
     container_name: redis-local
@@ -56,13 +47,11 @@ services:
     - "6379:6379"
     volumes:
     - redis_data_local:/data
-
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
     container_name: zookeeper-local
     ports:
     - "2181:2181"
-
     secrets:
     - zookeeper_client_port
     - zookeeper_tick_time

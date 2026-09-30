@@ -7,13 +7,11 @@ networks:
     driver: bridge
   kafka-net:
     driver: bridge
-
 volumes:
   auth_db_data:
   business_db_data:
   mongo_data:
   redis_data:
-
 services:
   # ----------------------------------------------------
   # Reverse Proxy
@@ -36,7 +34,6 @@ services:
     - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
     - public-net
-
   # ----------------------------------------------------
   # Application Services
   # ----------------------------------------------------
@@ -53,7 +50,6 @@ services:
     - "traefik.enable=true"
     - "traefik.http.routers.frontend.rule=Host(`${DOMAIN:-127.0.0.1.nip.io}`) || Host(`platform.${DOMAIN:-127.0.0.1.nip.io}`)"
     - "traefik.http.services.frontend.loadbalancer.server.port=3000"
-
     secrets:
     - nextauth_url
     - nextauth_secret
@@ -82,7 +78,6 @@ services:
     - "traefik.enable=true"
     - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN:-127.0.0.1.nip.io}`)"
     - "traefik.http.services.backend.loadbalancer.server.port=8081"
-
   # ----------------------------------------------------
   # Infrastructure Services
   # ----------------------------------------------------
@@ -112,14 +107,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
     secrets:
     - postgres_db
     - postgres_user
     - postgres_password
-    - postgres_db_file
-    - postgres_user_file
-    - postgres_password_file
   mongodb:
     image: mongo:7.0
     container_name: mongodb
@@ -133,12 +124,9 @@ services:
     - mongo_data:/data/db
     networks:
     - backend-net
-
     secrets:
     - mongo_initdb_root_username
     - mongo_initdb_root_password
-    - mongo_initdb_root_username_file
-    - mongo_initdb_root_password_file
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -149,13 +137,11 @@ services:
     - redis_data:/data
     networks:
     - backend-net
-
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
     container_name: zookeeper
     networks:
     - kafka-net
-
     secrets:
     - zookeeper_client_port
     - zookeeper_tick_time

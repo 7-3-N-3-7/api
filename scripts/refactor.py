@@ -32,8 +32,8 @@ def refactor(filepath):
                     key = env
                     val = None
                     
-                secret_name = key.lower()
-                all_secrets.add(key)
+                secret_name = key.lower().replace('_file', '')
+                all_secrets.add(key.replace('_FILE', ''))
                 new_secrets.append(secret_name)
                 
                 

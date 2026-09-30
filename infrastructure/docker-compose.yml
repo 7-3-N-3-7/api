@@ -7,14 +7,12 @@ networks:
     driver: bridge
   kafka-net:
     driver: bridge
-
 volumes:
   auth_db_data:
   business_db_data:
   mongo_data:
   redis_data:
   traefik_certs:
-
 secrets:
   auth_db_password:
     environment: "AUTH_DB_PASSWORD"
@@ -24,7 +22,6 @@ secrets:
     environment: "BUSINESS_DB_PASSWORD"
   mongo_password:
     environment: "MONGO_PASSWORD"
-
   docker_api_version:
     environment: DOCKER_API_VERSION
   spring_datasource_url:
@@ -133,7 +130,6 @@ services:
     - traefik_certs:/letsencrypt
     networks:
     - public-net
-
   # -------------------------------------------------------------------
   # 1. KEYCLOAK AUTH DATABASE (PostgreSQL - Auth Isolated)
   # -------------------------------------------------------------------
@@ -151,7 +147,7 @@ services:
     - auth_db_password
     - postgres_db
     - postgres_user
-    - postgres_password_file
+    - postgres_password
     volumes:
     - auth_db_data:/var/lib/postgresql/data
     networks:
@@ -161,7 +157,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
   # -------------------------------------------------------------------
   # 2. KEYCLOAK IAM (Identity & Access Management)
   # -------------------------------------------------------------------
@@ -186,7 +181,6 @@ services:
     - "traefik.http.routers.keycloak.tls.certresolver=myresolver"
     - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
     - "traefik.docker.network=infrastructure_public-net"
-
   # -------------------------------------------------------------------
   # 3. BUSINESS DATABASE (PostgreSQL - Relational Data & Tests)
   # -------------------------------------------------------------------
@@ -212,7 +206,7 @@ services:
     - business_db_password
     - postgres_db
     - postgres_user
-    - postgres_password_file
+    - postgres_password
     ports:
     - "5432:5432"
     volumes:
@@ -224,7 +218,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
   # -------------------------------------------------------------------
   # 4. MONGODB (Localization i18n & Media Transcripts)
   # -------------------------------------------------------------------
@@ -238,14 +231,13 @@ services:
     secrets:
     - mongo_password
     - mongo_initdb_root_username
-    - mongo_initdb_root_password_file
+    - mongo_initdb_root_password
     ports:
     - "27017:27017"
     volumes:
     - mongo_data:/data/db
     networks:
     - backend-net
-
   # -------------------------------------------------------------------
   # 5. REDIS (Redisson Hibernate L2 Cache)
   # -------------------------------------------------------------------
@@ -259,7 +251,6 @@ services:
     - redis_data:/data
     networks:
     - backend-net
-
   # -------------------------------------------------------------------
   # 6. APACHE KAFKA & ZOOKEEPER (Event Streaming)
   # -------------------------------------------------------------------
@@ -268,7 +259,6 @@ services:
     container_name: zookeeper
     networks:
     - kafka-net
-
     secrets:
     - zookeeper_client_port
     - zookeeper_tick_time
@@ -285,7 +275,6 @@ services:
     networks:
     - backend-net
     - kafka-net
-
   # -------------------------------------------------------------------
   # 7. WATCHTOWER (Automatic Container Updates)
   # -------------------------------------------------------------------
@@ -316,7 +305,6 @@ services:
     - ~/.docker/config.json:/config.json
     # Checks for updates every 12 minutes (720 seconds)
     command: --interval 720
-
   # -------------------------------------------------------------------
   # 8. BACKEND API
   # -------------------------------------------------------------------
@@ -337,7 +325,6 @@ services:
     - "traefik.http.routers.backend.tls.certresolver=myresolver"
     - "traefik.http.services.backend.loadbalancer.server.port=8081"
     - "traefik.docker.network=infrastructure_public-net"
-
   # -------------------------------------------------------------------
   # 9. FRONTEND UI
   # -------------------------------------------------------------------
@@ -363,7 +350,6 @@ services:
     - "traefik.http.routers.frontend.middlewares=oauth-auth"
     - "traefik.http.services.frontend.loadbalancer.server.port=80"
     - "traefik.docker.network=infrastructure_public-net"
-
   # -------------------------------------------------------------------
   # 10. OAUTH2-PROXY
   # -------------------------------------------------------------------
@@ -383,7 +369,6 @@ services:
     - "traefik.http.routers.oauth2-proxy.entrypoints=websecure"
     - "traefik.http.routers.oauth2-proxy.tls.certresolver=myresolver"
     - "traefik.http.services.oauth2-proxy.loadbalancer.server.port=4180"
-
       # ForwardAuth Middleware declaration
     - "traefik.http.middlewares.oauth-auth.forwardauth.address=http://oauth2-proxy:4180/"
     - "traefik.http.middlewares.oauth-auth.forwardauth.trustForwardHeader=true"
