@@ -51,7 +51,7 @@ partition "**Fase 2: Frontend (Outside-In)**" #F4F6F7 {
     -[#B03A2E,dashed]->
     #FADBD8:<b>6. Frontend BDD (Outer Loop)</b>
     • Udarbejd UI-scenarier og **Playwright** trin
-    • Eksekver: **Fejler (Rød)** //(ruter/elementer mangler)//;
+    • Eksekver: **Fejler (Rød)** //(ru ter/elementer mangler)//;
 
     #D5F5E3:<b>7. Frontend TDD (Inner Loop)</b>
     • Udvikl UI-komponenter, state og formularer

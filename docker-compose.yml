@@ -7,14 +7,33 @@ networks:
     driver: bridge
   kafka-net:
     driver: bridge
-
 volumes:
   auth_db_data:
   business_db_data:
   mongo_data:
   redis_data:
-
 services:
+  # ----------------------------------------------------
+  # Reverse Proxy
+  # ----------------------------------------------------
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik
+    command:
+    - "--api.insecure=true"
+    - "--providers.file.directory=/etc/traefik/dynamic"
+    - "--providers.file.watch=true"
+    - "--providers.docker=true"
+    - "--providers.docker.exposedbydefault=false"
+    - "--entrypoints.web.address=:80"
+    ports:
+    - "80:80"
+    - "8080:8080"
+    volumes:
+    - "./traefik/dynamic:/etc/traefik/dynamic:ro"
+    - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+    - public-net
   # ----------------------------------------------------
   # Application Services
   # ----------------------------------------------------
@@ -23,107 +42,192 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
-    ports:
-      - "80:80"
     networks:
-      - public-net
+    - public-net
     depends_on:
-      - backend
-
+    - backend
+    labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.frontend.rule=Host(`${DOMAIN:-127.0.0.1.nip.io}`) || Host(`platform.${DOMAIN:-127.0.0.1.nip.io}`)"
+    - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+    secrets:
+    - nextauth_url
+    - nextauth_secret
+    - node_options
+    - keycloak_client_id
+    - keycloak_client_secret
+    - keycloak_issuer
+    - keycloak_admin_client_id
+    - keycloak_admin_client_secret
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: backend
     ports:
-      - "8081:8081"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://business-db:5432/business_db
-      - SPRING_DATASOURCE_USERNAME=app_user
-      - SPRING_DATASOURCE_PASSWORD=app_password
-      - SPRING_DATA_MONGODB_HOST=mongodb
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    - "8081:8081"
     networks:
-      - public-net
-      - backend-net
+    - public-net
+    - backend-net
     depends_on:
-      - business-db
-      - mongodb
-      - redis
-      - kafka
-
+    - business-db
+    - mongodb
+    - redis
+    - kafka
+    labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN:-127.0.0.1.nip.io}`)"
+    - "traefik.http.services.backend.loadbalancer.server.port=8081"
   # ----------------------------------------------------
   # Infrastructure Services
   # ----------------------------------------------------
+    secrets:
+    - spring_datasource_url
+    - spring_datasource_username
+    - spring_datasource_password
+    - spring_data_mongodb_host
+    - spring_data_redis_host
+    - spring_kafka_bootstrap_servers
   business-db:
     image: postgres:16-alpine
     container_name: business-db
     restart: always
     environment:
-      POSTGRES_DB: business_db
-      POSTGRES_USER: app_user
-      POSTGRES_PASSWORD: app_password
+    - POSTGRES_DB_FILE=/run/secrets/postgres_db
+    - POSTGRES_USER_FILE=/run/secrets/postgres_user
+    - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
     ports:
-      - "5433:5432"
+    - "5433:5432"
     volumes:
-      - business_db_data:/var/lib/postgresql/data
+    - business_db_data:/var/lib/postgresql/data
     networks:
-      - backend-net
+    - backend-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U app_user -d business_db"]
       interval: 5s
       timeout: 5s
       retries: 5
-
+    secrets:
+    - postgres_db
+    - postgres_user
+    - postgres_password
   mongodb:
     image: mongo:7.0
     container_name: mongodb
     restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: mongo_user
-      MONGO_INITDB_ROOT_PASSWORD: mongo_password
+    - MONGO_INITDB_ROOT_USERNAME_FILE=/run/secrets/mongo_initdb_root_username
+    - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/mongo_initdb_root_password
     ports:
-      - "27017:27017"
+    - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+    - mongo_data:/data/db
     networks:
-      - backend-net
-
+    - backend-net
+    secrets:
+    - mongo_initdb_root_username
+    - mongo_initdb_root_password
   redis:
     image: redis:7-alpine
     container_name: redis
     restart: always
     ports:
-      - "6379:6379"
+    - "6379:6379"
     volumes:
-      - redis_data:/data
+    - redis_data:/data
     networks:
-      - backend-net
-
+    - backend-net
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
     container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
     networks:
-      - kafka-net
-
+    - kafka-net
+    secrets:
+    - zookeeper_client_port
+    - zookeeper_tick_time
+    command: /bin/sh -c "export ZOOKEEPER_CLIENT_PORT=$(cat 
+      /run/secrets/zookeeper_client_port) && export ZOOKEEPER_TICK_TIME=$(cat 
+      /run/secrets/zookeeper_tick_time) && exec /etc/confluent/docker/run"
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     container_name: kafka
     depends_on:
-      - zookeeper
+    - zookeeper
     ports:
-      - "9092:9092"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    - "9092:9092"
     networks:
-      - backend-net
-      - kafka-net
+    - backend-net
+    - kafka-net
+    secrets:
+    - kafka_broker_id
+    - kafka_zookeeper_connect
+    - kafka_advertised_listeners
+    - kafka_listener_security_protocol_map
+    - kafka_inter_broker_listener_name
+    - kafka_offsets_topic_replication_factor
+    command: /bin/sh -c "export KAFKA_BROKER_ID=$(cat 
+      /run/secrets/kafka_broker_id) && export KAFKA_ZOOKEEPER_CONNECT=$(cat 
+      /run/secrets/kafka_zookeeper_connect) && export 
+      KAFKA_ADVERTISED_LISTENERS=$(cat /run/secrets/kafka_advertised_listeners) 
+      && export KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=$(cat 
+      /run/secrets/kafka_listener_security_protocol_map) && export 
+      KAFKA_INTER_BROKER_LISTENER_NAME=$(cat 
+      /run/secrets/kafka_inter_broker_listener_name) && export 
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=$(cat 
+      /run/secrets/kafka_offsets_topic_replication_factor) && exec 
+      /etc/confluent/docker/run"
+secrets:
+  kafka_listener_security_protocol_map:
+    environment: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+  node_options:
+    environment: NODE_OPTIONS
+  mongo_initdb_root_username:
+    environment: MONGO_INITDB_ROOT_USERNAME
+  keycloak_client_secret:
+    environment: KEYCLOAK_CLIENT_SECRET
+  spring_data_redis_host:
+    environment: SPRING_DATA_REDIS_HOST
+  keycloak_admin_client_secret:
+    environment: KEYCLOAK_ADMIN_CLIENT_SECRET
+  kafka_zookeeper_connect:
+    environment: KAFKA_ZOOKEEPER_CONNECT
+  nextauth_url:
+    environment: NEXTAUTH_URL
+  spring_datasource_username:
+    environment: SPRING_DATASOURCE_USERNAME
+  kafka_broker_id:
+    environment: KAFKA_BROKER_ID
+  postgres_user:
+    environment: POSTGRES_USER
+  keycloak_admin_client_id:
+    environment: KEYCLOAK_ADMIN_CLIENT_ID
+  kafka_offsets_topic_replication_factor:
+    environment: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+  postgres_db:
+    environment: POSTGRES_DB
+  spring_data_mongodb_host:
+    environment: SPRING_DATA_MONGODB_HOST
+  nextauth_secret:
+    environment: NEXTAUTH_SECRET
+  kafka_inter_broker_listener_name:
+    environment: KAFKA_INTER_BROKER_LISTENER_NAME
+  kafka_advertised_listeners:
+    environment: KAFKA_ADVERTISED_LISTENERS
+  zookeeper_tick_time:
+    environment: ZOOKEEPER_TICK_TIME
+  postgres_password:
+    environment: POSTGRES_PASSWORD
+  zookeeper_client_port:
+    environment: ZOOKEEPER_CLIENT_PORT
+  keycloak_issuer:
+    environment: KEYCLOAK_ISSUER
+  spring_datasource_password:
+    environment: SPRING_DATASOURCE_PASSWORD
+  mongo_initdb_root_password:
+    environment: MONGO_INITDB_ROOT_PASSWORD
+  spring_datasource_url:
+    environment: SPRING_DATASOURCE_URL
+  spring_kafka_bootstrap_servers:
+    environment: SPRING_KAFKA_BOOTSTRAP_SERVERS
+  keycloak_client_id:
+    environment: KEYCLOAK_CLIENT_ID
