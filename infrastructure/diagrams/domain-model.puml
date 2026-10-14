@@ -1,0 +1,99 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2C3E50
+skinparam ArrowThickness 1.5
+hide circle
+hide methods
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #2C3E50
+    BorderThickness 1.5
+    HeaderBackgroundColor #F4F6F7
+}
+
+title Domænemodel - Booking, Journalisering & CRM Platform
+
+class "Bruger (User)" as User {
+    brugernavn
+    email
+    rolle
+}
+
+class "Klient (Client)" as Client {
+    fuldeNavn
+    fødselsdato
+    adresse
+    postnummer
+    telefonnummer
+}
+
+class "Terapeut (Therapist)" as Therapist {
+    biografi
+    arbejdstider
+}
+
+class "Organisation" as Organisation {
+    cvrNummer
+    organisationsNavn
+}
+
+class "Ydelse (Service)" as Service {
+    navn
+    beskrivelse
+    varighedMinutter
+    pris
+    lokation
+}
+
+class "Aftale (Appointment)" as Appointment {
+    titel
+    startTidspunkt
+    slutTidspunkt
+    status
+}
+
+class "Journalindlæg (JournalEntry)" as JournalEntry {
+    titel
+    indhold
+    humørVurdering
+    oprettetTidspunkt
+    interneKliniskeNoter
+}
+
+class "Versionshistorik (JGit)" as GitHistory {
+    commitHash
+    commitBesked
+    markdownIndhold
+    tidspunkt
+}
+
+class "Psykotraumatologisk Test" as PsychoTest {
+    testType
+    score
+    sværhedsgrad
+    besvarelser
+    tidspunkt
+}
+
+User <|-- Client : "Er en"
+User <|-- Therapist : "Er en"
+
+Therapist "1..*" -- "1" Organisation : "Tilknyttet / Opretter"
+Therapist "1" -- "0..*" Service : "Udbyder"
+Client "1" -- "0..*" Appointment : "Booker"
+Therapist "1" -- "0..*" Appointment : "Afholder"
+Service "0..1" -- "0..*" Appointment : "Danner grundlag for"
+
+Client "1" -- "0..*" JournalEntry : "Skriver / Ejer"
+Therapist "0..*" -- "0..*" JournalEntry : "Tilføjer kliniske noter"
+JournalEntry "1" -- "1..*" GitHistory : "Versionsstyres i"
+
+Client "1" -- "0..*" PsychoTest : "Besvarer"
+Therapist "1" -- "0..*" PsychoTest : "Vurderer"
+
+@enduml

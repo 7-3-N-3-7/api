@@ -42,6 +42,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
+    environment:
+      - BACKEND_INTERNAL_URL=http://backend:8081
     networks:
     - public-net
     depends_on:

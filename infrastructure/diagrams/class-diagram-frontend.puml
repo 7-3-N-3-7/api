@@ -1,0 +1,116 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2C3E50
+skinparam ArrowThickness 1.3
+skinparam packageStyle rectangle
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #2C3E50
+    BorderThickness 1.3
+    HeaderBackgroundColor #F4F6F7
+}
+
+title Frontend Klassediagram / Komponentarkitektur (Next.js 16 / React 19 / TypeScript)
+
+package "Middleware & Konfiguration (src/)" #F8F9FA {
+    class "middleware.ts" as Middleware <<Next.js Middleware>> {
+        +config: MatcherConfig
+        +proxy(request: NextRequest): Promise<NextResponse>
+    }
+
+    class "i18n/routing.ts" as Routing <<Module>> {
+        +locales: ["en", "da", "de", "es", "fr"]
+        +defaultLocale: "en"
+    }
+
+    class "i18n/request.ts" as RequestConfig <<Server Module>> {
+        -backendUrl: string
+        +getRequestConfig(requestLocale): Promise<IntlConfig>
+    }
+
+    class "lib/auth-cookies.ts" as AuthCookies <<Module>> {
+        +sessionCookieName: string
+        +sessionCookieOptions: CookieOption
+    }
+}
+
+package "BFF API Routes (src/app/api/auth/)" #EBF5FB {
+    class "[...nextauth]/route.ts" as NextAuthRoute <<NextAuth Handler>> {
+        +authOptions: AuthOptions
+        -refreshAccessToken(token: JWT): Promise<JWT>
+        +GET(req: Request): Response
+        +POST(req: Request): Response
+    }
+
+    class "register/route.ts" as RegisterRoute <<API Route>> {
+        +POST(request: Request): Promise<NextResponse>
+    }
+}
+
+package "UI Sider & Komponenter (src/app/[locale]/)" #E8F8F5 {
+    class "layout.tsx" as RootLayout <<Server Component>> {
+        +RootLayout(children, params): Promise<JSX.Element>
+    }
+
+    class "page.tsx (LandingPage)" as LandingPage <<Client Component>> {
+        -showAuthModal: boolean
+        -isLogin: boolean
+        -username: string
+        -password: string
+        -email: string
+        -firstName: string
+        -lastName: string
+        +handleLogin(e: FormEvent): Promise<void>
+        +handleRegister(e: FormEvent): Promise<void>
+        +openModal(): void
+    }
+
+    class "dashboard/layout.tsx" as DashboardLayout <<Server Component>> {
+        +DashboardLayout(children): Promise<JSX.Element>
+    }
+
+    class "dashboard/personal/page.tsx" as PersonalDashboard <<Server Component>> {
+        +PersonalDashboard(): Promise<JSX.Element>
+    }
+
+    class "dashboard/therapist/page.tsx" as TherapistDashboard <<Server Component>> {
+        +TherapistDashboard(): Promise<JSX.Element>
+    }
+
+    class "components/LanguageSwitcher.tsx" as LanguageSwitcher <<Client Component>> {
+        +handleSelect(newLocale: string): void
+    }
+
+    class "dashboard/UserDropdown.tsx" as UserDropdown <<Client Component>> {
+        +UserDropdown(): JSX.Element
+    }
+}
+
+Middleware --> Routing : validerer locale
+Middleware --> AuthCookies : læser JWT session cookie
+RequestConfig --> Routing : fallback locale
+NextAuthRoute --> AuthCookies : sætter cookie options
+
+RootLayout --> RequestConfig : henter i18n fra Backend API
+RootLayout *-- LandingPage
+RootLayout *-- DashboardLayout
+
+LandingPage ..> NextAuthRoute : signIn("credentials")
+LandingPage ..> RegisterRoute : POST /api/auth/register
+
+DashboardLayout *-- LanguageSwitcher
+DashboardLayout *-- UserDropdown
+DashboardLayout *-- PersonalDashboard
+DashboardLayout *-- TherapistDashboard
+
+PersonalDashboard --> NextAuthRoute : getServerSession(authOptions)
+TherapistDashboard --> NextAuthRoute : getServerSession(authOptions)
+LanguageSwitcher --> Routing : skifter sprog
+UserDropdown ..> NextAuthRoute : signOut()
+
+@enduml

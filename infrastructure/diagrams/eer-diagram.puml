@@ -1,0 +1,120 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2C3E50
+skinparam ArrowThickness 1.4
+hide circle
+
+skinparam entity {
+    BackgroundColor #FFFFFF
+    BorderColor #2C3E50
+    BorderThickness 1.4
+    HeaderBackgroundColor #EBF5FB
+}
+
+title EER-Diagram (Enhanced Entity-Relationship) - PostgreSQL & MongoDB
+
+package "PostgreSQL (business-db)" #F8F9FA {
+
+    entity "app_users (Supertype)" as app_users {
+        * **id** : UUID <<PK>>
+        --
+        * username : VARCHAR(255) <<UK, NOT NULL>>
+        * password : VARCHAR(255) <<NOT NULL>>
+        * role : VARCHAR(50) <<DISCRIMINATOR: CLIENT | THERAPIST | ADMIN>>
+    }
+
+    entity "client_profiles (Subtype / Bilag 5.1.1)" as client_profiles {
+        * **user_id** : UUID <<PK, FK>>
+        --
+        * full_name : VARCHAR(255) <<NOT NULL>>
+        * date_of_birth : DATE <<NOT NULL>>
+        * home_address : VARCHAR(255) <<NOT NULL>>
+        * postal_code : VARCHAR(20) <<NOT NULL>>
+        * phone_number : VARCHAR(50) <<NOT NULL>>
+    }
+
+    entity "organisations (Bilag 5.1.2)" as organisations {
+        * **id** : UUID <<PK>>
+        --
+        * cvr_number : VARCHAR(20) <<UK, NOT NULL>>
+        * name : VARCHAR(255) <<NOT NULL>>
+    }
+
+    entity "provider_profiles (Subtype / Terapeut)" as provider_profiles {
+        * **id** : UUID <<PK>>
+        --
+        * user_id : UUID <<FK, UK, NOT NULL>>
+        * organisation_id : UUID <<FK, NULLABLE>>
+        biography : TEXT
+        working_hours_json : VARCHAR(255)
+    }
+
+    entity "services" as services {
+        * **id** : UUID <<PK>>
+        --
+        * provider_profile_id : UUID <<FK, NOT NULL>>
+        name : VARCHAR(255)
+        description : TEXT
+        duration_minutes : INTEGER
+        price : DOUBLE PRECISION
+        location : VARCHAR(255)
+    }
+
+    entity "appointments" as appointments {
+        * **id** : UUID <<PK>>
+        --
+        * client_uuid : UUID <<FK, NOT NULL>>
+        * therapist_uuid : UUID <<FK, NOT NULL>>
+        * start_time : TIMESTAMP <<NOT NULL>>
+        * end_time : TIMESTAMP <<NOT NULL>>
+        title : VARCHAR(255)
+        status : VARCHAR(50)
+    }
+
+    entity "journal_entries" as journal_entries {
+        * **id** : UUID <<PK>>
+        --
+        * client_uuid : UUID <<FK, NOT NULL>>
+        * title : VARCHAR(255) <<NOT NULL>>
+        * content : TEXT <<NOT NULL>>
+        mood_rating : INTEGER
+        * timestamp : TIMESTAMP <<NOT NULL>>
+    }
+
+    entity "psychotraumatology_tests" as psychotraumatology_tests {
+        * **id** : UUID <<PK>>
+        --
+        * client_uuid : UUID <<FK, NOT NULL>>
+        * therapist_uuid : UUID <<FK, NOT NULL>>
+        * test_type : VARCHAR(255) <<NOT NULL>>
+        * score : INTEGER <<NOT NULL>>
+        * severity : VARCHAR(100) <<NOT NULL>>
+        * answers_json : TEXT <<NOT NULL>>
+        * timestamp : TIMESTAMP <<NOT NULL>>
+    }
+}
+
+package "MongoDB (integrate_mongo)" #FEF9E7 {
+    entity "i18n_dictionaries" as i18n {
+        * **_id** : ObjectId <<PK>>
+        --
+        * locale : String <<UK>>
+        * translations : Map<String, Object>
+    }
+}
+
+app_users ||--o| client_profiles : "ISA (Klient)"
+app_users ||--o| provider_profiles : "ISA (Terapeut)"
+organisations |o--o{ provider_profiles : "tilknyttet (1:N)"
+provider_profiles ||--o{ services : "udbyder (1:N)"
+app_users ||--o{ appointments : "client_uuid (1:N)"
+app_users ||--o{ appointments : "therapist_uuid (1:N)"
+app_users ||--o{ journal_entries : "client_uuid (1:N)"
+app_users ||--o{ psychotraumatology_tests : "client_uuid (1:N)"
+app_users ||--o{ psychotraumatology_tests : "therapist_uuid (1:N)"
+
+@enduml
