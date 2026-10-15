@@ -1,0 +1,127 @@
+@startuml
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2C3E50
+skinparam ArrowThickness 1.4
+
+skinparam activity {
+    BackgroundColor #FFFFFF
+    BorderColor #2C3E50
+    BorderThickness 1.4
+    DiamondBackgroundColor #FEF9E7
+    DiamondBorderColor #2C3E50
+}
+
+skinparam swimlane {
+    BorderColor #7F8C8D
+    BorderThickness 1.5
+    TitleBackgroundColor #EBF5FB
+    TitleFontColor #2C3E50
+    TitleFontStyle bold
+    TitleFontSize 13
+}
+
+title Aktivitetsdiagram - End-to-End Klinisk Platform (Booking, Handshake, Journal, PCL-5 & JGit)
+
+|Klient (Client Portal)|
+start
+:Tilgår platformen & logger ind
+eller registrerer fuld profil (Q12);
+
+|Next.js BFF & Keycloak IAM|
+:Validerer credentials mod **Keycloak IAM**
+og udsteder OIDC JWT / Session Cookie;
+:Videresender API-kald via
+""/api/backend/[...path]"" med Bearer JWT;
+
+|Spring Boot Backend & Persistens|
+if (Terapeut CVR Onboarding?) then (Ja - 8-cifret CVR)
+    :Opretter/finder ""Organisation (CVR)"",
+    opgraderer bruger til ""THERAPIST""
+    & synkroniserer Keycloak realm-rolle;
+else (Nej - Klient / Eksisterende)
+    :Indlæser ""ClientProfile"" / ""ProviderProfile""
+    fra **PostgreSQL** (`business-db`);
+endif
+
+|Klient (Client Portal)|
+:Søger i **Markedsplads** efter terapeut/CVR
+og vælger ydelse (30/45/60/90 min) & tidspunkt;
+:Sender bookinganmodning
+(""POST /api/v1/clinic/appointments"");
+
+|Spring Boot Backend & Persistens|
+:Kontrollerer tidsinterval i **PostgreSQL**
+(""existsOverlappingAppointment"");
+
+if (Overlappende aftale findes?) then (Ja - Konflikt)
+    #FADBD8:Afviser booking med
+    **HTTP 409 Conflict**;
+    |Klient (Client Portal)|
+    :Vælger nyt ledigt tidspunkt;
+    stop
+else (Nej - Ledig tid)
+    |Spring Boot Backend & Persistens|
+    #D5F5E3:Gemmer ""Appointment (CONFIRMED)"",
+    invaliderer **Redis L2 Cache**
+    & publicerer **Kafka** event;
+endif
+
+|Klient (Client Portal)|
+:Tildeler adgangssamtykke (**Handshake**)
+til terapeuten (""POST /api/v1/clinic/handshakes"");
+
+|Spring Boot Backend & Persistens|
+:Gemmer ""ClientTherapistHandshake (ACTIVE)""
+i **PostgreSQL**;
+
+fork
+    |Klient (Client Portal)|
+    :Skriver dagbogsindlæg (Humør 1-10)
+    & udfylder **PCL-5** traumetest (Score 0-80);
+    |Spring Boot Backend & Persistens|
+    :Gemmer ""JournalEntry"" & ""PsychotraumatologyTest""
+    i **PostgreSQL**;
+    :Committer Markdown-snapshot til **JGit**
+    (""patients/<clientId>.md"") og gemmer SHA-1 hash;
+fork again
+    |Terapeut (Multi-Window Workspace)|
+    :Åbner **Multi-Window Workspace**
+    med klientens delte journal & PCL-5 historik;
+    :Tilføjer fortroligt klinisk notat
+    (""POST /api/v1/clinic/clinical-notes"");
+    |Spring Boot Backend & Persistens|
+    :Verificerer aktivt **Handshake (ACTIVE)**;
+    :Gemmer ""TherapistClinicalNote"" og committer
+    ""[INTERNAL_MEDICAL_NOTES]""-sektion i **JGit**;
+end fork
+
+|Spring Boot Backend & Persistens|
+if (Hvem forespørger journal & JGit-historik?) then (Rolle == CLIENT)
+    #FCF3CF:Filtrerer alle ""INTERNAL_MEDICAL_NOTES""
+    ud af Markdown & JGit-commits (Privatlivsfilter);
+    |Klient (Client Portal)|
+    :Viser kun klientens egne journalindlæg
+    og egne JGit-versioner;
+else (Rolle == THERAPIST med ACTIVE Handshake)
+    |Spring Boot Backend & Persistens|
+    #D5F5E3:Returnerer fuld patientjournal inkl.
+    fortrolige kliniske noter & JGit-historik;
+    |Terapeut (Multi-Window Workspace)|
+    :Inspicerer **JGit Revisionshistorik** side-om-side:
+    skifter mellem **Delta Changes (+/-)** og **Full Snapshot**;
+endif
+
+|Klient (Client Portal)|
+if (Klient tilbagekalder samtykke (Revoke)?) then (Ja)
+    |Spring Boot Backend & Persistens|
+    #FADBD8:Opdaterer Handshake til ""REVOKED"";
+    :Blokerer fremtidig terapeutadgang (**HTTP 403**),
+    men bevarer eksisterende kliniske noter & JGit-auditlog;
+else (Nej - Samtykke fortsat aktivt)
+endif
+
+stop
+@enduml

@@ -15,21 +15,23 @@ skinparam entity {
     HeaderBackgroundColor #EBF5FB
 }
 
-title EER-Diagram (Enhanced Entity-Relationship) - PostgreSQL & MongoDB
+title Decentralized EER-Diagram (Enhanced Entity-Relationship) - PostgreSQL & MongoDB
 
-package "PostgreSQL (business-db)" #F8F9FA {
+package "PostgreSQL (business-db) - Decentralized Domain Hierarchy" #F8F9FA {
 
     entity "app_users (Supertype)" as app_users {
         * **id** : UUID <<PK>>
         --
         * username : VARCHAR(255) <<UK, NOT NULL>>
+        * email : VARCHAR(255) <<UK, NOT NULL>>
         * password : VARCHAR(255) <<NOT NULL>>
-        * role : VARCHAR(50) <<DISCRIMINATOR: CLIENT | THERAPIST | ADMIN>>
+        * role : VARCHAR(50) <<CLIENT | THERAPIST | ADMIN>>
     }
 
-    entity "client_profiles (Subtype / Bilag 5.1.1)" as client_profiles {
-        * **user_id** : UUID <<PK, FK>>
+    entity "client_profiles (Subtype / Q12)" as client_profiles {
+        * **id** : UUID <<PK>>
         --
+        * user_id : UUID <<FK, UK, NOT NULL>>
         * full_name : VARCHAR(255) <<NOT NULL>>
         * date_of_birth : DATE <<NOT NULL>>
         * home_address : VARCHAR(255) <<NOT NULL>>
@@ -37,84 +39,153 @@ package "PostgreSQL (business-db)" #F8F9FA {
         * phone_number : VARCHAR(50) <<NOT NULL>>
     }
 
-    entity "organisations (Bilag 5.1.2)" as organisations {
+    entity "organisations (CVR / Q2, Q8)" as organisations {
         * **id** : UUID <<PK>>
         --
-        * cvr_number : VARCHAR(20) <<UK, NOT NULL>>
+        * cvr_number : VARCHAR(8) <<UK, NOT NULL>>
         * name : VARCHAR(255) <<NOT NULL>>
     }
 
-    entity "provider_profiles (Subtype / Terapeut)" as provider_profiles {
+    entity "provider_profiles (Subtype / Q2)" as provider_profiles {
         * **id** : UUID <<PK>>
         --
         * user_id : UUID <<FK, UK, NOT NULL>>
-        * organisation_id : UUID <<FK, NULLABLE>>
+        * organisation_id : UUID <<FK, NOT NULL>>
         biography : TEXT
-        working_hours_json : VARCHAR(255)
+        working_hours_json : JSONB
     }
 
-    entity "services" as services {
+    entity "client_therapist_handshakes (Q3, Q4)" as handshakes {
         * **id** : UUID <<PK>>
         --
+        * client_profile_id : UUID <<FK, NOT NULL>>
         * provider_profile_id : UUID <<FK, NOT NULL>>
-        name : VARCHAR(255)
-        description : TEXT
-        duration_minutes : INTEGER
-        price : DOUBLE PRECISION
-        location : VARCHAR(255)
+        * status : VARCHAR(30) <<PENDING | ACTIVE | REVOKED>>
+        * granted_at : TIMESTAMP
+        revoked_at : TIMESTAMP
     }
 
-    entity "appointments" as appointments {
+    entity "services (Hybrid Template / Q8)" as services {
         * **id** : UUID <<PK>>
         --
-        * client_uuid : UUID <<FK, NOT NULL>>
-        * therapist_uuid : UUID <<FK, NOT NULL>>
+        organisation_id : UUID <<FK, NULLABLE (Org Template)>>
+        provider_profile_id : UUID <<FK, NULLABLE (Custom)>>
+        * name : VARCHAR(255) <<NOT NULL>>
+        description : TEXT
+        * duration_minutes : INTEGER <<30, 45, 60, 90>>
+        * price : DECIMAL(10,2)
+        * location : VARCHAR(255) <<Clinic | Online>>
+        * is_active : BOOLEAN <<DEFAULT TRUE>>
+    }
+
+    entity "appointments (Q9)" as appointments {
+        * **id** : UUID <<PK>>
+        --
+        * client_profile_id : UUID <<FK, NOT NULL>>
+        * provider_profile_id : UUID <<FK, NOT NULL>>
+        * service_id : UUID <<FK, NOT NULL>>
         * start_time : TIMESTAMP <<NOT NULL>>
         * end_time : TIMESTAMP <<NOT NULL>>
         title : VARCHAR(255)
-        status : VARCHAR(50)
+        * status : VARCHAR(30) <<CONFIRMED | CANCELLED>>
     }
 
-    entity "journal_entries" as journal_entries {
+    entity "journal_entries (Client Journal / Q5, Q13)" as journal_entries {
         * **id** : UUID <<PK>>
         --
-        * client_uuid : UUID <<FK, NOT NULL>>
+        * client_profile_id : UUID <<FK, NOT NULL>>
         * title : VARCHAR(255) <<NOT NULL>>
         * content : TEXT <<NOT NULL>>
-        mood_rating : INTEGER
+        * mood_rating : INTEGER <<1..10>>
+        * is_shared_with_therapists : BOOLEAN <<DEFAULT TRUE>>
+        git_commit_hash : VARCHAR(64) <<JGit Audit>>
         * timestamp : TIMESTAMP <<NOT NULL>>
     }
 
-    entity "psychotraumatology_tests" as psychotraumatology_tests {
+    entity "therapist_clinical_notes (Confidential / Q4, Q5)" as clinical_notes {
         * **id** : UUID <<PK>>
         --
-        * client_uuid : UUID <<FK, NOT NULL>>
-        * therapist_uuid : UUID <<FK, NOT NULL>>
-        * test_type : VARCHAR(255) <<NOT NULL>>
+        * client_profile_id : UUID <<FK, NOT NULL>>
+        * author_provider_id : UUID <<FK, NOT NULL>>
+        journal_entry_id : UUID <<FK, NULLABLE>>
+        * confidential_markdown : TEXT <<INTERNAL_MEDICAL_NOTES>>
+        git_commit_hash : VARCHAR(64) <<JGit Audit>>
+        * created_at : TIMESTAMP <<NOT NULL>>
+    }
+
+    entity "psychotraumatology_tests (Q11)" as psycho_tests {
+        * **id** : UUID <<PK>>
+        --
+        * client_profile_id : UUID <<FK, NOT NULL>>
+        provider_profile_id : UUID <<FK, NULLABLE>>
+        * test_type : VARCHAR(100) <<PCL-5>>
         * score : INTEGER <<NOT NULL>>
-        * severity : VARCHAR(100) <<NOT NULL>>
-        * answers_json : TEXT <<NOT NULL>>
+        * severity : VARCHAR(50) <<LOW | MODERATE | HIGH | SEVERE>>
+        * answers_json : JSONB <<NOT NULL>>
         * timestamp : TIMESTAMP <<NOT NULL>>
     }
 }
 
-package "MongoDB (integrate_mongo)" #FEF9E7 {
+package "MongoDB (integrate_mongo - Dokument & I18n Persistens)" #FEF9E7 {
     entity "i18n_dictionaries" as i18n {
         * **_id** : ObjectId <<PK>>
         --
-        * locale : String <<UK>>
+        * locale : String <<UK (da, en, de, es, fr)>>
         * translations : Map<String, Object>
+    }
+
+    entity "transcripts" as transcripts {
+        * **_id** : ObjectId <<PK>>
+        --
+        * mediaId : String <<UK, NOT NULL>>
+        * language : String <<da-DK | en-US>>
+        * status : String <<COMPLETED | PROCESSING>>
+        * segments : List<TranscriptSegment>
+        * createdAt : ISODate
     }
 }
 
+package "JGit Fil-Repository (journal-repo - Immutable Git Audit Log)" #E8F8F5 {
+    entity "git_commits (patients_<clientId>.md)" as git_commits {
+        * **commit_hash** : SHA-1 (40 chars) <<PK>>
+        --
+        * author_name : String
+        * author_email : String
+        * timestamp : Long (Epoch)
+        * message : String
+        * blob_markdown : TEXT <<Snapshot + INTERNAL_MEDICAL_NOTES>>
+        * parent_hash : SHA-1 <<FK>>
+    }
+}
+
+' EER Specialization (Only 2 arrows from app_users!)
 app_users ||--o| client_profiles : "ISA (Klient)"
 app_users ||--o| provider_profiles : "ISA (Terapeut)"
-organisations |o--o{ provider_profiles : "tilknyttet (1:N)"
-provider_profiles ||--o{ services : "udbyder (1:N)"
-app_users ||--o{ appointments : "client_uuid (1:N)"
-app_users ||--o{ appointments : "therapist_uuid (1:N)"
-app_users ||--o{ journal_entries : "client_uuid (1:N)"
-app_users ||--o{ psychotraumatology_tests : "client_uuid (1:N)"
-app_users ||--o{ psychotraumatology_tests : "therapist_uuid (1:N)"
+
+' Organisation & Services Hierarchy
+organisations ||--o{ provider_profiles : "tilknyttet (1:N)"
+organisations ||--o{ services : "skabelon (0..1:N)"
+provider_profiles ||--o{ services : "udbyder (0..1:N)"
+
+' Handshake Consent
+client_profiles ||--o{ handshakes : "giver samtykke"
+provider_profiles ||--o{ handshakes : "modtager adgang"
+
+' Appointments
+client_profiles ||--o{ appointments : "booker"
+provider_profiles ||--o{ appointments : "afholder"
+services ||--o{ appointments : "omhandler"
+
+' Journals & Confidential Clinical Notes
+client_profiles ||--o{ journal_entries : "skriver"
+client_profiles ||--o{ clinical_notes : "omhandler patient"
+provider_profiles ||--o{ clinical_notes : "forfatter (bevares ved revoke)"
+journal_entries |o--o{ clinical_notes : "knyttet til"
+journal_entries ||--o{ git_commits : "versionsstyres i JGit"
+clinical_notes ||--o{ git_commits : "versionsstyres i JGit"
+
+' Psychotraumatology Tests
+client_profiles ||--o{ psycho_tests : "besvarer"
+provider_profiles |o--o{ psycho_tests : "vurderer / tildeler"
 
 @enduml

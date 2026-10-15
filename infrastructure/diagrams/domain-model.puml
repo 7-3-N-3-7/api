@@ -16,7 +16,7 @@ skinparam class {
     HeaderBackgroundColor #F4F6F7
 }
 
-title Domænemodel - Booking, Journalisering & CRM Platform
+title Domænemodel - Booking, Journalisering, Handshake & CRM Platform
 
 class "Bruger (User)" as User {
     brugernavn
@@ -37,9 +37,15 @@ class "Terapeut (Therapist)" as Therapist {
     arbejdstider
 }
 
-class "Organisation" as Organisation {
+class "Organisation (CVR)" as Organisation {
     cvrNummer
     organisationsNavn
+}
+
+class "Handshake (Samtykke)" as Handshake {
+    status
+    oprettetTidspunkt
+    tilbagekaldtTidspunkt
 }
 
 class "Ydelse (Service)" as Service {
@@ -48,6 +54,7 @@ class "Ydelse (Service)" as Service {
     varighedMinutter
     pris
     lokation
+    erAktiv
 }
 
 class "Aftale (Appointment)" as Appointment {
@@ -61,14 +68,22 @@ class "Journalindlæg (JournalEntry)" as JournalEntry {
     titel
     indhold
     humørVurdering
+    deltMedTerapeuter
     oprettetTidspunkt
-    interneKliniskeNoter
+}
+
+class "Fortrolig Terapeutnote" as ClinicalNote {
+    fortroligtIndhold
+    forfatterTerapeut
+    oprettetTidspunkt
 }
 
 class "Versionshistorik (JGit)" as GitHistory {
     commitHash
+    forfatter
     commitBesked
-    markdownIndhold
+    fuldtSnapshotMarkdown
+    deltaDiffLinjer
     tidspunkt
 }
 
@@ -80,20 +95,42 @@ class "Psykotraumatologisk Test" as PsychoTest {
     tidspunkt
 }
 
+class "Sprogordbog (I18nDictionary)" as I18nDict {
+    sprogkode (da, en, de, es, fr)
+    oversættelser (nøgle -> tekst)
+}
+
+class "Medie-Transskription (MediaTranscript)" as MediaTranscript {
+    mediaId
+    sprogkode
+    transskriberetTekst
+    tidsstempler
+}
+
 User <|-- Client : "Er en"
 User <|-- Therapist : "Er en"
 
 Therapist "1..*" -- "1" Organisation : "Tilknyttet / Opretter"
-Therapist "1" -- "0..*" Service : "Udbyder"
-Client "1" -- "0..*" Appointment : "Booker"
+Organisation "0..1" -- "0..*" Service : "Definerer skabelon"
+Therapist "0..1" -- "0..*" Service : "Udbyder"
+
+Client "1" -- "0..*" Handshake : "Giver / Tilbagekalder samtykke"
+Therapist "1" -- "0..*" Handshake : "Modtager adgang"
+
+Client "1" -- "0..*" Appointment : "Booker / Flytter"
 Therapist "1" -- "0..*" Appointment : "Afholder"
-Service "0..1" -- "0..*" Appointment : "Danner grundlag for"
+Service "1" -- "0..*" Appointment : "Danner grundlag for"
 
 Client "1" -- "0..*" JournalEntry : "Skriver / Ejer"
-Therapist "0..*" -- "0..*" JournalEntry : "Tilføjer kliniske noter"
+Therapist "1" -- "0..*" ClinicalNote : "Skriver (INTERNAL_MEDICAL_NOTES)"
+Client "1" -- "0..*" ClinicalNote : "Omhandler"
+JournalEntry "0..1" -- "0..*" ClinicalNote : "Tilknyttet"
 JournalEntry "1" -- "1..*" GitHistory : "Versionsstyres i"
+ClinicalNote "1" -- "1..*" GitHistory : "Versionsstyres i"
 
-Client "1" -- "0..*" PsychoTest : "Besvarer"
-Therapist "1" -- "0..*" PsychoTest : "Vurderer"
+Client "1" -- "0..*" PsychoTest : "Besvarer (PCL-5)"
+Therapist "0..1" -- "0..*" PsychoTest : "Vurderer / Tildeler"
+Appointment "0..1" -- "0..*" MediaTranscript : "Genererer lydtransskription"
+User "0..*" -- "0..*" I18nDict : "Anvender lokalisering (Admin redigerer)"
 
 @enduml

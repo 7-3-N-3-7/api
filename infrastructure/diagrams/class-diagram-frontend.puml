@@ -1,5 +1,6 @@
 @startuml
 !pragma layout smetana
+set namespaceSeparator none
 skinparam defaultFontName Arial
 skinparam defaultFontSize 11
 skinparam roundCorner 8
@@ -17,7 +18,7 @@ skinparam class {
 
 title Frontend Klassediagram / Komponentarkitektur (Next.js 16 / React 19 / TypeScript)
 
-package "Middleware & Konfiguration (src/)" #F8F9FA {
+package "Middleware & i18n Konfiguration (src/)" #F8F9FA {
     class "middleware.ts" as Middleware <<Next.js Middleware>> {
         +config: MatcherConfig
         +proxy(request: NextRequest): Promise<NextResponse>
@@ -39,20 +40,31 @@ package "Middleware & Konfiguration (src/)" #F8F9FA {
     }
 }
 
-package "BFF API Routes (src/app/api/auth/)" #EBF5FB {
-    class "[...nextauth]/route.ts" as NextAuthRoute <<NextAuth Handler>> {
+package "BFF API Routes (src/app/api/)" #EBF5FB {
+    class "auth/[...nextauth]/route.ts" as NextAuthRoute <<NextAuth Handler>> {
         +authOptions: AuthOptions
         -refreshAccessToken(token: JWT): Promise<JWT>
         +GET(req: Request): Response
         +POST(req: Request): Response
     }
 
-    class "register/route.ts" as RegisterRoute <<API Route>> {
+    class "auth/register/route.ts" as RegisterRoute <<API Route>> {
         +POST(request: Request): Promise<NextResponse>
+    }
+
+    class "backend/[...path]/route.ts" as BackendBffProxy <<BFF Proxy & Keycloak Sync>> {
+        -BACKEND_URL: string
+        +GET(req: NextRequest, ctx): Promise<NextResponse>
+        +POST(req: NextRequest, ctx): Promise<NextResponse>
+        +PUT(req: NextRequest, ctx): Promise<NextResponse>
+        +PATCH(req: NextRequest, ctx): Promise<NextResponse>
+        +DELETE(req: NextRequest, ctx): Promise<NextResponse>
+        -proxyRequest(req: NextRequest, ctx): Promise<NextResponse>
+        -syncKeycloakTherapistRole(userUuid: string): Promise<void>
     }
 }
 
-package "UI Sider & Komponenter (src/app/[locale]/)" #E8F8F5 {
+package "UI Sider & Workspace Komponenter (src/app/[locale]/ & src/components/)" #E8F8F5 {
     class "layout.tsx" as RootLayout <<Server Component>> {
         +RootLayout(children, params): Promise<JSX.Element>
     }
@@ -60,26 +72,94 @@ package "UI Sider & Komponenter (src/app/[locale]/)" #E8F8F5 {
     class "page.tsx (LandingPage)" as LandingPage <<Client Component>> {
         -showAuthModal: boolean
         -isLogin: boolean
-        -username: string
-        -password: string
-        -email: string
-        -firstName: string
-        -lastName: string
+        -dateOfBirth: string
+        -homeAddress: string
+        -postalCode: string
+        -phoneNumber: string
         +handleLogin(e: FormEvent): Promise<void>
         +handleRegister(e: FormEvent): Promise<void>
-        +openModal(): void
     }
 
     class "dashboard/layout.tsx" as DashboardLayout <<Server Component>> {
         +DashboardLayout(children): Promise<JSX.Element>
     }
 
+    class "components/PortalWorkspaceShell.tsx" as PortalWorkspaceShell <<Client Component>> {
+        -me: UserContext
+        -isTherapistMode: boolean
+        -isAdminMode: boolean
+        +PortalWorkspaceShell(children): JSX.Element
+    }
+
     class "dashboard/personal/page.tsx" as PersonalDashboard <<Server Component>> {
         +PersonalDashboard(): Promise<JSX.Element>
     }
 
+    class "components/ClientPortalWorkspace.tsx" as ClientPortalWorkspace <<Client Component>> {
+        -overview: ClientOverviewState
+        -selectedServiceId: string
+        -bookingDate: string
+        -bookingSlot: string
+        -journalTitle: string
+        -journalContent: string
+        -journalMood: number
+        -sharedWithTherapists: boolean
+        -pclAnswers: number[]
+        +fetchDatabaseData(): Promise<void>
+        +handleBookAppointment(e: FormEvent): Promise<void>
+        +handleRescheduleSubmit(e: FormEvent): Promise<void>
+        +handleCancelAppointment(id: string): Promise<void>
+        +handleSaveJournalEntry(e: FormEvent): Promise<void>
+        +handleSubmitPcl5(e: FormEvent): Promise<void>
+        +handleToggleHandshake(hs): Promise<void>
+        +handleOpenGitHistory(): Promise<void>
+    }
+
     class "dashboard/therapist/page.tsx" as TherapistDashboard <<Server Component>> {
         +TherapistDashboard(): Promise<JSX.Element>
+    }
+
+    class "components/TherapistMultiWindowWorkspace.tsx" as TherapistMultiWindowWorkspace <<Client Component>> {
+        -overview: TherapistOverviewState
+        -currentMonthDate: Date
+        -selectedDateStr: string
+        -openWindows: InternalWorkspaceWindow[]
+        -clientBundles: Record<string, ClientBundle>
+        -clientGitHistories: Record<string, GitCommit[]>
+        +loadDatabaseOverview(): Promise<void>
+        +openAppointmentWindow(apt): void
+        +openClientJournalWindow(client): void
+        +openClientGitTimelineWindow(client, focusHash?): void
+        +handleSaveSharedEntry(clientUuid, name): Promise<void>
+        +handleSaveConfidentialNote(clientUuid, name): Promise<void>
+        +handleRescheduleAppointment(apt): Promise<void>
+        +handleCancelAppointment(id): Promise<void>
+        +handleCreateService(e: FormEvent): Promise<void>
+        +handleToggleServiceActive(id): Promise<void>
+    }
+
+    class "components/JGitHistoryTimeline.tsx" as JGitHistoryTimeline <<Client Component>> {
+        -activeFilter: "ALL" | "CLIENT" | "THERAPIST" | "CONFIDENTIAL"
+        -viewMode: "DELTA" | "SNAPSHOT"
+        -searchQuery: string
+        -internalSelectedHash: string | null
+        +handleCommitClick(hash: string): void
+        +renderCommitInspector(commit: EnrichedGitCommit): JSX.Element
+    }
+
+    class "dashboard/admin/page.tsx" as AdminI18nDictionaryPage <<Client Component>> {
+        -selectedLocale: string
+        -translations: Record<string, string>
+        +loadDictionary(locale: string): Promise<void>
+        +handleUpdateKey(key: string, value: string): Promise<void>
+        +handleAddKey(e: FormEvent): Promise<void>
+    }
+
+    class "dashboard/settings/page.tsx" as ProfileAndClinicSettingsPage <<Client Component>> {
+        -clientProfile: ClientProfileForm
+        -therapistOnboarding: TherapistOnboardingForm
+        +handleSaveClientProfile(e: FormEvent): Promise<void>
+        +handleSaveTherapistSettings(e: FormEvent): Promise<void>
     }
 
     class "components/LanguageSwitcher.tsx" as LanguageSwitcher <<Client Component>> {
@@ -95,22 +175,34 @@ Middleware --> Routing : validerer locale
 Middleware --> AuthCookies : læser JWT session cookie
 RequestConfig --> Routing : fallback locale
 NextAuthRoute --> AuthCookies : sætter cookie options
+BackendBffProxy --> NextAuthRoute : getServerSession() / getToken()
 
 RootLayout --> RequestConfig : henter i18n fra Backend API
 RootLayout *-- LandingPage
 RootLayout *-- DashboardLayout
 
 LandingPage ..> NextAuthRoute : signIn("credentials")
-LandingPage ..> RegisterRoute : POST /api/auth/register
+LandingPage ..> RegisterRoute : POST /api/auth/register (Bilag 5.1.1)
 
-DashboardLayout *-- LanguageSwitcher
-DashboardLayout *-- UserDropdown
-DashboardLayout *-- PersonalDashboard
-DashboardLayout *-- TherapistDashboard
+DashboardLayout *-- PortalWorkspaceShell
+PortalWorkspaceShell *-- LanguageSwitcher
+PortalWorkspaceShell *-- UserDropdown
+PortalWorkspaceShell *-- PersonalDashboard
+PortalWorkspaceShell *-- TherapistDashboard
+PortalWorkspaceShell *-- AdminI18nDictionaryPage
+PortalWorkspaceShell *-- ProfileAndClinicSettingsPage
+
+PersonalDashboard *-- ClientPortalWorkspace
+TherapistDashboard *-- TherapistMultiWindowWorkspace
+ClientPortalWorkspace *-- JGitHistoryTimeline
+TherapistMultiWindowWorkspace *-- JGitHistoryTimeline
+
+ClientPortalWorkspace ..> BackendBffProxy : REST via /api/backend/*
+TherapistMultiWindowWorkspace ..> BackendBffProxy : REST via /api/backend/*
+AdminI18nDictionaryPage ..> BackendBffProxy : PUT/GET /api/backend/i18n/*
+ProfileAndClinicSettingsPage ..> BackendBffProxy : POST /api/backend/clinic/therapist-onboarding
 
 PersonalDashboard --> NextAuthRoute : getServerSession(authOptions)
 TherapistDashboard --> NextAuthRoute : getServerSession(authOptions)
-LanguageSwitcher --> Routing : skifter sprog
-UserDropdown ..> NextAuthRoute : signOut()
 
 @enduml
