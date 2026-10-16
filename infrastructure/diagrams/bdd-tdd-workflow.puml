@@ -31,36 +31,37 @@ partition "**Krav & Versionsstyring**" {
     • Commit indledende "".feature""-filer (Gherkin);
 }
 
-partition "**Fase 1: Backend (Outside-In)**" #F8F9FA {
+partition "**Fase 1: Backend & Generisk Base-Arkitektur (Outside-In / Zero-Mock)**" #F8F9FA {
     -[#B03A2E,dashed]->
     #FADBD8:<b>3. Backend BDD (Outer Loop)</b>
-    • Implementer API-kald i Cucumber med **REST Assured**
-    • Eksekver: **Fejler (Rød)** //(fx HTTP 404)//;
+    • Implementer Gherkin-scenarier i Cucumber (fx ""generic_base_architecture.feature"")
+    • Eksekver mod rigtig Spring Boot + DB: **Fejler (Rød)** //(fx HTTP 404/403 eller manglende Base-klasser)//;
     
     #D5F5E3:<b>4. Backend TDD (Inner Loop)</b>
-    • Skriv fejlende enhedstests (Controller/Service/Repo)
-    • Implementer logik, datalag og endpoints
+    • Skriv fejlende JUnit 5 enhedstests (""GenericBaseArchitectureTest"", Controller/Service/Repo/DAO/JGit)
+    • Nedarv fra ""BaseEntity"", ""BaseRepository"", ""BaseDAO"", ""BaseDTO"", ""BaseService"", ""BaseController""
+    • Tilføj unik domænelogik, PostgreSQL/MongoDB datalag, Redis L2 & endpoints
     • Eksekver enhedstests: **Bestået (Grøn)**;
 
-    #D5F5E3:<b>5. Backend Verifikation</b>
-    • Kør samlet **REST Assured** / Cucumber API-testsuite
-    • Kontrakt og forretningslogik: **Bestået (Grøn)**;
+    #D5F5E3:<b>5. Backend & Coverage Verifikation</b>
+    • Kør samlet Cucumber BDD & JUnit testsuite (63 tests / 29 Cucumber-scenarier)
+    • Verificer **JaCoCo** >80% line & branch coverage gate: **Bestået (Grøn)**;
 }
 
-partition "**Fase 2: Frontend (Outside-In)**" #F4F6F7 {
+partition "**Fase 2: Frontend & Full-Stack E2E (Outside-In / Zero-Mock)**" #F4F6F7 {
     -[#B03A2E,dashed]->
     #FADBD8:<b>6. Frontend BDD (Outer Loop)</b>
-    • Udarbejd UI-scenarier og **Playwright** trin
-    • Eksekver: **Fejler (Rød)** //(ru ter/elementer mangler)//;
+    • Udarbejd Gherkin UI/BFF-scenarier i Cucumber.js med **Playwright**
+    • Eksekver mod live Next.js BFF & Keycloak: **Fejler (Rød)**;
 
     #D5F5E3:<b>7. Frontend TDD (Inner Loop)</b>
-    • Udvikl UI-komponenter, state og formularer
-    • Integrer mod det verificerede backend-API
-    • Eksekver komponenttests: **Bestået (Grøn)**;
+    • Udvikl Next.js 16 / React 19 UI-komponenter, JGit tidslinje & Multi-Window
+    • Integrer gennem Next.js BFF Proxy (""/api/backend/[...path]"")
+    • Eksekver **Vitest** komponenttests: **Bestået (Grøn)**;
 
-    #D5F5E3:<b>8. Systemverifikation (E2E)</b>
-    • Start fuldt miljø (backend + frontend)
-    • **Playwright** end-to-end-suite: **Bestået (Grøn)**;
+    #D5F5E3:<b>8. Fuldt System E2E Verifikation</b>
+    • Kør fuldt miljø (Keycloak IAM + Next.js BFF + Spring Boot + PostgreSQL + MongoDB + JGit)
+    • **Playwright** & Cucumber E2E-suite (20 scenarier / 160 steps): **Bestået (Grøn)**;
 }
 
 partition "**Integration & Sporbarhed**" {

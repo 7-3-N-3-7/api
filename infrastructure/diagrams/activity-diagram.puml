@@ -1,0 +1,92 @@
+@startuml
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2C3E50
+skinparam ArrowThickness 1.4
+
+skinparam activity {
+    BackgroundColor #FFFFFF
+    BorderColor #2C3E50
+    BorderThickness 1.4
+    DiamondBackgroundColor #FEF9E7
+    DiamondBorderColor #2C3E50
+}
+
+skinparam swimlane {
+    BorderColor #7F8C8D
+    BorderThickness 1.5
+    TitleBackgroundColor #EBF5FB
+    TitleFontColor #2C3E50
+    TitleFontStyle bold
+    TitleFontSize 12
+}
+
+title Aktivitetsdiagram - Dynamisk Spring IoC DI Swimlane Flow (Route -> BaseController -> BaseService -> BaseRepository -> Hibernate Entity / DTO)
+
+|Klient / Terapeut (Next.js Route & BFF)|
+start
+:Bruger udfører handling i UI
+(Onboarding, Booking, Handshake, Journal eller PCL-5);
+:Next.js BFF validerer OIDC Session / JWT mod **Keycloak IAM**
+og videresender HTTP Request til ""/api/v1/..."" med Bearer JWT;
+
+|Controller Swimlane (BaseController<E, D, ID>)|
+:Spring DispatcherServlet router kaldet til domæne-controller
+(""ClinicPlatformController"", ""AppointmentController"",
+""JournalController"", ""PsychotraumatologyController"", ""UserController"");
+:Controller delegerer **udelukkende** til sin generiske
+Spring IoC-injicerede ""BaseService<E, D, UUID>"";
+
+|Service Swimlane (BaseService<E, D, ID> @Transactional)|
+:Åbner ""@Transactional"" kontekst & resolver generiske typer
+""Class<E>"" og ""Class<D>"" via ""GenericTypeResolver"";
+:Mapper automatisk ""D (BaseDTO<UUID>) <-> E (BaseEntity<UUID>)""
+og afvikler registrerede ""CrudInterceptor<E, UUID>""-hooks
+(""beforeCreate"" / ""beforeUpdate"" / ""beforeDelete"");
+
+if (Operationstype?) then (Klinisk Profil / CVR / Ydelse / Handshake)
+    :Validerer CVR, profilfelter eller samtykkeperiode
+    i ""ClinicPlatformService"";
+elseif (Aftalebooking & Timefold AI?) then (Booking / Ombooking)
+    :Kontrollerer overlap & AI-slots i ""AppointmentService"";
+    if (Overlappende aftale findes?) then (Ja - Konflikt)
+        #FADBD8:Kaster **HTTP 409 Conflict**;
+        |Klient / Terapeut (Next.js Route & BFF)|
+        :Viser fejlbesked & foreslår ledige Timefold-tider;
+        stop
+    else (Nej - Ledig tid)
+    endif
+elseif (Journal eller PCL-5 Traumetest?) then (Journal / Klinisk Notat / PCL-5)
+    :Validerer adgangsrettigheder, Handshake-status &
+    privatlivsfilter (""INTERNAL_MEDICAL_NOTES"")
+    i ""JournalService"" / ""PsychotraumatologyService"";
+endif
+
+|Repository Swimlane (BaseRepository<E, ID>)|
+:Udfører typesikret kald eller dynamisk ""JpaSpecificationExecutor<E>""
+filtrering (""_like"", ""_gt"", ""_lt"", ""_gte"", ""_lte"", sortering & paginering)
+via Spring Data JPA ""BaseRepository<E, UUID>"";
+
+|Hibernate ORM / PostgreSQL / JGit / Redis / Kafka|
+#D5F5E3:Hibernate ""Session"" / ""EntityManager"" persisterer eller indlæser
+""E extends BaseEntity<UUID>"" i **PostgreSQL** (`business-db`);
+if (Kræver revisionsspor eller cache/event?) then (Ja)
+    :Committer Markdown-snapshot til **JGit** (SHA-1 hash),
+    opdaterer/invaliderer **Redis L2 Cache**
+    & publicerer **Kafka** domæne-event;
+else (Nej)
+endif
+
+|Service Swimlane (BaseService<E, D, ID> @Transactional)|
+:Afvikler ""afterCreate"" / ""afterUpdate"" / ""afterDelete""
+på ""CrudInterceptor<E, UUID>"" og transformerer ""toDto(E)"";
+
+|Controller Swimlane (BaseController<E, D, ID>)|
+:Pakker resultat i ""ResponseEntity<D>"" (HTTP 200 / 201 / 204);
+
+|Klient / Terapeut (Next.js Route & BFF)|
+:Modtager JSON-respons og opdaterer reaktivt UI;
+stop
+@enduml

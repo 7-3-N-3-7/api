@@ -1,0 +1,149 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2C3E50
+skinparam ArrowThickness 1.5
+hide circle
+hide methods
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #2C3E50
+    BorderThickness 1.5
+    HeaderBackgroundColor #F4F6F7
+}
+
+title Domænemodel - Booking, Journalisering, Handshake & CRM Platform (med BaseEntity Arvehierarki)
+
+abstract class "BaseEntity (Generisk Identitet)" as BaseEntity #F9EBEA {
+    id : UUID
+}
+
+class "Bruger (User)" as User {
+    brugernavn
+    email
+    rolle
+}
+
+class "Klient (Client)" as Client {
+    fuldeNavn
+    fødselsdato
+    adresse
+    postnummer
+    telefonnummer
+}
+
+class "Terapeut (Therapist)" as Therapist {
+    biografi
+    arbejdstider
+}
+
+class "Organisation (CVR)" as Organisation {
+    cvrNummer
+    organisationsNavn
+}
+
+class "Handshake (Samtykke)" as Handshake {
+    status
+    oprettetTidspunkt
+    tilbagekaldtTidspunkt
+}
+
+class "Ydelse (Service)" as Service {
+    navn
+    beskrivelse
+    varighedMinutter
+    pris
+    lokation
+    erAktiv
+}
+
+class "Aftale (Appointment)" as Appointment {
+    titel
+    startTidspunkt
+    slutTidspunkt
+    status
+}
+
+class "Journalindlæg (JournalEntry)" as JournalEntry {
+    titel
+    indhold
+    humørVurdering
+    deltMedTerapeuter
+    oprettetTidspunkt
+}
+
+class "Fortrolig Terapeutnote" as ClinicalNote {
+    fortroligtIndhold
+    forfatterTerapeut
+    oprettetTidspunkt
+}
+
+class "Versionshistorik (JGit)" as GitHistory {
+    commitHash
+    forfatter
+    commitBesked
+    fuldtSnapshotMarkdown
+    deltaDiffLinjer
+    tidspunkt
+}
+
+class "Psykotraumatologisk Test" as PsychoTest {
+    testType
+    score
+    sværhedsgrad
+    besvarelser
+    tidspunkt
+}
+
+class "Sprogordbog (I18nDictionary)" as I18nDict {
+    sprogkode (da, en, de, es, fr)
+    oversættelser (nøgle -> tekst)
+}
+
+class "Medie-Transskription (MediaTranscript)" as MediaTranscript {
+    mediaId
+    sprogkode
+    transskriberetTekst
+    tidsstempler
+}
+
+BaseEntity <|-- User
+BaseEntity <|-- Organisation
+BaseEntity <|-- Handshake
+BaseEntity <|-- Service
+BaseEntity <|-- Appointment
+BaseEntity <|-- JournalEntry
+BaseEntity <|-- ClinicalNote
+BaseEntity <|-- PsychoTest
+
+User <|-- Client : "Er en"
+User <|-- Therapist : "Er en"
+
+Therapist "1..*" -- "1" Organisation : "Tilknyttet / Opretter"
+Organisation "0..1" -- "0..*" Service : "Definerer skabelon"
+Therapist "0..1" -- "0..*" Service : "Udbyder"
+
+Client "1" -- "0..*" Handshake : "Giver / Tilbagekalder samtykke"
+Therapist "1" -- "0..*" Handshake : "Modtager adgang"
+
+Client "1" -- "0..*" Appointment : "Booker / Flytter"
+Therapist "1" -- "0..*" Appointment : "Afholder"
+Service "1" -- "0..*" Appointment : "Danner grundlag for"
+
+Client "1" -- "0..*" JournalEntry : "Skriver / Ejer"
+Therapist "1" -- "0..*" ClinicalNote : "Skriver (INTERNAL_MEDICAL_NOTES)"
+Client "1" -- "0..*" ClinicalNote : "Omhandler"
+JournalEntry "0..1" -- "0..*" ClinicalNote : "Tilknyttet"
+JournalEntry "1" -- "1..*" GitHistory : "Versionsstyres i"
+ClinicalNote "1" -- "1..*" GitHistory : "Versionsstyres i"
+
+Client "1" -- "0..*" PsychoTest : "Besvarer (PCL-5)"
+Therapist "0..1" -- "0..*" PsychoTest : "Vurderer / Tildeler"
+Appointment "0..1" -- "0..*" MediaTranscript : "Genererer lydtransskription"
+User "0..*" -- "0..*" I18nDict : "Anvender lokalisering (Admin redigerer)"
+
+@enduml

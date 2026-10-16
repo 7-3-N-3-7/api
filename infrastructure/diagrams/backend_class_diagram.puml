@@ -1,0 +1,508 @@
+@startuml
+!pragma layout smetana
+set namespaceSeparator none
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2C3E50
+skinparam ArrowThickness 1.3
+skinparam packageStyle rectangle
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #2C3E50
+    BorderThickness 1.3
+    HeaderBackgroundColor #F4F6F7
+}
+
+title Backend Klassediagram (com.platform - Java 17 / Spring Boot 3.3 - Generisk Base Arkitektur)
+
+package "Generic Core Base Layer (com.platform.core)" as PkgCore #F9EBEA {
+    abstract class BaseController<T extends BaseEntity> <<AbstractController>> {
+        #service: BaseService<T>
+        +getService(): BaseService<T>
+        +setService(service: BaseService<T>): void
+        +getAll(): ResponseEntity<List<T>>
+        +getById(id: UUID): ResponseEntity<T>
+        +create(entity: T): ResponseEntity<T>
+        +update(id: UUID, entity: T): ResponseEntity<T>
+        +delete(id: UUID): ResponseEntity<Void>
+    }
+
+    interface BaseDTO <<Serializable>> {
+        +getId(): UUID
+    }
+
+    class BaseService<T extends BaseEntity> <<GenericService>> {
+        #repository: JpaRepository<T, UUID>
+        #interceptors: List<CrudInterceptor<T>>
+        +getRepository(): JpaRepository<T, UUID>
+        +setRepository(repository: JpaRepository<T, UUID>): void
+        +addInterceptor(interceptor: CrudInterceptor<T>): void
+        +findAll(): List<T>
+        +findById(id: UUID): Optional<T>
+        +getByIdOrThrow(id: UUID): T
+        +create(entity: T): T
+        +save(entity: T): T
+        +update(id: UUID, entity: T): T
+        +deleteById(id: UUID): void
+        +existsById(id: UUID): boolean
+        +count(): long
+    }
+
+    interface CrudInterceptor<T extends BaseEntity> <<LifecycleHook>> {
+        +beforeCreate(entity: T): void
+        +afterCreate(entity: T): void
+        +beforeUpdate(entity: T): void
+        +afterUpdate(entity: T): void
+        +beforeDelete(id: UUID): void
+        +afterDelete(id: UUID): void
+    }
+
+    interface BaseRepository<T extends BaseEntity> <<@NoRepositoryBean>> {
+        ' Extends JpaRepository<T, UUID> & JpaSpecificationExecutor<T>
+    }
+
+    abstract class BaseDAO<T extends BaseEntity> <<GenericDAO>> {
+        #entityManager: EntityManager
+        #entityClass: Class<T>
+        +findAll(): List<T>
+        +findById(id: UUID): Optional<T>
+        +save(entity: T): T
+        +deleteById(id: UUID): void
+        +existsById(id: UUID): boolean
+        +count(): long
+        +findAllDynamic(offset: int, limit: int, filters: Map<String, String>, sortParam: String): List<T>
+        #convertValue(val: String, targetType: Class<?>): Object
+    }
+
+    abstract class BaseEntity <<@MappedSuperclass>> {
+        #id: UUID
+        +getId(): UUID
+        +setId(id: UUID): void
+    }
+}
+
+package "Controller & Config Layer (com.platform.controller & config)" as PkgCtrl #FDFEFE {
+    class SecurityConfig <<Configuration>> {
+        +filterChain(http: HttpSecurity): SecurityFilterChain
+        +jwtAuthenticationConverter(): JwtAuthenticationConverter
+        +passwordEncoder(): PasswordEncoder
+    }
+
+    class ClinicDatabaseInitializer <<CommandLineRunner>> {
+        -i18nDictionaryRepository: I18nDictionaryRepository
+        +run(args: String...): void
+        -seedI18nDictionaries(): void
+        -buildPortalTranslations(loc: String): Map<String, Object>
+    }
+
+    class UserController <<RestController>> {
+        -userService: UserService
+        +createUser(req: UserRequestDto): ResponseEntity<?>
+        +handleValidationExceptions(ex): ResponseEntity<String>
+    }
+
+    class ProfileController <<RestController>> {
+        +getUserProfile(auth: Authentication): ResponseEntity<Map>
+    }
+
+    class ClinicPlatformController <<RestController>> {
+        -clientProfileRepository: ClientProfileRepository
+        -organisationRepository: OrganisationRepository
+        -providerProfileRepository: ProviderProfileRepository
+        -serviceRepository: ServiceRepository
+        -handshakeRepository: HandshakeRepository
+        -appointmentRepository: AppointmentRepository
+        -journalEntryRepository: JournalEntryRepository
+        -psychotraumatologyTestRepository: PsychotraumatologyTestRepository
+        +getCurrentUserContext(auth: Authentication): ResponseEntity<Map>
+        +getMarketplaceDirectory(): ResponseEntity<Map>
+        +getClientOverview(clientUuid: UUID): ResponseEntity<Map>
+        +getTherapistOverview(therapistUuid: UUID): ResponseEntity<Map>
+        +savePublicClientProfile(profile: ClientProfile): ResponseEntity<ClientProfile>
+        +updateClientProfile(profile: ClientProfile): ResponseEntity<ClientProfile>
+        +getClientProfile(userUuid: UUID): ResponseEntity<ClientProfile>
+        +getOrganisations(): ResponseEntity<List<Organisation>>
+        +onboardTherapist(payload: Map, auth: Authentication): ResponseEntity<ProviderProfile>
+        +getAllServices(): ResponseEntity<List<Service>>
+        +createService(payload: Map): ResponseEntity<Service>
+        +toggleServiceActive(id: UUID): ResponseEntity<Service>
+        +getClientHandshakes(clientUuid: UUID): ResponseEntity<List<ClientTherapistHandshake>>
+        +getTherapistHandshakes(therapistUuid: UUID): ResponseEntity<List<ClientTherapistHandshake>>
+        +createOrUpdateHandshake(req: ClientTherapistHandshake): ResponseEntity<ClientTherapistHandshake>
+        +updateHandshakeStatus(id: UUID, body: Map): ResponseEntity<ClientTherapistHandshake>
+    }
+
+    class AppointmentController <<RestController>> {
+        -appointmentService: AppointmentService
+        +getAppointmentsForClient(uuid: UUID, from: String, to: String): ResponseEntity<List>
+        +getAppointmentsForTherapist(uuid: UUID): ResponseEntity<List>
+        +createAppointment(a: Appointment): ResponseEntity<Appointment>
+        +rescheduleAppointment(id: UUID, a: Appointment): ResponseEntity<Appointment>
+        +cancelAppointment(id: UUID): ResponseEntity<Void>
+    }
+
+    class JournalController <<RestController>> {
+        -journalEntryRepository: JournalEntryRepository
+        -clinicalNoteRepository: TherapistClinicalNoteRepository
+        -journalGitService: JournalGitService
+        +createJournalEntry(dto: JournalEntryDto, auth: Authentication): ResponseEntity
+        +createTherapistNote(payload: Map, auth: Authentication): ResponseEntity
+        +getClientTimeline(uuid: UUID, auth: Authentication): ResponseEntity
+        +getClientClinicalBundle(uuid: UUID, auth: Authentication): ResponseEntity
+        +getJournalHistory(uuid: UUID, auth: Authentication): ResponseEntity
+    }
+
+    class PsychotraumatologyController <<RestController>> {
+        -testRepository: PsychotraumatologyTestRepository
+        +submitTest(dto: PsychotraumatologyTestDto): ResponseEntity
+        +getTestsByClient(uuid: UUID, auth: Authentication): ResponseEntity
+    }
+
+    class I18nController <<RestController>> {
+        -i18nService: I18nService
+        +getDictionary(locale: String): ResponseEntity<Map>
+        +updateTranslation(locale: String, key: String, req: TranslationUpdateRequest): ResponseEntity
+    }
+
+    class SecureDataController <<RestController>> {
+        +getSecureData(): ResponseEntity<Map<String, String>>
+    }
+
+    class PublicHealthController <<RestController>> {
+        +getHealthStatus(): ResponseEntity<Map<String, String>>
+    }
+}
+
+package "DTO Layer (com.platform.dto & crm.dto)" as PkgDto #FEF9E7 {
+    class UserRequestDto <<DTO>> {
+        -username: String
+        -password: String
+        -role: String
+    }
+
+    class UserResponseDto <<DTO>> {
+        -id: UUID
+        -username: String
+        -role: String
+    }
+
+    class JournalEntryDto <<DTO>> {
+        -clientUuid: UUID
+        -therapistUuid: UUID
+        -title: String
+        -content: String
+        -moodRating: Integer
+        -sharedWithTherapists: Boolean
+        -visibility: String
+    }
+
+    class PsychotraumatologyTestDto <<DTO>> {
+        -clientUuid: UUID
+        -therapistUuid: UUID
+        -testType: String
+        -score: Integer
+        -severity: String
+        -answersJson: String
+    }
+
+    class TranslationUpdateRequest <<DTO>> {
+        -value: String
+    }
+}
+
+package "Service Layer (com.platform.service)" as PkgSvc #F4ECF7 {
+    class UserService <<Service>> {
+        -userRepository: UserRepository
+        +createUser(request: UserRequestDto): UserResponseDto
+    }
+
+    class AppointmentService <<Service>> {
+        -appointmentRepository: AppointmentRepository
+        -cacheService: PlatformCacheService
+        -eventService: PlatformEventService
+        +getAppointmentsForClient(clientUuid: UUID, from: LocalDate, to: LocalDate): List<Appointment>
+        +getAppointmentsForTherapist(therapistUuid: UUID): List<Appointment>
+        +createAppointment(appointment: Appointment): Appointment
+        +rescheduleAppointment(id: UUID, updated: Appointment): Appointment
+        +cancelAppointment(id: UUID): void
+    }
+
+    class JournalService <<Service>> {
+        -{static} INTERNAL_NOTES_MARKER: String
+        +getJournalContent(rawMarkdown: String, isTherapist: boolean): String
+    }
+
+    class JournalGitService <<Service>> {
+        -repoPath: String
+        -git: Git
+        +init(): void
+        +commitJournalEntry(patientId: String, content: String, msg: String): void
+        +commitJournalEntryWithHash(patientId: String, content: String, msg: String, author: String): String
+        +readJournalEntry(patientId: String): String
+        +getCommitHistory(patientId: String, includeInternalNotes: boolean): List<Map>
+        +close(): void
+    }
+
+    class I18nService <<Service>> {
+        -repository: I18nDictionaryRepository
+        +getDictionary(locale: String): Optional<I18nDictionary>
+        +updateTranslation(locale: String, key: String, val: String): I18nDictionary
+    }
+
+    class PlatformCacheService <<Service>> {
+        -transcriptCollections: Map<String, List<Map>>
+        -l2CacheRegions: Map<String, Map<String, Object>>
+        +clearCollection(collection: String): void
+        +saveDocument(collection: String, doc: Map): void
+        +findByField(collection: String, field: String, value: String): Optional<Map>
+        +putInCacheRegion(region: String, key: String, value: Object): void
+        +evictRegion(region: String): void
+        +isRegionHydrated(region: String): boolean
+    }
+
+    class PlatformEventService <<Service>> {
+        -publishedEventsByTopic: Map<String, List<Map>>
+        +publishEvent(topic: String, payload: Map): void
+        +getEventsForTopic(topic: String): List<Map>
+        +clearAllEvents(): void
+    }
+}
+
+package "Repository Layer (com.platform.repository & crm.repository)" as PkgRepo #EBF5FB {
+    interface UserRepository <<BaseRepository>> {
+        +existsByUsername(username: String): boolean
+    }
+
+    interface ClientProfileRepository <<BaseRepository>> {
+        +findByUserId(userId: UUID): Optional<ClientProfile>
+    }
+
+    interface OrganisationRepository <<BaseRepository>> {
+        +findByCvrNumber(cvrNumber: String): Optional<Organisation>
+    }
+
+    interface ProviderProfileRepository <<BaseRepository>> {
+        +findByUserUuid(userUuid: UUID): Optional<ProviderProfile>
+    }
+
+    interface ServiceRepository <<BaseRepository>> {
+        +findByOrganisationId(organisationId: UUID): List<Service>
+        +findByProviderId(providerId: UUID): List<Service>
+    }
+
+    interface HandshakeRepository <<BaseRepository>> {
+        +findByClientUuid(clientUuid: UUID): List<ClientTherapistHandshake>
+        +findByTherapistUuid(therapistUuid: UUID): List<ClientTherapistHandshake>
+        +findByClientUuidAndTherapistUuid(c: UUID, t: UUID): Optional<ClientTherapistHandshake>
+    }
+
+    interface AppointmentRepository <<BaseRepository>> {
+        +findByClientUuid(clientUuid: UUID): List<Appointment>
+        +findByTherapistUuid(therapistUuid: UUID): List<Appointment>
+    }
+
+    interface JournalEntryRepository <<BaseRepository>> {
+        +findByClientUuidOrderByTimestampDesc(clientUuid: UUID): List<JournalEntry>
+    }
+
+    interface TherapistClinicalNoteRepository <<BaseRepository>> {
+        +findByClientUuidOrderByCreatedAtDesc(clientUuid: UUID): List<TherapistClinicalNote>
+    }
+
+    interface PsychotraumatologyTestRepository <<BaseRepository>> {
+        +findByClientUuid(clientUuid: UUID): List<PsychotraumatologyTest>
+    }
+
+    interface I18nDictionaryRepository <<MongoRepository>> {
+        +findByLocale(locale: String): Optional<I18nDictionary>
+    }
+}
+
+package "Entity & Model Layer (com.platform.entity & crm.model)" as PkgEntity #E8F8F5 {
+    class UserEntity <<Entity: app_users>> {
+        -username: String
+        -password: String
+        -role: String
+    }
+
+    class ClientProfile <<Entity: client_profiles>> {
+        -userId: UUID
+        -fullName: String
+        -email: String
+        -dateOfBirth: String
+        -homeAddress: String
+        -postalCode: String
+        -phoneNumber: String
+    }
+
+    class Organisation <<Entity: organisations>> {
+        -cvrNumber: String
+        -name: String
+    }
+
+    class ProviderProfile <<Entity: provider_profiles>> {
+        -user: UserEntity
+        -userUuid: UUID
+        -displayName: String
+        -organisation: Organisation
+        -biography: String
+        -workingHoursJson: String
+    }
+
+    class ClientTherapistHandshake <<Entity: client_therapist_handshakes>> {
+        -clientUuid: UUID
+        -clientName: String
+        -therapistUuid: UUID
+        -therapistName: String
+        -organisationName: String
+        -status: String
+        -grantedAt: LocalDateTime
+        -revokedAt: LocalDateTime
+    }
+
+    class Service <<Entity: services>> {
+        -provider: ProviderProfile
+        -organisation: Organisation
+        -name: String
+        -description: String
+        -durationMinutes: Integer
+        -price: Double
+        -location: String
+        -isActive: Boolean
+    }
+
+    class Appointment <<Entity: appointments>> {
+        -clientUuid: UUID
+        -therapistUuid: UUID
+        -serviceId: UUID
+        -startTime: LocalDateTime
+        -endTime: LocalDateTime
+        -title: String
+        -status: String
+    }
+
+    class JournalEntry <<Entity: journal_entries>> {
+        -clientUuid: UUID
+        -title: String
+        -content: String
+        -moodRating: Integer
+        -sharedWithTherapists: Boolean
+        -gitCommitHash: String
+        -timestamp: LocalDateTime
+    }
+
+    class TherapistClinicalNote <<Entity: therapist_clinical_notes>> {
+        -clientUuid: UUID
+        -authorTherapistUuid: UUID
+        -authorTherapistName: String
+        -organisationName: String
+        -journalEntryId: UUID
+        -confidentialMarkdown: String
+        -gitCommitHash: String
+        -createdAt: LocalDateTime
+    }
+
+    class PsychotraumatologyTest <<Entity: psychotraumatology_tests>> {
+        -clientUuid: UUID
+        -therapistUuid: UUID
+        -testType: String
+        -score: Integer
+        -severity: String
+        -answersJson: String
+        -timestamp: LocalDateTime
+    }
+
+    class I18nDictionary <<Document: i18n_dictionaries>> {
+        -id: String
+        -locale: String
+        -translations: Map<String, Object>
+    }
+}
+
+' Generic Core Inheritance Relationships
+BaseController <|-- AppointmentController
+BaseController --> BaseService
+BaseService o-- CrudInterceptor
+BaseService --> BaseRepository
+BaseDAO --> BaseEntity
+
+BaseDTO <|.. UserRequestDto
+BaseDTO <|.. UserResponseDto
+BaseDTO <|.. JournalEntryDto
+BaseDTO <|.. PsychotraumatologyTestDto
+
+BaseService <|-- UserService
+BaseService <|-- AppointmentService
+
+BaseRepository <|-- UserRepository
+BaseRepository <|-- ClientProfileRepository
+BaseRepository <|-- OrganisationRepository
+BaseRepository <|-- ProviderProfileRepository
+BaseRepository <|-- ServiceRepository
+BaseRepository <|-- HandshakeRepository
+BaseRepository <|-- AppointmentRepository
+BaseRepository <|-- JournalEntryRepository
+BaseRepository <|-- TherapistClinicalNoteRepository
+BaseRepository <|-- PsychotraumatologyTestRepository
+
+BaseEntity <|-- UserEntity
+BaseEntity <|-- ClientProfile
+BaseEntity <|-- Organisation
+BaseEntity <|-- ProviderProfile
+BaseEntity <|-- ClientTherapistHandshake
+BaseEntity <|-- Service
+BaseEntity <|-- Appointment
+BaseEntity <|-- JournalEntry
+BaseEntity <|-- TherapistClinicalNote
+BaseEntity <|-- PsychotraumatologyTest
+
+' Domain Dependencies
+UserController --> UserService
+UserService --> UserRepository
+UserRepository --> UserEntity
+
+ClinicDatabaseInitializer --> I18nDictionaryRepository
+
+ClinicPlatformController --> ClientProfileRepository
+ClinicPlatformController --> OrganisationRepository
+ClinicPlatformController --> ProviderProfileRepository
+ClinicPlatformController --> ServiceRepository
+ClinicPlatformController --> HandshakeRepository
+ClinicPlatformController --> AppointmentRepository
+ClinicPlatformController --> JournalEntryRepository
+ClinicPlatformController --> PsychotraumatologyTestRepository
+
+ClientProfileRepository --> ClientProfile
+OrganisationRepository --> Organisation
+ProviderProfileRepository --> ProviderProfile
+ServiceRepository --> Service
+HandshakeRepository --> ClientTherapistHandshake
+
+ProviderProfile "0..*" --> "0..1" Organisation : organisation
+Service "0..*" --> "0..1" ProviderProfile : provider
+Service "0..*" --> "0..1" Organisation : organisation
+
+AppointmentController --> AppointmentService
+AppointmentService --> AppointmentRepository
+AppointmentService --> PlatformCacheService
+AppointmentService --> PlatformEventService
+AppointmentRepository --> Appointment
+
+JournalController --> JournalEntryRepository
+JournalController --> TherapistClinicalNoteRepository
+JournalController --> JournalGitService
+JournalGitService --> JournalService : uses privacy filter
+JournalEntryRepository --> JournalEntry
+TherapistClinicalNoteRepository --> TherapistClinicalNote
+
+PsychotraumatologyController --> PsychotraumatologyTestRepository
+PsychotraumatologyTestRepository --> PsychotraumatologyTest
+
+I18nController --> I18nService
+I18nService --> I18nDictionaryRepository
+I18nDictionaryRepository --> I18nDictionary
+
+@enduml
