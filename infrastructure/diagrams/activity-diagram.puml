@@ -20,108 +20,73 @@ skinparam swimlane {
     TitleBackgroundColor #EBF5FB
     TitleFontColor #2C3E50
     TitleFontStyle bold
-    TitleFontSize 13
+    TitleFontSize 12
 }
 
-title Aktivitetsdiagram - End-to-End Klinisk Platform (Booking, Handshake, Journal, PCL-5 & JGit)
+title Aktivitetsdiagram - Dynamisk Spring IoC DI Swimlane Flow (Route -> BaseController -> BaseService -> BaseRepository -> Hibernate Entity / DTO)
 
-|Klient (Client Portal)|
+|Klient / Terapeut (Next.js Route & BFF)|
 start
-:Tilgår platformen & logger ind
-eller registrerer fuld profil (Q12);
+:Bruger udfører handling i UI
+(Onboarding, Booking, Handshake, Journal eller PCL-5);
+:Next.js BFF validerer OIDC Session / JWT mod **Keycloak IAM**
+og videresender HTTP Request til ""/api/v1/..."" med Bearer JWT;
 
-|Next.js BFF & Keycloak IAM|
-:Validerer credentials mod **Keycloak IAM**
-og udsteder OIDC JWT / Session Cookie;
-:Videresender API-kald via
-""/api/backend/[...path]"" med Bearer JWT;
+|Controller Swimlane (BaseController<E, D, ID>)|
+:Spring DispatcherServlet router kaldet til domæne-controller
+(""ClinicPlatformController"", ""AppointmentController"",
+""JournalController"", ""PsychotraumatologyController"", ""UserController"");
+:Controller delegerer **udelukkende** til sin generiske
+Spring IoC-injicerede ""BaseService<E, D, UUID>"";
 
-|Spring Boot Backend & Persistens|
-if (Terapeut CVR Onboarding?) then (Ja - 8-cifret CVR)
-    :Opretter/finder ""Organisation (CVR)"",
-    opgraderer bruger til ""THERAPIST""
-    & synkroniserer Keycloak realm-rolle;
-else (Nej - Klient / Eksisterende)
-    :Indlæser ""ClientProfile"" / ""ProviderProfile""
-    fra **PostgreSQL** (`business-db`);
+|Service Swimlane (BaseService<E, D, ID> @Transactional)|
+:Åbner ""@Transactional"" kontekst & resolver generiske typer
+""Class<E>"" og ""Class<D>"" via ""GenericTypeResolver"";
+:Mapper automatisk ""D (BaseDTO<UUID>) <-> E (BaseEntity<UUID>)""
+og afvikler registrerede ""CrudInterceptor<E, UUID>""-hooks
+(""beforeCreate"" / ""beforeUpdate"" / ""beforeDelete"");
+
+if (Operationstype?) then (Klinisk Profil / CVR / Ydelse / Handshake)
+    :Validerer CVR, profilfelter eller samtykkeperiode
+    i ""ClinicPlatformService"";
+elseif (Aftalebooking & Timefold AI?) then (Booking / Ombooking)
+    :Kontrollerer overlap & AI-slots i ""AppointmentService"";
+    if (Overlappende aftale findes?) then (Ja - Konflikt)
+        #FADBD8:Kaster **HTTP 409 Conflict**;
+        |Klient / Terapeut (Next.js Route & BFF)|
+        :Viser fejlbesked & foreslår ledige Timefold-tider;
+        stop
+    else (Nej - Ledig tid)
+    endif
+elseif (Journal eller PCL-5 Traumetest?) then (Journal / Klinisk Notat / PCL-5)
+    :Validerer adgangsrettigheder, Handshake-status &
+    privatlivsfilter (""INTERNAL_MEDICAL_NOTES"")
+    i ""JournalService"" / ""PsychotraumatologyService"";
 endif
 
-|Klient (Client Portal)|
-:Søger i **Markedsplads** efter terapeut/CVR
-og vælger ydelse (30/45/60/90 min) & tidspunkt;
-:Sender bookinganmodning
-(""POST /api/v1/clinic/appointments"");
+|Repository Swimlane (BaseRepository<E, ID>)|
+:Udfører typesikret kald eller dynamisk ""JpaSpecificationExecutor<E>""
+filtrering (""_like"", ""_gt"", ""_lt"", ""_gte"", ""_lte"", sortering & paginering)
+via Spring Data JPA ""BaseRepository<E, UUID>"";
 
-|Spring Boot Backend & Persistens|
-:Kontrollerer tidsinterval i **PostgreSQL**
-(""existsOverlappingAppointment"");
-
-if (Overlappende aftale findes?) then (Ja - Konflikt)
-    #FADBD8:Afviser booking med
-    **HTTP 409 Conflict**;
-    |Klient (Client Portal)|
-    :Vælger nyt ledigt tidspunkt;
-    stop
-else (Nej - Ledig tid)
-    |Spring Boot Backend & Persistens|
-    #D5F5E3:Gemmer ""Appointment (CONFIRMED)"",
-    invaliderer **Redis L2 Cache**
-    & publicerer **Kafka** event;
+|Hibernate ORM / PostgreSQL / JGit / Redis / Kafka|
+#D5F5E3:Hibernate ""Session"" / ""EntityManager"" persisterer eller indlæser
+""E extends BaseEntity<UUID>"" i **PostgreSQL** (`business-db`);
+if (Kræver revisionsspor eller cache/event?) then (Ja)
+    :Committer Markdown-snapshot til **JGit** (SHA-1 hash),
+    opdaterer/invaliderer **Redis L2 Cache**
+    & publicerer **Kafka** domæne-event;
+else (Nej)
 endif
 
-|Klient (Client Portal)|
-:Tildeler adgangssamtykke (**Handshake**)
-til terapeuten (""POST /api/v1/clinic/handshakes"");
+|Service Swimlane (BaseService<E, D, ID> @Transactional)|
+:Afvikler ""afterCreate"" / ""afterUpdate"" / ""afterDelete""
+på ""CrudInterceptor<E, UUID>"" og transformerer ""toDto(E)"";
 
-|Spring Boot Backend & Persistens|
-:Gemmer ""ClientTherapistHandshake (ACTIVE)""
-i **PostgreSQL**;
+|Controller Swimlane (BaseController<E, D, ID>)|
+:Pakker resultat i ""ResponseEntity<D>"" (HTTP 200 / 201 / 204);
 
-fork
-    |Klient (Client Portal)|
-    :Skriver dagbogsindlæg (Humør 1-10)
-    & udfylder **PCL-5** traumetest (Score 0-80);
-    |Spring Boot Backend & Persistens|
-    :Gemmer ""JournalEntry"" & ""PsychotraumatologyTest""
-    i **PostgreSQL**;
-    :Committer Markdown-snapshot til **JGit**
-    (""patients/<clientId>.md"") og gemmer SHA-1 hash;
-fork again
-    |Terapeut (Multi-Window Workspace)|
-    :Åbner **Multi-Window Workspace**
-    med klientens delte journal & PCL-5 historik;
-    :Tilføjer fortroligt klinisk notat
-    (""POST /api/v1/clinic/clinical-notes"");
-    |Spring Boot Backend & Persistens|
-    :Verificerer aktivt **Handshake (ACTIVE)**;
-    :Gemmer ""TherapistClinicalNote"" og committer
-    ""[INTERNAL_MEDICAL_NOTES]""-sektion i **JGit**;
-end fork
-
-|Spring Boot Backend & Persistens|
-if (Hvem forespørger journal & JGit-historik?) then (Rolle == CLIENT)
-    #FCF3CF:Filtrerer alle ""INTERNAL_MEDICAL_NOTES""
-    ud af Markdown & JGit-commits (Privatlivsfilter);
-    |Klient (Client Portal)|
-    :Viser kun klientens egne journalindlæg
-    og egne JGit-versioner;
-else (Rolle == THERAPIST med ACTIVE Handshake)
-    |Spring Boot Backend & Persistens|
-    #D5F5E3:Returnerer fuld patientjournal inkl.
-    fortrolige kliniske noter & JGit-historik;
-    |Terapeut (Multi-Window Workspace)|
-    :Inspicerer **JGit Revisionshistorik** side-om-side:
-    skifter mellem **Delta Changes (+/-)** og **Full Snapshot**;
-endif
-
-|Klient (Client Portal)|
-if (Klient tilbagekalder samtykke (Revoke)?) then (Ja)
-    |Spring Boot Backend & Persistens|
-    #FADBD8:Opdaterer Handshake til ""REVOKED"";
-    :Blokerer fremtidig terapeutadgang (**HTTP 403**),
-    men bevarer eksisterende kliniske noter & JGit-auditlog;
-else (Nej - Samtykke fortsat aktivt)
-endif
-
+|Klient / Terapeut (Next.js Route & BFF)|
+:Modtager JSON-respons og opdaterer reaktivt UI;
 stop
 @enduml

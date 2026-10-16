@@ -15,12 +15,16 @@ skinparam entity {
     HeaderBackgroundColor #EBF5FB
 }
 
-title Decentralized EER-Diagram (Enhanced Entity-Relationship) - PostgreSQL & MongoDB
+title Decentralized EER-Diagram (Enhanced Entity-Relationship) - PostgreSQL (BaseEntity UUID Supertype) & MongoDB
 
-package "PostgreSQL (business-db) - Decentralized Domain Hierarchy" #F8F9FA {
+package "PostgreSQL (business-db) - BaseEntity (@MappedSuperclass) & Decentralized Domain Hierarchy" #F8F9FA {
 
-    entity "app_users (Supertype)" as app_users {
-        * **id** : UUID <<PK>>
+    entity "BaseEntity (<<MappedSuperclass>>)" as base_entity #F9EBEA {
+        * **id** : UUID <<PK, GeneratedValue(UUID)>>
+    }
+
+    entity "app_users (Supertype extends BaseEntity)" as app_users {
+        * **id** : UUID <<PK (inherited)>>
         --
         * username : VARCHAR(255) <<UK, NOT NULL>>
         * email : VARCHAR(255) <<UK, NOT NULL>>
@@ -28,8 +32,8 @@ package "PostgreSQL (business-db) - Decentralized Domain Hierarchy" #F8F9FA {
         * role : VARCHAR(50) <<CLIENT | THERAPIST | ADMIN>>
     }
 
-    entity "client_profiles (Subtype / Q12)" as client_profiles {
-        * **id** : UUID <<PK>>
+    entity "client_profiles (Subtype / Q12 extends BaseEntity)" as client_profiles {
+        * **id** : UUID <<PK (inherited)>>
         --
         * user_id : UUID <<FK, UK, NOT NULL>>
         * full_name : VARCHAR(255) <<NOT NULL>>
@@ -39,15 +43,15 @@ package "PostgreSQL (business-db) - Decentralized Domain Hierarchy" #F8F9FA {
         * phone_number : VARCHAR(50) <<NOT NULL>>
     }
 
-    entity "organisations (CVR / Q2, Q8)" as organisations {
-        * **id** : UUID <<PK>>
+    entity "organisations (CVR / Q2, Q8 extends BaseEntity)" as organisations {
+        * **id** : UUID <<PK (inherited)>>
         --
         * cvr_number : VARCHAR(8) <<UK, NOT NULL>>
         * name : VARCHAR(255) <<NOT NULL>>
     }
 
-    entity "provider_profiles (Subtype / Q2)" as provider_profiles {
-        * **id** : UUID <<PK>>
+    entity "provider_profiles (Subtype / Q2 extends BaseEntity)" as provider_profiles {
+        * **id** : UUID <<PK (inherited)>>
         --
         * user_id : UUID <<FK, UK, NOT NULL>>
         * organisation_id : UUID <<FK, NOT NULL>>
@@ -55,8 +59,8 @@ package "PostgreSQL (business-db) - Decentralized Domain Hierarchy" #F8F9FA {
         working_hours_json : JSONB
     }
 
-    entity "client_therapist_handshakes (Q3, Q4)" as handshakes {
-        * **id** : UUID <<PK>>
+    entity "client_therapist_handshakes (Q3, Q4 extends BaseEntity)" as handshakes {
+        * **id** : UUID <<PK (inherited)>>
         --
         * client_profile_id : UUID <<FK, NOT NULL>>
         * provider_profile_id : UUID <<FK, NOT NULL>>
@@ -65,8 +69,8 @@ package "PostgreSQL (business-db) - Decentralized Domain Hierarchy" #F8F9FA {
         revoked_at : TIMESTAMP
     }
 
-    entity "services (Hybrid Template / Q8)" as services {
-        * **id** : UUID <<PK>>
+    entity "services (Hybrid Template / Q8 extends BaseEntity)" as services {
+        * **id** : UUID <<PK (inherited)>>
         --
         organisation_id : UUID <<FK, NULLABLE (Org Template)>>
         provider_profile_id : UUID <<FK, NULLABLE (Custom)>>
@@ -78,8 +82,8 @@ package "PostgreSQL (business-db) - Decentralized Domain Hierarchy" #F8F9FA {
         * is_active : BOOLEAN <<DEFAULT TRUE>>
     }
 
-    entity "appointments (Q9)" as appointments {
-        * **id** : UUID <<PK>>
+    entity "appointments (Q9 extends BaseEntity)" as appointments {
+        * **id** : UUID <<PK (inherited)>>
         --
         * client_profile_id : UUID <<FK, NOT NULL>>
         * provider_profile_id : UUID <<FK, NOT NULL>>
@@ -90,8 +94,8 @@ package "PostgreSQL (business-db) - Decentralized Domain Hierarchy" #F8F9FA {
         * status : VARCHAR(30) <<CONFIRMED | CANCELLED>>
     }
 
-    entity "journal_entries (Client Journal / Q5, Q13)" as journal_entries {
-        * **id** : UUID <<PK>>
+    entity "journal_entries (Client Journal / Q5, Q13 extends BaseEntity)" as journal_entries {
+        * **id** : UUID <<PK (inherited)>>
         --
         * client_profile_id : UUID <<FK, NOT NULL>>
         * title : VARCHAR(255) <<NOT NULL>>
@@ -102,8 +106,8 @@ package "PostgreSQL (business-db) - Decentralized Domain Hierarchy" #F8F9FA {
         * timestamp : TIMESTAMP <<NOT NULL>>
     }
 
-    entity "therapist_clinical_notes (Confidential / Q4, Q5)" as clinical_notes {
-        * **id** : UUID <<PK>>
+    entity "therapist_clinical_notes (Confidential / Q4, Q5 extends BaseEntity)" as clinical_notes {
+        * **id** : UUID <<PK (inherited)>>
         --
         * client_profile_id : UUID <<FK, NOT NULL>>
         * author_provider_id : UUID <<FK, NOT NULL>>
@@ -113,8 +117,8 @@ package "PostgreSQL (business-db) - Decentralized Domain Hierarchy" #F8F9FA {
         * created_at : TIMESTAMP <<NOT NULL>>
     }
 
-    entity "psychotraumatology_tests (Q11)" as psycho_tests {
-        * **id** : UUID <<PK>>
+    entity "psychotraumatology_tests (Q11 extends BaseEntity)" as psycho_tests {
+        * **id** : UUID <<PK (inherited)>>
         --
         * client_profile_id : UUID <<FK, NOT NULL>>
         provider_profile_id : UUID <<FK, NULLABLE>>
@@ -157,6 +161,16 @@ package "JGit Fil-Repository (journal-repo - Immutable Git Audit Log)" #E8F8F5 {
         * parent_hash : SHA-1 <<FK>>
     }
 }
+
+' BaseEntity Superclass Inheritance
+base_entity <|-- app_users
+base_entity <|-- organisations
+base_entity <|-- handshakes
+base_entity <|-- services
+base_entity <|-- appointments
+base_entity <|-- journal_entries
+base_entity <|-- clinical_notes
+base_entity <|-- psycho_tests
 
 ' EER Specialization (Only 2 arrows from app_users!)
 app_users ||--o| client_profiles : "ISA (Klient)"

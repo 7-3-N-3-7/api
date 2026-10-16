@@ -31,20 +31,21 @@ partition "**Krav & Versionsstyring**" {
     • Commit indledende "".feature""-filer (Gherkin);
 }
 
-partition "**Fase 1: Backend (Outside-In / Zero-Mock)**" #F8F9FA {
+partition "**Fase 1: Backend & Generisk Base-Arkitektur (Outside-In / Zero-Mock)**" #F8F9FA {
     -[#B03A2E,dashed]->
     #FADBD8:<b>3. Backend BDD (Outer Loop)</b>
-    • Implementer Gherkin-scenarier i Cucumber med **REST Assured**
-    • Eksekver mod rigtig Spring Boot + DB: **Fejler (Rød)** //(fx HTTP 404/403)//;
+    • Implementer Gherkin-scenarier i Cucumber (fx ""generic_base_architecture.feature"")
+    • Eksekver mod rigtig Spring Boot + DB: **Fejler (Rød)** //(fx HTTP 404/403 eller manglende Base-klasser)//;
     
     #D5F5E3:<b>4. Backend TDD (Inner Loop)</b>
-    • Skriv fejlende JUnit 5 enhedstests (Controller/Service/Repo/JGit)
-    • Implementer domænelogik, PostgreSQL/MongoDB datalag, Redis L2 & endpoints
+    • Skriv fejlende JUnit 5 enhedstests (""GenericBaseArchitectureTest"", Controller/Service/Repo/DAO/JGit)
+    • Nedarv fra ""BaseEntity"", ""BaseRepository"", ""BaseDAO"", ""BaseDTO"", ""BaseService"", ""BaseController""
+    • Tilføj unik domænelogik, PostgreSQL/MongoDB datalag, Redis L2 & endpoints
     • Eksekver enhedstests: **Bestået (Grøn)**;
 
     #D5F5E3:<b>5. Backend & Coverage Verifikation</b>
-    • Kør samlet **REST Assured** / Cucumber API-testsuite (53 tests)
-    • Verificer **JaCoCo** 100% coverage gate: **Bestået (Grøn)**;
+    • Kør samlet Cucumber BDD & JUnit testsuite (63 tests / 29 Cucumber-scenarier)
+    • Verificer **JaCoCo** >80% line & branch coverage gate: **Bestået (Grøn)**;
 }
 
 partition "**Fase 2: Frontend & Full-Stack E2E (Outside-In / Zero-Mock)**" #F4F6F7 {

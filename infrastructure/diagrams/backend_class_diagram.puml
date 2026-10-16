@@ -16,7 +16,73 @@ skinparam class {
     HeaderBackgroundColor #F4F6F7
 }
 
-title Backend Klassediagram (com.platform - Java 17 / Spring Boot 3.3)
+title Backend Klassediagram (com.platform - Java 17 / Spring Boot 3.3 - Generisk Base Arkitektur)
+
+package "Generic Core Base Layer (com.platform.core)" as PkgCore #F9EBEA {
+    abstract class BaseController<T extends BaseEntity> <<AbstractController>> {
+        #service: BaseService<T>
+        +getService(): BaseService<T>
+        +setService(service: BaseService<T>): void
+        +getAll(): ResponseEntity<List<T>>
+        +getById(id: UUID): ResponseEntity<T>
+        +create(entity: T): ResponseEntity<T>
+        +update(id: UUID, entity: T): ResponseEntity<T>
+        +delete(id: UUID): ResponseEntity<Void>
+    }
+
+    interface BaseDTO <<Serializable>> {
+        +getId(): UUID
+    }
+
+    class BaseService<T extends BaseEntity> <<GenericService>> {
+        #repository: JpaRepository<T, UUID>
+        #interceptors: List<CrudInterceptor<T>>
+        +getRepository(): JpaRepository<T, UUID>
+        +setRepository(repository: JpaRepository<T, UUID>): void
+        +addInterceptor(interceptor: CrudInterceptor<T>): void
+        +findAll(): List<T>
+        +findById(id: UUID): Optional<T>
+        +getByIdOrThrow(id: UUID): T
+        +create(entity: T): T
+        +save(entity: T): T
+        +update(id: UUID, entity: T): T
+        +deleteById(id: UUID): void
+        +existsById(id: UUID): boolean
+        +count(): long
+    }
+
+    interface CrudInterceptor<T extends BaseEntity> <<LifecycleHook>> {
+        +beforeCreate(entity: T): void
+        +afterCreate(entity: T): void
+        +beforeUpdate(entity: T): void
+        +afterUpdate(entity: T): void
+        +beforeDelete(id: UUID): void
+        +afterDelete(id: UUID): void
+    }
+
+    interface BaseRepository<T extends BaseEntity> <<@NoRepositoryBean>> {
+        ' Extends JpaRepository<T, UUID> & JpaSpecificationExecutor<T>
+    }
+
+    abstract class BaseDAO<T extends BaseEntity> <<GenericDAO>> {
+        #entityManager: EntityManager
+        #entityClass: Class<T>
+        +findAll(): List<T>
+        +findById(id: UUID): Optional<T>
+        +save(entity: T): T
+        +deleteById(id: UUID): void
+        +existsById(id: UUID): boolean
+        +count(): long
+        +findAllDynamic(offset: int, limit: int, filters: Map<String, String>, sortParam: String): List<T>
+        #convertValue(val: String, targetType: Class<?>): Object
+    }
+
+    abstract class BaseEntity <<@MappedSuperclass>> {
+        #id: UUID
+        +getId(): UUID
+        +setId(id: UUID): void
+    }
+}
 
 package "Controller & Config Layer (com.platform.controller & config)" as PkgCtrl #FDFEFE {
     class SecurityConfig <<Configuration>> {
@@ -206,47 +272,47 @@ package "Service Layer (com.platform.service)" as PkgSvc #F4ECF7 {
 }
 
 package "Repository Layer (com.platform.repository & crm.repository)" as PkgRepo #EBF5FB {
-    interface UserRepository <<JpaRepository>> {
+    interface UserRepository <<BaseRepository>> {
         +existsByUsername(username: String): boolean
     }
 
-    interface ClientProfileRepository <<JpaRepository>> {
+    interface ClientProfileRepository <<BaseRepository>> {
         +findByUserId(userId: UUID): Optional<ClientProfile>
     }
 
-    interface OrganisationRepository <<JpaRepository>> {
+    interface OrganisationRepository <<BaseRepository>> {
         +findByCvrNumber(cvrNumber: String): Optional<Organisation>
     }
 
-    interface ProviderProfileRepository <<JpaRepository>> {
+    interface ProviderProfileRepository <<BaseRepository>> {
         +findByUserUuid(userUuid: UUID): Optional<ProviderProfile>
     }
 
-    interface ServiceRepository <<JpaRepository>> {
+    interface ServiceRepository <<BaseRepository>> {
         +findByOrganisationId(organisationId: UUID): List<Service>
         +findByProviderId(providerId: UUID): List<Service>
     }
 
-    interface HandshakeRepository <<JpaRepository>> {
+    interface HandshakeRepository <<BaseRepository>> {
         +findByClientUuid(clientUuid: UUID): List<ClientTherapistHandshake>
         +findByTherapistUuid(therapistUuid: UUID): List<ClientTherapistHandshake>
         +findByClientUuidAndTherapistUuid(c: UUID, t: UUID): Optional<ClientTherapistHandshake>
     }
 
-    interface AppointmentRepository <<JpaRepository>> {
+    interface AppointmentRepository <<BaseRepository>> {
         +findByClientUuid(clientUuid: UUID): List<Appointment>
         +findByTherapistUuid(therapistUuid: UUID): List<Appointment>
     }
 
-    interface JournalEntryRepository <<JpaRepository>> {
+    interface JournalEntryRepository <<BaseRepository>> {
         +findByClientUuidOrderByTimestampDesc(clientUuid: UUID): List<JournalEntry>
     }
 
-    interface TherapistClinicalNoteRepository <<JpaRepository>> {
+    interface TherapistClinicalNoteRepository <<BaseRepository>> {
         +findByClientUuidOrderByCreatedAtDesc(clientUuid: UUID): List<TherapistClinicalNote>
     }
 
-    interface PsychotraumatologyTestRepository <<JpaRepository>> {
+    interface PsychotraumatologyTestRepository <<BaseRepository>> {
         +findByClientUuid(clientUuid: UUID): List<PsychotraumatologyTest>
     }
 
@@ -257,14 +323,12 @@ package "Repository Layer (com.platform.repository & crm.repository)" as PkgRepo
 
 package "Entity & Model Layer (com.platform.entity & crm.model)" as PkgEntity #E8F8F5 {
     class UserEntity <<Entity: app_users>> {
-        -id: UUID
         -username: String
         -password: String
         -role: String
     }
 
     class ClientProfile <<Entity: client_profiles>> {
-        -id: UUID
         -userId: UUID
         -fullName: String
         -email: String
@@ -275,13 +339,11 @@ package "Entity & Model Layer (com.platform.entity & crm.model)" as PkgEntity #E
     }
 
     class Organisation <<Entity: organisations>> {
-        -id: UUID
         -cvrNumber: String
         -name: String
     }
 
     class ProviderProfile <<Entity: provider_profiles>> {
-        -id: UUID
         -user: UserEntity
         -userUuid: UUID
         -displayName: String
@@ -291,7 +353,6 @@ package "Entity & Model Layer (com.platform.entity & crm.model)" as PkgEntity #E
     }
 
     class ClientTherapistHandshake <<Entity: client_therapist_handshakes>> {
-        -id: UUID
         -clientUuid: UUID
         -clientName: String
         -therapistUuid: UUID
@@ -303,7 +364,6 @@ package "Entity & Model Layer (com.platform.entity & crm.model)" as PkgEntity #E
     }
 
     class Service <<Entity: services>> {
-        -id: UUID
         -provider: ProviderProfile
         -organisation: Organisation
         -name: String
@@ -315,7 +375,6 @@ package "Entity & Model Layer (com.platform.entity & crm.model)" as PkgEntity #E
     }
 
     class Appointment <<Entity: appointments>> {
-        -id: UUID
         -clientUuid: UUID
         -therapistUuid: UUID
         -serviceId: UUID
@@ -326,7 +385,6 @@ package "Entity & Model Layer (com.platform.entity & crm.model)" as PkgEntity #E
     }
 
     class JournalEntry <<Entity: journal_entries>> {
-        -id: UUID
         -clientUuid: UUID
         -title: String
         -content: String
@@ -337,7 +395,6 @@ package "Entity & Model Layer (com.platform.entity & crm.model)" as PkgEntity #E
     }
 
     class TherapistClinicalNote <<Entity: therapist_clinical_notes>> {
-        -id: UUID
         -clientUuid: UUID
         -authorTherapistUuid: UUID
         -authorTherapistName: String
@@ -349,7 +406,6 @@ package "Entity & Model Layer (com.platform.entity & crm.model)" as PkgEntity #E
     }
 
     class PsychotraumatologyTest <<Entity: psychotraumatology_tests>> {
-        -id: UUID
         -clientUuid: UUID
         -therapistUuid: UUID
         -testType: String
@@ -366,6 +422,44 @@ package "Entity & Model Layer (com.platform.entity & crm.model)" as PkgEntity #E
     }
 }
 
+' Generic Core Inheritance Relationships
+BaseController <|-- AppointmentController
+BaseController --> BaseService
+BaseService o-- CrudInterceptor
+BaseService --> BaseRepository
+BaseDAO --> BaseEntity
+
+BaseDTO <|.. UserRequestDto
+BaseDTO <|.. UserResponseDto
+BaseDTO <|.. JournalEntryDto
+BaseDTO <|.. PsychotraumatologyTestDto
+
+BaseService <|-- UserService
+BaseService <|-- AppointmentService
+
+BaseRepository <|-- UserRepository
+BaseRepository <|-- ClientProfileRepository
+BaseRepository <|-- OrganisationRepository
+BaseRepository <|-- ProviderProfileRepository
+BaseRepository <|-- ServiceRepository
+BaseRepository <|-- HandshakeRepository
+BaseRepository <|-- AppointmentRepository
+BaseRepository <|-- JournalEntryRepository
+BaseRepository <|-- TherapistClinicalNoteRepository
+BaseRepository <|-- PsychotraumatologyTestRepository
+
+BaseEntity <|-- UserEntity
+BaseEntity <|-- ClientProfile
+BaseEntity <|-- Organisation
+BaseEntity <|-- ProviderProfile
+BaseEntity <|-- ClientTherapistHandshake
+BaseEntity <|-- Service
+BaseEntity <|-- Appointment
+BaseEntity <|-- JournalEntry
+BaseEntity <|-- TherapistClinicalNote
+BaseEntity <|-- PsychotraumatologyTest
+
+' Domain Dependencies
 UserController --> UserService
 UserService --> UserRepository
 UserRepository --> UserEntity
