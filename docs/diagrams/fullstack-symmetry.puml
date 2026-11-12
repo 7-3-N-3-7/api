@@ -1,0 +1,150 @@
+@startuml
+!pragma layout smetana
+set namespaceSeparator none
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam packageStyle rectangle
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2C3E50
+skinparam ArrowThickness 1.3
+
+skinparam class {
+    BackgroundColor #F8FAFC
+    BorderColor #2C3E50
+    BorderThickness 1.3
+    HeaderBackgroundColor #E2E8F0
+    FontColor #0F172A
+    AttributeFontColor #334155
+}
+
+title 1:1 Full-Stack Architectural Symmetry & Dual-App Frontend SoC (Java 17 Backend vs. TypeScript/React Frontend)
+
+package "Backend (Java 17 / Spring Boot 3.3)" as Backend #F1F5F9 {
+
+    package "com.platform.core" as BackendCore #FFFFFF {
+        class "BaseDomainCore.java" as JavaDomainCore << (C, #3B82F6) Pure Java >> {
+            + interface HasId<ID>
+            + enum ErrorCode
+            + class DomainException
+            + class DomainGuard
+            + abstract class BaseService<E, D, ID>
+        }
+
+        class "BaseWebCore.java" as JavaWebCore << (C, #10B981) Spring Web >> {
+            + abstract class BaseController<E, D, ID>
+            + class GlobalExceptionHandler
+            --
+            Produces RFC 7807 ProblemDetail
+        }
+    }
+
+    package "com.platform.features.appointment" as BackendSlice #FFFFFF {
+        class "AppointmentFeature.java" as JavaFeature << (F, #8B5CF6) Single-File Slice >> {
+            + record AppointmentDto
+            + class AppointmentController
+            ~ class AppointmentService (package-private)
+            ~ interface AppointmentRepository (package-private)
+            ~ class Appointment (package-private @Entity)
+        }
+    }
+
+    JavaWebCore -up-> JavaDomainCore : depends on
+    JavaFeature -up-> JavaDomainCore : extends BaseService
+    JavaFeature -up-> JavaWebCore : extends BaseController
+}
+
+package "Frontend Dual-App SoC (TypeScript 5 / React 19)" as Frontend #FEF2F2 {
+
+    package "apps/landing (Port 5173 - Public Zero-Trust Gateway)" as LandingApp #FFFBEB {
+        class "authGateway.ts" as TsAuthGateway << (G, #F59E0B) Pure TypeScript Gateway >> {
+            + type GatewayRoleHint ('CLIENT' | 'PROVIDER' | 'MANAGEMENT')
+            + buildLoginUrl(roleHint?)
+            + initiateLogin(roleHint?)
+            --
+            Zero React / Zero CRUD imports
+        }
+
+        class "LandingFeature.tsx" as TsLandingFeature << (L, #F59E0B) Public Slice >> {
+            + component <LandingFeatureView />
+            --
+            Public Value Proposition & Login Trigger
+        }
+
+        TsLandingFeature -up-> TsAuthGateway : triggers OIDC / Portal redirect
+    }
+
+    package "apps/dashboard & src/core (Port 5174 / BFF :3000 - 2-File Core)" as FrontendCore #FFFFFF {
+        class "baseDomainCore.ts" as TsDomainCore << (T, #3B82F6) Pure TypeScript >> {
+            + interface HasId<ID>
+            + type UserRole ('CLIENT' | 'PROVIDER' | 'THERAPIST' | 'MANAGEMENT' | 'ADMIN')
+            + interface AuthenticatedUser
+            + function expandRoleAliases(role)
+            + function matchesAnyRole(userRoles, allowed)
+            + enum ErrorCode
+            + interface ProblemDetail (RFC 7807)
+            + class FrontendDomainException
+            + class DomainGuard
+            + abstract class BaseApiService<D, ID>
+        }
+
+        class "baseUiCore.tsx" as TsUiCore << (R, #10B981) React Supertype >> {
+            + component <AuthProvider /> & hook useAuth()
+            + component <RoleGuard allowed={...} />
+            + function useBaseCrud<D, ID>()
+            + component <ProblemAlert />
+            + component <PortalWorkspaceShell />
+            --
+            Enforces RBAC & consumes RFC 7807 ProblemDetail
+        }
+    }
+
+    package "src/features/* (Role-Guarded Vertical Slices)" as FrontendSlice #FFFFFF {
+        class "AppointmentFeature.tsx / BookingFeature.tsx" as TsFeature << (F, #8B5CF6) Vertical Slice >> {
+            + interface AppointmentDto
+            + component <AppointmentFeatureView />
+            + component <BookingFeatureView /> (RoleGuard: CLIENT, PROVIDER)
+            - class AppointmentApiService (module-private)
+        }
+
+        class "JournalFeature.tsx" as TsJournalFeature << (F, #8B5CF6) Vertical Slice >> {
+            + interface JournalEntryDto
+            + component <JournalFeatureView /> (RoleGuard: PROVIDER)
+            - class JournalApiService (module-private)
+        }
+
+        class "ManagementFeature.tsx" as TsMgmtFeature << (F, #8B5CF6) Vertical Slice >> {
+            + interface ManagementKpiDto
+            + component <ManagementFeatureView /> (RoleGuard: MANAGEMENT)
+            - class ManagementApiService (module-private)
+        }
+    }
+
+    TsUiCore -up-> TsDomainCore : depends on
+    TsFeature -up-> TsDomainCore : extends BaseApiService
+    TsFeature -up-> TsUiCore : uses <RoleGuard />, useBaseCrud & <ProblemAlert />
+    TsJournalFeature -up-> TsUiCore : guarded by <RoleGuard allowed={['PROVIDER']} />
+    TsMgmtFeature -up-> TsUiCore : guarded by <RoleGuard allowed={['MANAGEMENT']} />
+    TsAuthGateway ..> TsUiCore : "HTTP Redirect (:5173 -> :5174/?roleHint=...)"
+}
+
+' Cross-Stack HTTP / JSON Contract
+JavaWebCore <..> TsDomainCore : "HTTP REST / JSON + Bearer JWT\n+ RFC 7807 ProblemDetail\n(1:1 Contract)"
+JavaFeature <..> TsFeature : "1:1 DTO & Slice Mirroring\n(/api/v1/appointments <-> /api/backend/appointments)"
+
+note bottom of BackendSlice
+  **Backend Encapsulation:**
+  Service, Repository, and Entity are
+  **package-private** (no 'public' keyword).
+  Only Controller and DTO are public.
+end note
+
+note bottom of FrontendSlice
+  **Frontend Encapsulation & RBAC SoC:**
+  Each <Name>ApiService is **module-private** (no 'export' keyword).
+  Views are isolated via <RoleGuard allowed={[...]} /> across
+  CLIENT, PROVIDER (<-> THERAPIST), and MANAGEMENT (<-> ADMIN).
+end note
+
+@enduml

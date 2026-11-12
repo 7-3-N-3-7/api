@@ -1,0 +1,18 @@
+flowchart TD
+    subgraph OuterLoop ["Ydre Loop: BDD / Cucumber (Forretningsværdi & API-kontrakt)"]
+        Gherkin["1. Skriv Gherkin Scenarie (.feature)\nf.eks. 'Afvis dobbeltbooking med 409 Conflict'"]
+        StepDefs["2. Implementer Step Definitions (<Feature>Steps.java)\nKør Cucumber-test -> FEJLER (Red)"]
+        OuterGreen["6. Kør Cucumber E2E Test\nVerificér HTTP 409 & RFC 7807 ProblemDetail -> BESTÅR (Green)"]
+    end
+
+    subgraph InnerLoop ["Indre Loop: TDD / JUnit 5 & Mockito (Domænelogik i Isolation)"]
+        UnitRed["3. Skriv JUnit 5 Unit Test (<Feature>ServiceTest.java)\nMock Repository -> Test validateBeforeCreate() -> FEJLER (Red)"]
+        ImplSlice["4. Implementer Vertical Slice (<Feature>Feature.java)\nBrug ErrorCode.CONFLICT.require(...) i Service -> BESTÅR (Green)"]
+        Refactor["5. Refaktorér med høj kohæsion\nBehold package-private indkapsling"]
+    end
+
+    Gherkin --> StepDefs
+    StepDefs -->|Skift til Indre Loop| UnitRed
+    UnitRed --> ImplSlice
+    ImplSlice --> Refactor
+    Refactor -->|Vend tilbage til Ydre Loop| OuterGreen

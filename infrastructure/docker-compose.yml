@@ -211,6 +211,7 @@ services:
     - "5432:5432"
     volumes:
     - business_db_data:/var/lib/postgresql/data
+    - ./init-finance-dbs.sql:/docker-entrypoint-initdb.d/init-finance-dbs.sql:ro
     networks:
     - backend-net
     healthcheck:
@@ -306,6 +307,42 @@ services:
     # Checks for updates every 12 minutes (720 seconds)
     command: --interval 720
   # -------------------------------------------------------------------
+  # 7B. KILL BILL & APACHE FINERACT (Isolated on backend-net, Shared PostgreSQL)
+  # -------------------------------------------------------------------
+  killbill:
+    image: killbill/killbill:0.24.10
+    container_name: killbill
+    restart: always
+    depends_on:
+      business-db:
+        condition: service_healthy
+    environment:
+    - JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m
+    - KILLBILL_DAO_URL=jdbc:postgresql://business-db:5432/killbill
+    - KILLBILL_DAO_USER=${BUSINESS_DB_USER:-app_user}
+    - KILLBILL_DAO_PASSWORD=${BUSINESS_DB_PASSWORD:-app_password}
+    networks:
+    - backend-net
+  fineract:
+    image: apache/fineract:latest
+    container_name: fineract
+    restart: always
+    depends_on:
+      business-db:
+        condition: service_healthy
+    environment:
+    - JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m
+    - FINERACT_HIKARI_DRIVER_SOURCE_CLASS_NAME=org.postgresql.Driver
+    - FINERACT_HIKARI_JDBC_URL=jdbc:postgresql://business-db:5432/fineract_tenants
+    - FINERACT_HIKARI_USERNAME=${BUSINESS_DB_USER:-app_user}
+    - FINERACT_HIKARI_PASSWORD=${BUSINESS_DB_PASSWORD:-app_password}
+    - FINERACT_DEFAULT_TENANTDB_PORT=5432
+    - FINERACT_DEFAULT_TENANTDB_HOSTNAME=business-db
+    - FINERACT_DEFAULT_TENANTDB_UID=${BUSINESS_DB_USER:-app_user}
+    - FINERACT_DEFAULT_TENANTDB_PWD=${BUSINESS_DB_PASSWORD:-app_password}
+    networks:
+    - backend-net
+  # -------------------------------------------------------------------
   # 8. BACKEND API
   # -------------------------------------------------------------------
   backend:
@@ -314,6 +351,9 @@ services:
     restart: always
     env_file:
     - .env
+    environment:
+    - KILLBILL_URL=http://killbill:8080
+    - FINERACT_URL=http://fineract:8080/fineract-provider/api/v1
     networks:
     - public-net
     - backend-net
@@ -323,6 +363,11 @@ services:
     - "traefik.http.routers.backend.rule=Host(`api.157.180.43.151.nip.io`)"
     - "traefik.http.routers.backend.entrypoints=websecure"
     - "traefik.http.routers.backend.tls.certresolver=myresolver"
+    - "traefik.http.routers.backend.service=backend"
+    - "traefik.http.routers.backend-reports.rule=Host(`reports.157.180.43.151.nip.io`) && (PathPrefix(`/backend-coverage`) || PathPrefix(`/backend-cucumber`))"
+    - "traefik.http.routers.backend-reports.entrypoints=websecure"
+    - "traefik.http.routers.backend-reports.tls.certresolver=myresolver"
+    - "traefik.http.routers.backend-reports.service=backend"
     - "traefik.http.services.backend.loadbalancer.server.port=8081"
     - "traefik.docker.network=infrastructure_public-net"
   # -------------------------------------------------------------------
@@ -340,15 +385,33 @@ services:
     image: ghcr.io/7-3-n-3-7/frontend:${FRONTEND_TAG:-latest}
     container_name: frontend
     restart: always
+    env_file:
+    - .env
+    environment:
+    - BACKEND_INTERNAL_URL=http://backend:8081
+    - NEXTAUTH_URL=${NEXTAUTH_URL:-https://platform.157.180.43.151.nip.io}
+    - NEXTAUTH_COOKIE_DOMAIN=${NEXTAUTH_COOKIE_DOMAIN:-.157.180.43.151.nip.io}
+    - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-my-super-secret-key-12345}
+    - NODE_OPTIONS=--dns-result-order=ipv4first
+    - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-platform-frontend}
+    - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET:-VFbnGPXmCy8Cf9KwAbcy4ulLig3MzraN}
+    - KEYCLOAK_ISSUER=${KEYCLOAK_ISSUER:-https://login.157.180.43.151.nip.io/realms/EduJournal}
+    - KEYCLOAK_ADMIN_CLIENT_ID=${KEYCLOAK_ADMIN_CLIENT_ID:-platform-admin}
+    - KEYCLOAK_ADMIN_CLIENT_SECRET=${KEYCLOAK_ADMIN_CLIENT_SECRET:-Eksf3Rd4uJtV1oW9eOrolcrvI3i4fxcg}
     networks:
     - public-net
     labels:
     - "traefik.enable=true"
-    - "traefik.http.routers.frontend.rule=Host(`platform.157.180.43.151.nip.io`)"
+    - "traefik.http.routers.frontend.rule=Host(`157.180.43.151.nip.io`) || Host(`platform.157.180.43.151.nip.io`)"
     - "traefik.http.routers.frontend.entrypoints=websecure"
     - "traefik.http.routers.frontend.tls.certresolver=myresolver"
     - "traefik.http.routers.frontend.middlewares=oauth-auth"
-    - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    - "traefik.http.routers.frontend.service=frontend"
+    - "traefik.http.routers.frontend-reports.rule=Host(`reports.157.180.43.151.nip.io`)"
+    - "traefik.http.routers.frontend-reports.entrypoints=websecure"
+    - "traefik.http.routers.frontend-reports.tls.certresolver=myresolver"
+    - "traefik.http.routers.frontend-reports.service=frontend"
+    - "traefik.http.services.frontend.loadbalancer.server.port=3000"
     - "traefik.docker.network=infrastructure_public-net"
   # -------------------------------------------------------------------
   # 10. OAUTH2-PROXY
