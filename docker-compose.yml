@@ -212,6 +212,14 @@ services:
       - spring_data_mongodb_host
       - spring_data_redis_host
       - spring_kafka_bootstrap_servers
+      - vipps_client_id
+      - vipps_client_secret
+      - vipps_subscription_key
+      - vipps_api_base_url
+      - vipps_therapist_payout_iban
+      - vipps_therapist_vipps_msn
+      - vipps_management_payout_iban
+      - vipps_management_vipps_msn
 
   # ----------------------------------------------------
   # Infrastructure Services
@@ -366,3 +374,19 @@ secrets:
     environment: SPRING_KAFKA_BOOTSTRAP_SERVERS
   keycloak_client_id:
     environment: KEYCLOAK_CLIENT_ID
+  vipps_client_id:
+    environment: VIPPS_CLIENT_ID
+  vipps_client_secret:
+    environment: VIPPS_CLIENT_SECRET
+  vipps_subscription_key:
+    environment: VIPPS_SUBSCRIPTION_KEY
+  vipps_api_base_url:
+    environment: VIPPS_API_BASE_URL
+  vipps_therapist_payout_iban:
+    environment: VIPPS_THERAPIST_PAYOUT_IBAN
+  vipps_therapist_vipps_msn:
+    environment: VIPPS_THERAPIST_VIPPS_MSN
+  vipps_management_payout_iban:
+    environment: VIPPS_MANAGEMENT_PAYOUT_IBAN
+  vipps_management_vipps_msn:
+    environment: VIPPS_MANAGEMENT_VIPPS_MSN

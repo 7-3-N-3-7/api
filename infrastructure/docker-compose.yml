@@ -104,6 +104,22 @@ secrets:
     environment: POSTGRES_PASSWORD
   spring_security_oauth2_resourceserver_jwt_issuer_uri:
     environment: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+  vipps_client_id:
+    environment: VIPPS_CLIENT_ID
+  vipps_client_secret:
+    environment: VIPPS_CLIENT_SECRET
+  vipps_subscription_key:
+    environment: VIPPS_SUBSCRIPTION_KEY
+  vipps_api_base_url:
+    environment: VIPPS_API_BASE_URL
+  vipps_therapist_payout_iban:
+    environment: VIPPS_THERAPIST_PAYOUT_IBAN
+  vipps_therapist_vipps_msn:
+    environment: VIPPS_THERAPIST_VIPPS_MSN
+  vipps_management_payout_iban:
+    environment: VIPPS_MANAGEMENT_PAYOUT_IBAN
+  vipps_management_vipps_msn:
+    environment: VIPPS_MANAGEMENT_VIPPS_MSN
 services:
   # -------------------------------------------------------------------
   # 0. TRAEFIK (Reverse Proxy & Let's Encrypt SSL)
@@ -321,6 +337,17 @@ services:
     - KILLBILL_DAO_URL=jdbc:postgresql://business-db:5432/killbill
     - KILLBILL_DAO_USER=${BUSINESS_DB_USER:-app_user}
     - KILLBILL_DAO_PASSWORD=${BUSINESS_DB_PASSWORD:-app_password}
+    volumes:
+    - ./killbill-vipps-plugin:/opt/killbill-vipps-plugin:ro
+    secrets:
+    - vipps_client_id
+    - vipps_client_secret
+    - vipps_subscription_key
+    - vipps_api_base_url
+    - vipps_therapist_payout_iban
+    - vipps_therapist_vipps_msn
+    - vipps_management_payout_iban
+    - vipps_management_vipps_msn
     networks:
     - backend-net
   fineract:
@@ -381,6 +408,14 @@ services:
     - spring_data_redis_host
     - spring_kafka_bootstrap_servers
     - spring_security_oauth2_resourceserver_jwt_issuer_uri
+    - vipps_client_id
+    - vipps_client_secret
+    - vipps_subscription_key
+    - vipps_api_base_url
+    - vipps_therapist_payout_iban
+    - vipps_therapist_vipps_msn
+    - vipps_management_payout_iban
+    - vipps_management_vipps_msn
   frontend:
     image: ghcr.io/7-3-n-3-7/frontend:${FRONTEND_TAG:-latest}
     container_name: frontend

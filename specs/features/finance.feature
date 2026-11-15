@@ -50,3 +50,31 @@ Feature: Clinic Billing, Prepaid Clip Cards, Subscriptions, Installment Loans, a
     Then access should be denied due to insufficient permissions
     When therapist "maja_terapeut" views the clinic general ledger summary
     Then the clinic general ledger summary should be accessible
+
+  Scenario: Vipps MobilePay OSGi plugin processes recurring subscriptions, clip cards, and tokenized credit card payments
+    Given a registered user account exists with username "maja_terapeut", full name "Maja Lindholm", email "maja@klinik.dk", and role "THERAPIST"
+    And a registered user account exists with username "anders_sand", full name "Anders Sand", email "anders@example.dk", and role "CLIENT"
+    And an authenticated therapist session for "maja_terapeut"
+    And the baseline general ledger balances are recorded
+    When client "anders_sand" pays via Vipps OSGi checkout for "CLIP_CARD" of 5000 DKK with payment method "CREDIT_CARD" and 5 clips
+    Then client "anders_sand" should have 5 remaining prepaid clips
+    And general ledger account "1100" should change by 5000 DKK and deferred account "2100" should change by 5000 DKK from baseline
+    When client "anders_sand" pays via Vipps OSGi checkout for "SUBSCRIPTION" of 499 DKK with payment method "MOBILEPAY"
+    And the active Vipps agreement is charged for the next recurring period by "anders_sand"
+    Then general ledger account "1100" should change by 5998 DKK and revenue account "4200" should change by 998 DKK from baseline
+    When the active Vipps agreement is cancelled by "anders_sand"
+    Then the Vipps agreement status should be "STOPPED"
+
+  Scenario: Purchasing Therapist and Management access via Vipps MobilePay routes payouts to Docker Secret IBANs and upgrades roles
+    Given a registered user account exists with username "maja_terapeut", full name "Maja Lindholm", email "maja@klinik.dk", and role "THERAPIST"
+    And a registered user account exists with username "anders_sand", full name "Anders Sand", email "anders@example.dk", and role "CLIENT"
+    And an authenticated therapist session for "maja_terapeut"
+    And the baseline general ledger balances are recorded
+    When user "anders_sand" with role "CLIENT" purchases platform access "THERAPIST_ACCESS" via payment method "MOBILEPAY"
+    Then the Vipps payout destination should have IBAN "DK8130000012345678", MSN "700101", amount 799 DKK, and granted role "THERAPIST"
+    And general ledger account "1100" should change by 799 DKK and revenue account "4300" should change by 799 DKK from baseline
+    And user "anders_sand" should be able to access the clinic general ledger summary
+    When user "maja_terapeut" with role "THERAPIST" purchases platform access "MANAGEMENT_ACCESS" via payment method "CREDIT_CARD"
+    Then the Vipps payout destination should have IBAN "DK9230000087654321", MSN "700202", amount 1499 DKK, and granted role "ADMIN"
+    And general ledger account "1100" should change by 2298 DKK and revenue account "4300" should change by 2298 DKK from baseline
+    And the ledger commit snapshot for that invoice should be retrievable
