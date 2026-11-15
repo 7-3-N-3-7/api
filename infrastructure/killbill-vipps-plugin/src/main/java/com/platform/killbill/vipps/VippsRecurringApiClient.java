@@ -24,6 +24,7 @@ public class VippsRecurringApiClient {
     private static final Pattern JSON_AGREEMENT_ID_PATTERN = Pattern.compile("\"agreementId\"\\s*:\\s*\"([^\"]+)\"");
     private static final Pattern JSON_CHARGE_ID_PATTERN = Pattern.compile("\"chargeId\"\\s*:\\s*\"([^\"]+)\"");
     private static final Pattern JSON_REFERENCE_PATTERN = Pattern.compile("\"reference\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern JSON_REDIRECT_URL_PATTERN = Pattern.compile("\"(?:vippsConfirmationUrl|redirectUrl)\"\\s*:\\s*\"([^\"]+)\"");
 
     private final VippsPluginConfig config;
     private final HttpClient httpClient;
@@ -44,17 +45,23 @@ public class VippsRecurringApiClient {
     ) {
         if (!config.isRemoteEnabled()) {
             String syntheticId = "agr_" + UUID.randomUUID().toString().substring(0, 8);
-            return new VippsAgreementResult(syntheticId, "ACTIVE", route.vippsMsn(), route.payoutIban());
+            return new VippsAgreementResult(syntheticId, null, null, "ACTIVE", route.vippsMsn(), route.payoutIban());
         }
 
         String token = fetchAccessToken(route.vippsMsn());
         long minorUnits = toMinorUnits(amount);
         String normalizedPhone = normalizePhone(phoneNumber);
+        String redirectBase = sanitize(config.getPublicBaseUrl()).replaceAll("/+$", "");
+        String safeCurrency = sanitize(currency);
+        String safePlan = sanitize(planName);
         String body = "{"
-                + "\"pricing\":{\"type\":\"LEGACY\",\"amount\":" + minorUnits + ",\"currency\":\"" + sanitize(currency) + "\"},"
+                + "\"pricing\":{\"type\":\"LEGACY\",\"amount\":" + minorUnits + ",\"currency\":\"" + safeCurrency + "\"},"
                 + "\"interval\":{\"unit\":\"MONTH\",\"count\":1},"
-                + "\"productName\":\"" + sanitize(planName) + "\","
-                + "\"productDescription\":\"EduJournal Kill Bill (" + sanitize(route.payoutIban()) + ")\","
+                + "\"merchantRedirectUrl\":\"" + redirectBase + "/vipps/callback\","
+                + "\"merchantAgreementUrl\":\"" + redirectBase + "/da/dashboard\","
+                + "\"productName\":\"" + safePlan + "\","
+                + "\"productDescription\":\"" + sanitize(config.getMerchantName()) + " (CVR " + sanitize(config.getMerchantCvr()) + ") (" + sanitize(route.payoutIban()) + ")\","
+                + "\"initialCharge\":{\"amount\":" + minorUnits + ",\"currency\":\"" + safeCurrency + "\",\"description\":\"" + safePlan + "\",\"transactionType\":\"DIRECT_CAPTURE\"},"
                 + "\"phoneNumber\":\"" + sanitize(normalizedPhone) + "\","
                 + "\"scope\":\"name address email phoneNumber\""
                 + "}";
@@ -67,7 +74,9 @@ public class VippsRecurringApiClient {
                 body
         );
         String agreementId = extractField(JSON_AGREEMENT_ID_PATTERN, responseBody, "agr_" + UUID.randomUUID().toString().substring(0, 8));
-        return new VippsAgreementResult(agreementId, "ACTIVE", route.vippsMsn(), route.payoutIban());
+        String chargeId = extractField(JSON_CHARGE_ID_PATTERN, responseBody, null);
+        String redirectUrl = extractField(JSON_REDIRECT_URL_PATTERN, responseBody, null);
+        return new VippsAgreementResult(agreementId, chargeId, redirectUrl, "ACTIVE", route.vippsMsn(), route.payoutIban());
     }
 
     public VippsChargeResult createCharge(
@@ -133,11 +142,14 @@ public class VippsRecurringApiClient {
         String token = fetchAccessToken(route.vippsMsn());
         long minorUnits = toMinorUnits(amount);
         String vippsMethodType = "CREDIT_CARD".equalsIgnoreCase(paymentMethod) ? "CARD" : "WALLET";
+        String redirectBase = sanitize(config.getPublicBaseUrl()).replaceAll("/+$", "");
         String body = "{"
                 + "\"amount\":{\"currency\":\"" + sanitize(currency) + "\",\"value\":" + minorUnits + "},"
                 + "\"paymentMethod\":{\"type\":\"" + vippsMethodType + "\"},"
                 + "\"reference\":\"" + sanitize(reference) + "\","
-                + "\"paymentDescription\":\"EduJournal (" + sanitize(maskedInstrument) + " -> " + sanitize(route.payoutIban()) + ")\""
+                + "\"userFlow\":\"WEB_REDIRECT\","
+                + "\"returnUrl\":\"" + redirectBase + "/vipps/callback\","
+                + "\"paymentDescription\":\"" + sanitize(config.getMerchantName()) + " (" + sanitize(maskedInstrument) + " -> " + sanitize(route.payoutIban()) + ")\""
                 + "}";
 
         String responseBody = sendJson(
@@ -148,7 +160,8 @@ public class VippsRecurringApiClient {
                 body
         );
         String ref = extractField(JSON_REFERENCE_PATTERN, responseBody, reference);
-        return new VippsChargeResult(ref, reference, "CAPTURED");
+        String redirectUrl = extractField(JSON_REDIRECT_URL_PATTERN, responseBody, null);
+        return new VippsChargeResult(ref, reference, redirectUrl, "CAPTURED");
     }
 
     public String fetchAccessToken(String merchantSerialNumber) {
@@ -160,6 +173,10 @@ public class VippsRecurringApiClient {
                     .header("client_secret", config.getClientSecret())
                     .header("Ocp-Apim-Subscription-Key", config.getSubscriptionKey())
                     .header("Merchant-Serial-Number", merchantSerialNumber)
+                    .header("Vipps-System-Name", "EduJournal-" + sanitize(config.getMerchantName()))
+                    .header("Vipps-System-Version", "1.0.0")
+                    .header("Vipps-System-Plugin-Name", "killbill-vipps-plugin")
+                    .header("Vipps-System-Plugin-Version", "1.0.0")
                     .POST(HttpRequest.BodyPublishers.noBody())
                     .build();
 
@@ -190,6 +207,10 @@ public class VippsRecurringApiClient {
                     .header("Ocp-Apim-Subscription-Key", config.getSubscriptionKey())
                     .header("Merchant-Serial-Number", merchantSerialNumber)
                     .header("Idempotency-Key", UUID.randomUUID().toString())
+                    .header("Vipps-System-Name", "EduJournal-" + sanitize(config.getMerchantName()))
+                    .header("Vipps-System-Version", "1.0.0")
+                    .header("Vipps-System-Plugin-Name", "killbill-vipps-plugin")
+                    .header("Vipps-System-Plugin-Version", "1.0.0")
                     .header("Content-Type", "application/json")
                     .method(method, HttpRequest.BodyPublishers.ofString(jsonBody))
                     .build();
@@ -214,7 +235,11 @@ public class VippsRecurringApiClient {
         if (phone == null || phone.isBlank()) {
             return "4520123456";
         }
-        return phone.replaceAll("[^0-9]", "");
+        String digits = phone.replaceAll("[^0-9]", "");
+        if (digits.length() == 8) {
+            return "45" + digits;
+        }
+        return digits.isEmpty() ? "4520123456" : digits;
     }
 
     private static String sanitize(String input) {
@@ -229,7 +254,22 @@ public class VippsRecurringApiClient {
         return matcher.find() ? matcher.group(1) : fallback;
     }
 
-    public record VippsAgreementResult(String agreementId, String status, String vippsMsn, String payoutIban) {}
+    public record VippsAgreementResult(
+            String agreementId,
+            String chargeId,
+            String redirectUrl,
+            String status,
+            String vippsMsn,
+            String payoutIban
+    ) {
+        public VippsAgreementResult(String agreementId, String status, String vippsMsn, String payoutIban) {
+            this(agreementId, null, null, status, vippsMsn, payoutIban);
+        }
+    }
 
-    public record VippsChargeResult(String chargeId, String externalReference, String status) {}
+    public record VippsChargeResult(String chargeId, String externalReference, String redirectUrl, String status) {
+        public VippsChargeResult(String chargeId, String externalReference, String status) {
+            this(chargeId, externalReference, null, status);
+        }
+    }
 }

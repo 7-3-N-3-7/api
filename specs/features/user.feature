@@ -67,3 +67,52 @@ Feature: User Account Management, Authentication, and Role-Based Access Control
     And an identity token with subject "user-123", username "anders_sand", and roles "CLIENT" issued by the trusted authority
     When checking the current user profile with that identity token
     Then the personal profile should belong to "anders_sand" with role "CLIENT"
+
+  @ui-only @ui
+  Scenario: Landing page 2-step registration wizard validates and navigates cleanly across steps
+    When in the browser a visitor opens the 2-step registration wizard on "/da"
+    Then the registration modal should show step "1 / 2" and match visual snapshot "user-register-step1"
+    When in the browser the visitor fills step 1 of registration with first name "Sofie", last name "Holm", username "wizard_preview_user", and advances to step 2
+    Then the registration modal should show step "2 / 2" and match visual snapshot "user-register-step2"
+    When in the browser the visitor returns to step 1 of the registration wizard
+    Then the registration modal should return to step "1 / 2"
+
+  @ui-only @ui
+  Scenario: New visitor completes 2-step landing registration and lands inside personal portal
+    When in the browser a visitor completes the 2-step registration for logical user "ny_klient_reg" on "/da"
+    Then the browser should sign in and navigate to the personal dashboard with "portal-workspace-shell" visible
+
+  @ui-only @ui
+  Scenario: Unauthenticated access to protected dashboard routes redirects back to landing login
+    Given an unauthenticated visitor session
+    When in the browser the unauthenticated visitor opens "/da/dashboard/personal"
+    Then the browser should redirect to the landing page showing "hero-cta-login"
+
+  @ui-only @ui
+  Scenario: Desktop workspace shell supports sidebar collapse and multi-role portal switching
+    Given a registered user account exists with username "multi_admin", full name "Admin Bruger", email "multi_admin@klinik.dk", and role "ADMIN"
+    When in the portal UI user "multi_admin" with role "ADMIN" opens "/da/dashboard/admin"
+    And in the portal UI the user collapses the desktop sidebar
+    Then the workspace sidebar attribute "data-sidebar-collapsed" should be "true"
+    And the visual snapshot "shell-desktop-sidebar-collapsed" of the desktop viewport should match baseline
+    When in the portal UI the user switches portal area via "portal-switch-client"
+    Then the browser URL should contain "/da/dashboard/personal"
+
+  @ui-only @ui
+  Scenario: Mobile viewport workspace shell toggles navigation drawer and user menu dropdown
+    Given a registered user account exists with username "anders_sand", full name "Anders Sand", email "anders@example.dk", and role "CLIENT"
+    When in a mobile viewport "390x844" client "anders_sand" opens "/da/dashboard/personal"
+    And in the portal UI the user opens the mobile navigation drawer
+    Then element "mobile-sidebar-drawer" should be visible and match visual snapshot "shell-mobile-drawer"
+    When in the portal UI the user closes the mobile drawer and opens the user menu dropdown
+    Then element "user-menu-dropdown" should be visible
+
+  @ui-only @ui
+  Scenario: Administrator creates and deletes a scoped user account in the user directory UI
+    Given an authenticated administrator session
+    When in the portal UI administrator "admin_user" opens "/da/dashboard/admin?tab=users"
+    Then the visual snapshot "admin-users-directory" of the user directory workspace should match baseline
+    When in the portal UI administrator creates a "CLIENT" user account for logical user "ui_oprettet_bruger"
+    Then the user directory list in the UI should contain logical user "ui_oprettet_bruger"
+    When in the portal UI administrator deletes logical user "ui_oprettet_bruger" via the confirmation dialog
+    Then logical user "ui_oprettet_bruger" should be removed from the UI user directory list

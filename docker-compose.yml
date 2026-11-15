@@ -216,6 +216,13 @@ services:
       - vipps_client_secret
       - vipps_subscription_key
       - vipps_api_base_url
+      - vipps_merchant_serial_number
+      - vipps_clinic_default_iban
+      - vipps_clinic_default_msn
+      - vipps_public_base_url
+      - vipps_remote_enabled
+      - vipps_merchant_name
+      - vipps_merchant_cvr
       - vipps_therapist_payout_iban
       - vipps_therapist_vipps_msn
       - vipps_management_payout_iban
@@ -382,6 +389,20 @@ secrets:
     environment: VIPPS_SUBSCRIPTION_KEY
   vipps_api_base_url:
     environment: VIPPS_API_BASE_URL
+  vipps_merchant_serial_number:
+    environment: VIPPS_MERCHANT_SERIAL_NUMBER
+  vipps_clinic_default_iban:
+    environment: VIPPS_CLINIC_DEFAULT_IBAN
+  vipps_clinic_default_msn:
+    environment: VIPPS_CLINIC_DEFAULT_MSN
+  vipps_public_base_url:
+    environment: VIPPS_PUBLIC_BASE_URL
+  vipps_remote_enabled:
+    environment: VIPPS_REMOTE_ENABLED
+  vipps_merchant_name:
+    environment: VIPPS_MERCHANT_NAME
+  vipps_merchant_cvr:
+    environment: VIPPS_MERCHANT_CVR
   vipps_therapist_payout_iban:
     environment: VIPPS_THERAPIST_PAYOUT_IBAN
   vipps_therapist_vipps_msn:

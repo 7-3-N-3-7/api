@@ -100,6 +100,17 @@ class VippsKillBillPluginTest {
         var defaultRoute = config.resolvePayout("CLIP_CARD");
         assertEquals(VippsPluginConfig.DEFAULT_CLINIC_IBAN, defaultRoute.payoutIban());
         assertNull(defaultRoute.grantedRole());
+
+        // Single shared MSN override + 73N37 company defaults
+        Files.writeString(secretsDir.resolve("vipps_merchant_serial_number"), "554433\n");
+        VippsPluginConfig sharedConfig = new VippsPluginConfig(secretsDir, false);
+        assertEquals("73N37", sharedConfig.getMerchantName());
+        assertEquals("46688244", sharedConfig.getMerchantCvr());
+        assertEquals("https://73n37.dk", sharedConfig.getPublicBaseUrl());
+        assertEquals("554433", sharedConfig.getSingleMerchantSerialNumber());
+        assertEquals("554433", sharedConfig.resolvePayout("THERAPIST_ACCESS").vippsMsn());
+        assertEquals("554433", sharedConfig.resolvePayout("MANAGEMENT_ACCESS").vippsMsn());
+        assertEquals("554433", sharedConfig.resolvePayout("CLIP_CARD").vippsMsn());
     }
 
     @Test
@@ -134,14 +145,14 @@ class VippsKillBillPluginTest {
         UUID pmId = UUID.randomUUID();
         CallContext ctx = mock(CallContext.class);
 
-        // 1. Therapist Access via Vipps MobilePay Recurring v3
+        // 1. Therapist Access via Vipps MobilePay Recurring v3 (4 DKK)
         UUID therapistPayId = UUID.randomUUID();
         PaymentTransactionInfoPlugin therapistTx = plugin.purchasePayment(
                 accountId,
                 therapistPayId,
                 UUID.randomUUID(),
                 pmId,
-                new BigDecimal("799.00"),
+                new BigDecimal("4.00"),
                 Currency.DKK,
                 List.of(
                         new PluginProperty("productType", "THERAPIST_ACCESS", false),
@@ -157,13 +168,13 @@ class VippsKillBillPluginTest {
         assertEquals("chg_live_001", therapistTx.getSecondPaymentReferenceId());
         assertTrue(capturedRequests.stream().anyMatch(r -> r.contains("/recurring/v3/agreements") && r.contains("MSN=700101")));
 
-        // 2. Clip card via Tokenized Credit Card (ePayment v1 CARD)
+        // 2. Clip card via Tokenized Credit Card (ePayment v1 CARD, 3 DKK)
         PaymentTransactionInfoPlugin cardTx = plugin.purchasePayment(
                 accountId,
                 UUID.randomUUID(),
                 UUID.randomUUID(),
                 pmId,
-                new BigDecimal("5000.00"),
+                new BigDecimal("3.00"),
                 Currency.DKK,
                 List.of(
                         new PluginProperty("productType", "CLIP_CARD", false),
@@ -183,7 +194,7 @@ class VippsKillBillPluginTest {
                         UUID.randomUUID(),
                         UUID.randomUUID(),
                         pmId,
-                        new BigDecimal("499.00"),
+                        new BigDecimal("3.00"),
                         Currency.DKK,
                         List.of(
                                 new PluginProperty("paymentMethod", "CREDIT_CARD", false),
@@ -209,7 +220,7 @@ class VippsKillBillPluginTest {
         assertTrue(capturedRequests.stream().anyMatch(r -> r.startsWith("PATCH /recurring/v3/agreements/agr_live_001")));
 
         PaymentTransactionInfoPlugin refundTx = plugin.refundPayment(
-                accountId, therapistPayId, UUID.randomUUID(), pmId, new BigDecimal("799.00"), Currency.DKK, List.of(), ctx
+                accountId, therapistPayId, UUID.randomUUID(), pmId, new BigDecimal("4.00"), Currency.DKK, List.of(), ctx
         );
         assertEquals(TransactionType.REFUND, refundTx.getTransactionType());
         assertEquals(3, plugin.getPaymentInfo(accountId, therapistPayId, List.of(), ctx).size());

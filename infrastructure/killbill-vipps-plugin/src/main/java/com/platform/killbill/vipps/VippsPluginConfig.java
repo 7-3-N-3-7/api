@@ -14,7 +14,10 @@ import java.util.Locale;
 public final class VippsPluginConfig {
 
     public static final String DEFAULT_SECRETS_DIR = "/run/secrets";
-    public static final String DEFAULT_API_BASE_URL = "https://apitest.vipps.no";
+    public static final String DEFAULT_API_BASE_URL = "https://api.vipps.no";
+    public static final String DEFAULT_MERCHANT_NAME = "73N37";
+    public static final String DEFAULT_MERCHANT_CVR = "46688244";
+    public static final String DEFAULT_PUBLIC_BASE_URL = "https://73n37.dk";
     public static final String DEFAULT_THERAPIST_IBAN = "DK8130000012345678";
     public static final String DEFAULT_THERAPIST_MSN = "700101";
     public static final String DEFAULT_MANAGEMENT_IBAN = "DK9230000087654321";
@@ -24,6 +27,10 @@ public final class VippsPluginConfig {
 
     private final Path secretsDirectory;
     private final String apiBaseUrl;
+    private final String merchantName;
+    private final String merchantCvr;
+    private final String publicBaseUrl;
+    private final String singleMerchantSerialNumber;
     private final String clientId;
     private final String clientSecret;
     private final String subscriptionKey;
@@ -42,15 +49,19 @@ public final class VippsPluginConfig {
     public VippsPluginConfig(Path secretsDirectory, boolean remoteEnabledOverride) {
         this.secretsDirectory = secretsDirectory;
         this.apiBaseUrl = readSecret("vipps_api_base_url", "VIPPS_API_BASE_URL", DEFAULT_API_BASE_URL);
+        this.merchantName = readSecret("vipps_merchant_name", "VIPPS_MERCHANT_NAME", DEFAULT_MERCHANT_NAME);
+        this.merchantCvr = readSecret("vipps_merchant_cvr", "VIPPS_MERCHANT_CVR", DEFAULT_MERCHANT_CVR);
+        this.publicBaseUrl = readSecret("vipps_public_base_url", "VIPPS_PUBLIC_BASE_URL", DEFAULT_PUBLIC_BASE_URL);
+        this.singleMerchantSerialNumber = readSecret("vipps_merchant_serial_number", "VIPPS_MERCHANT_SERIAL_NUMBER", "");
         this.clientId = readSecret("vipps_client_id", "VIPPS_CLIENT_ID", "vipps-sandbox-client-id");
         this.clientSecret = readSecret("vipps_client_secret", "VIPPS_CLIENT_SECRET", "vipps-sandbox-client-secret");
         this.subscriptionKey = readSecret("vipps_subscription_key", "VIPPS_SUBSCRIPTION_KEY", "vipps-sandbox-ocp-apim-key");
         this.therapistPayoutIban = readSecret("vipps_therapist_payout_iban", "VIPPS_THERAPIST_PAYOUT_IBAN", DEFAULT_THERAPIST_IBAN);
-        this.therapistVippsMsn = readSecret("vipps_therapist_vipps_msn", "VIPPS_THERAPIST_VIPPS_MSN", DEFAULT_THERAPIST_MSN);
+        this.therapistVippsMsn = resolveMsn(singleMerchantSerialNumber, readSecret("vipps_therapist_vipps_msn", "VIPPS_THERAPIST_VIPPS_MSN", DEFAULT_THERAPIST_MSN));
         this.managementPayoutIban = readSecret("vipps_management_payout_iban", "VIPPS_MANAGEMENT_PAYOUT_IBAN", DEFAULT_MANAGEMENT_IBAN);
-        this.managementVippsMsn = readSecret("vipps_management_vipps_msn", "VIPPS_MANAGEMENT_VIPPS_MSN", DEFAULT_MANAGEMENT_MSN);
+        this.managementVippsMsn = resolveMsn(singleMerchantSerialNumber, readSecret("vipps_management_vipps_msn", "VIPPS_MANAGEMENT_VIPPS_MSN", DEFAULT_MANAGEMENT_MSN));
         this.clinicPayoutIban = readSecret("vipps_clinic_default_iban", "VIPPS_CLINIC_DEFAULT_IBAN", DEFAULT_CLINIC_IBAN);
-        this.clinicVippsMsn = readSecret("vipps_clinic_default_msn", "VIPPS_CLINIC_DEFAULT_MSN", DEFAULT_CLINIC_MSN);
+        this.clinicVippsMsn = resolveMsn(singleMerchantSerialNumber, readSecret("vipps_clinic_default_msn", "VIPPS_CLINIC_DEFAULT_MSN", DEFAULT_CLINIC_MSN));
         String remoteFlag = readSecret("vipps_remote_enabled", "VIPPS_REMOTE_ENABLED", Boolean.toString(remoteEnabledOverride));
         this.remoteEnabled = remoteEnabledOverride || Boolean.parseBoolean(remoteFlag);
     }
@@ -68,6 +79,10 @@ public final class VippsPluginConfig {
     ) {
         this.secretsDirectory = Path.of(DEFAULT_SECRETS_DIR);
         this.apiBaseUrl = fallback(apiBaseUrl, DEFAULT_API_BASE_URL);
+        this.merchantName = DEFAULT_MERCHANT_NAME;
+        this.merchantCvr = DEFAULT_MERCHANT_CVR;
+        this.publicBaseUrl = DEFAULT_PUBLIC_BASE_URL;
+        this.singleMerchantSerialNumber = "";
         this.clientId = fallback(clientId, "vipps-sandbox-client-id");
         this.clientSecret = fallback(clientSecret, "vipps-sandbox-client-secret");
         this.subscriptionKey = fallback(subscriptionKey, "vipps-sandbox-ocp-apim-key");
@@ -103,6 +118,10 @@ public final class VippsPluginConfig {
 
     private static String fallback(String value, String defaultValue) {
         return (value == null || value.isBlank()) ? defaultValue : value.trim();
+    }
+
+    private static String resolveMsn(String singleMsn, String tierMsn) {
+        return (singleMsn != null && !singleMsn.isBlank()) ? singleMsn.trim() : tierMsn;
     }
 
     public PayoutRoute resolvePayout(String productType) {
@@ -159,6 +178,30 @@ public final class VippsPluginConfig {
 
     public String getManagementVippsMsn() {
         return managementVippsMsn;
+    }
+
+    public String getMerchantName() {
+        return merchantName;
+    }
+
+    public String getMerchantCvr() {
+        return merchantCvr;
+    }
+
+    public String getPublicBaseUrl() {
+        return publicBaseUrl;
+    }
+
+    public String getSingleMerchantSerialNumber() {
+        return singleMerchantSerialNumber;
+    }
+
+    public String getClinicPayoutIban() {
+        return clinicPayoutIban;
+    }
+
+    public String getClinicVippsMsn() {
+        return clinicVippsMsn;
     }
 
     public boolean isRemoteEnabled() {

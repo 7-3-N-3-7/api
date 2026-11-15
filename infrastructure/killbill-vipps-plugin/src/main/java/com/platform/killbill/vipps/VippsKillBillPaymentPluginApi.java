@@ -331,11 +331,16 @@ public class VippsKillBillPaymentPluginApi implements PaymentPluginApi {
 
         String ref1;
         String ref2;
+        String redirectUrl = null;
         if (isRecurringProduct(productType)) {
             VippsAgreementResult agreement = vippsClient.createAgreement(planName, amount, isoCurrency, phoneNumber, route);
-            VippsChargeResult charge = vippsClient.createCharge(agreement.agreementId(), amount, isoCurrency, planName, route);
+            String chargeId = agreement.chargeId();
+            if (chargeId == null) {
+                chargeId = vippsClient.createCharge(agreement.agreementId(), amount, isoCurrency, planName, route).chargeId();
+            }
             ref1 = agreement.agreementId();
-            ref2 = charge.chargeId();
+            ref2 = chargeId;
+            redirectUrl = agreement.redirectUrl();
         } else {
             String masked = "CREDIT_CARD".equalsIgnoreCase(paymentMethod)
                     ? "CARD-" + cardLast4
@@ -350,11 +355,15 @@ public class VippsKillBillPaymentPluginApi implements PaymentPluginApi {
             );
             ref1 = epay.chargeId();
             ref2 = route.vippsMsn();
+            redirectUrl = epay.redirectUrl();
         }
 
         List<PluginProperty> outputProps = new ArrayList<>(toList(properties));
         outputProps.add(new PluginProperty("payoutIban", route.payoutIban(), false));
         outputProps.add(new PluginProperty("vippsMsn", route.vippsMsn(), false));
+        if (redirectUrl != null) {
+            outputProps.add(new PluginProperty("redirectUrl", redirectUrl, false));
+        }
         if (route.grantedRole() != null) {
             outputProps.add(new PluginProperty("grantedRole", route.grantedRole(), false));
         }
