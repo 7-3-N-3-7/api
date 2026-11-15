@@ -1,0 +1,158 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'class': {'hideEmptyMembersBox': true}}}%%
+classDiagram
+    direction TB
+
+    namespace com_platform_core {
+        class BaseDomainCore {
+            <<final>>
+            -BaseDomainCore()
+        }
+
+        class HasId {
+            <<interface>>
+            +id() UUID
+        }
+
+        class Identifiable {
+            <<interface>>
+            +getId() UUID
+            +setId(UUID id) void
+            +id() UUID
+        }
+
+        class BaseRepository~Entity~ {
+            <<interface>>
+            +findAll(Specification~Entity~ spec, Pageable pageable) Page~Entity~
+        }
+
+        class ErrorCode {
+            <<enumeration>>
+            NOT_FOUND(404)
+            CONFLICT(409)
+            BAD_REQUEST(400)
+            UNAUTHORIZED(401)
+            FORBIDDEN(403)
+            UNPROCESSABLE_ENTITY(422)
+            INTERNAL_ERROR(500)
+            +toException(String details) DomainException
+            +supply(String details) Supplier~DomainException~
+            +require(boolean cond, String details) void
+        }
+
+        class DomainException {
+            -ErrorCode errorCode
+            -Instant timestamp
+            +getStatus() int
+            +getTitle() String
+        }
+
+        class BaseService~Entity, DTO~ {
+            <<abstract>>
+            #BaseRepository~Entity~ repository
+            #toDto(Entity entity)* DTO
+            #toEntity(DTO dto)* Entity
+            #mergeEntity(Entity existing, DTO dto) Entity
+            #validateBeforeCreate(DTO dto) void
+            #validateBeforeUpdate(UUID id, DTO dto) void
+            +findAll() List~DTO~
+            +findAllPaged(Pageable pageable) Page~DTO~
+            +findById(UUID id) DTO
+            +create(DTO dto) DTO
+            +update(UUID id, DTO dto) DTO
+            +deleteById(UUID id) void
+        }
+
+        class BaseWebCore {
+            <<final>>
+            -BaseWebCore()
+        }
+
+        class BaseController~Entity, DTO~ {
+            <<abstract>>
+            #BaseService~Entity, DTO~ service
+            +getAll() ResponseEntity~List~DTO~~
+            +getAllPaged(Pageable pageable) ResponseEntity~Page~DTO~~
+            +getById(UUID id) ResponseEntity~DTO~
+            +create(DTO dto) ResponseEntity~DTO~
+            +update(UUID id, DTO dto) ResponseEntity~DTO~
+            +delete(UUID id) ResponseEntity~Void~
+        }
+
+        class GlobalExceptionHandler {
+            <<RestControllerAdvice>>
+            +handleDomainException(DomainException ex, HttpServletRequest req) ResponseEntity~ProblemDetail~
+            +handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest req) ResponseEntity~ProblemDetail~
+        }
+    }
+
+    namespace com_platform_features_appointment {
+        class AppointmentFeature {
+            <<final>>
+            -AppointmentFeature()
+        }
+
+        class AppointmentDto {
+            <<record>>
+            +UUID id
+            +UUID clientUuid
+            +UUID therapistUuid
+            +UUID serviceId
+            +LocalDateTime startTime
+            +LocalDateTime endTime
+            +String status
+        }
+
+        class Appointment {
+            <<Entity>>
+            -UUID id
+            -UUID clientUuid
+            -UUID therapistUuid
+            -UUID serviceId
+            -LocalDateTime startTime
+            -LocalDateTime endTime
+            -String status
+        }
+
+        class AppointmentPort {
+            <<interface>>
+            +findByClientUuid(UUID clientUuid) List~Appointment~
+            +findByTherapistUuid(UUID therapistUuid) List~Appointment~
+        }
+
+        class AppointmentRepository {
+            <<package-private>>
+            +existsByStartTime(LocalDateTime startTime) boolean
+        }
+
+        class AppointmentService {
+            <<package-private>>
+            #validateBeforeCreate(AppointmentDto dto) void
+            #validateBeforeUpdate(UUID id, AppointmentDto dto) void
+            #toDto(Appointment entity) AppointmentDto
+            #toEntity(AppointmentDto dto) Appointment
+        }
+
+        class AppointmentController {
+            <<package-private>>
+            +getByClient(UUID clientUuid) ResponseEntity~List~AppointmentDto~~
+            +getTimefoldSlots(UUID therapistUuid) ResponseEntity~List~CandidateSlot~~
+        }
+    }
+
+    HasId <|-- Identifiable : udvider
+    BaseDomainCore ..> BaseService : indkapsler
+    BaseWebCore ..> BaseController : indkapsler
+    BaseController o--> BaseService : delegerer til
+    BaseService o--> BaseRepository : bruger
+    ErrorCode ..> DomainException : opretter
+    GlobalExceptionHandler ..> DomainException : mapper til RFC 7807
+
+    Identifiable <|.. Appointment : implementerer
+    HasId <|.. AppointmentDto : implementerer
+    BaseRepository <|-- AppointmentRepository : udvider
+    AppointmentPort <|.. AppointmentRepository : implementerer
+    BaseService <|-- AppointmentService : nedarver fra
+    BaseController <|-- AppointmentController : nedarver fra
+    AppointmentController o--> AppointmentService : delegerer til
+    AppointmentService o--> AppointmentRepository : henter data via
+    AppointmentService ..> ErrorCode : validerer via require()

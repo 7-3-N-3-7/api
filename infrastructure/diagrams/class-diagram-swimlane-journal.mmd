@@ -1,0 +1,126 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'class': {'hideEmptyMembersBox': true}}}%%
+classDiagram
+    direction TB
+
+    namespace Core_Supertyper {
+        class BaseController~JournalEntry, JournalEntryDto~ {
+            <<abstract>>
+        }
+        class BaseService~JournalEntry, JournalEntryDto~ {
+            <<abstract>>
+        }
+        class BaseRepository~E~ {
+            <<interface>>
+        }
+        class Identifiable {
+            <<interface>>
+        }
+    }
+
+    namespace JournalFeature_Slice {
+        class JournalFeature {
+            <<final>>
+            +filterInternalNotes(String rawMarkdown, boolean isTherapist) String
+        }
+
+        class JournalController {
+            <<package-private RestController>>
+            +create(JournalEntryDto dto) ResponseEntity~JournalEntryDto~
+            +updateSharing(UUID entryId, Map payload) ResponseEntity~JournalEntryDto~
+            +createTherapistNote(TherapistClinicalNoteDto dto) ResponseEntity~TherapistClinicalNoteDto~
+            +getByClient(UUID clientUuid) ResponseEntity~List~JournalEntryDto~~
+            +getHistory(UUID clientUuid) ResponseEntity~List~Map~~
+            +getTimeline(UUID clientUuid) ResponseEntity~List~Map~~
+        }
+
+        class JournalService {
+            <<package-private Service>>
+            -JournalGitService journalGitService
+            #toDto(JournalEntry entity) JournalEntryDto
+            #toEntity(JournalEntryDto dto) JournalEntry
+            #validateBeforeCreate(JournalEntryDto dto) void
+        }
+
+        class JournalGitService {
+            <<Service JGit>>
+            +init() void
+            +commitJournalEntryWithHash(String patientId, String content, String msg, String author, String branch) String
+            +readJournalEntry(String patientId) String
+            +getCommitHistory(String patientId) List~Map~
+        }
+
+        class JournalPort {
+            <<interface>>
+        }
+        class JournalEntryRepository {
+            <<package-private>>
+        }
+        class TherapistClinicalNoteRepository {
+            <<package-private>>
+        }
+        class TherapistNoteRepository {
+            <<package-private>>
+        }
+
+        class JournalEntry {
+            <<Entity journal_entries>>
+            -UUID id
+            -UUID clientUuid
+            -UUID appointmentId
+            -String title
+            -String content
+            -Integer moodRating
+            -Boolean sharedWithTherapists
+            -List~UUID~ sharedTherapistUuids
+            -String gitCommitHash
+            -String gitBranch
+        }
+
+        class TherapistClinicalNote {
+            <<Entity therapist_clinical_notes>>
+            -UUID id
+            -UUID clientUuid
+            -UUID authorTherapistUuid
+            -UUID journalEntryId
+            -String confidentialMarkdown
+            -String gitCommitHash
+            -LocalDateTime createdAt
+        }
+
+        class TherapistNote {
+            <<Entity therapist_notes>>
+            -UUID id
+            -UUID clientUuid
+            -UUID therapistUuid
+            -String note
+            -LocalDateTime timestamp
+        }
+
+        class JournalEntryDto {
+            <<record>>
+            +UUID id
+            +String title
+            +String content
+            +Integer moodRating
+            +Boolean sharedWithTherapists
+            +String gitCommitHash
+        }
+    }
+
+    JournalFeature ..> JournalController : indkapsler
+    BaseController <|-- JournalController : nedarver fra
+    BaseService <|-- JournalService : nedarver fra
+    BaseRepository <|-- JournalEntryRepository : udvider
+    BaseRepository <|-- TherapistClinicalNoteRepository : udvider
+    BaseRepository <|-- TherapistNoteRepository : udvider
+    JournalPort <|.. JournalEntryRepository : implementerer
+    Identifiable <|.. JournalEntry : implementerer
+    Identifiable <|.. TherapistClinicalNote : implementerer
+    Identifiable <|.. TherapistNote : implementerer
+
+    JournalController --> JournalService : delegerer til
+    JournalService --> JournalEntryRepository : gemmer klientindlæg
+    JournalService --> TherapistClinicalNoteRepository : gemmer fortrolige noter
+    JournalService --> TherapistNoteRepository : gemmer lægenoter
+    JournalService --> JournalGitService : committer SHA-1 snapshot
+    JournalService ..> JournalEntryDto : filtrerer & returnerer DTO

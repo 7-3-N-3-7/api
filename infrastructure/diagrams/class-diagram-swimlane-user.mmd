@@ -1,0 +1,90 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'class': {'hideEmptyMembersBox': true}}}%%
+classDiagram
+    direction TB
+
+    namespace Core_Supertyper {
+        class BaseController~UserEntity, UserDto~ {
+            <<abstract>>
+        }
+        class BaseService~UserEntity, UserDto~ {
+            <<abstract>>
+        }
+        class BaseRepository~UserEntity~ {
+            <<interface>>
+        }
+        class Identifiable {
+            <<interface>>
+        }
+    }
+
+    namespace UserFeature_Slice {
+        class UserFeature {
+            <<final>>
+            +String ALLOWED_USER_ROLES_REGEX
+        }
+
+        class UserController {
+            <<package-private RestController /api/users>>
+            +getAll() ResponseEntity~List~UserDto~~
+            +create(UserDto dto) ResponseEntity~UserDto~
+        }
+
+        class ProfileController {
+            <<package-private RestController /api/v1/user>>
+            +getUserProfile(Authentication auth) ResponseEntity~Map~
+            -extractPrimaryRole(Jwt jwt) String
+        }
+
+        class PublicHealthController {
+            <<package-private RestController /api/v1/public>>
+            +healthCheck() ResponseEntity~Map~
+        }
+
+        class SecureDataController {
+            <<package-private RestController /api/v1/secure-data>>
+            +getSecureData() ResponseEntity~Map~
+        }
+
+        class UserService {
+            <<package-private Service>>
+            -PasswordEncoder passwordEncoder
+            #toDto(UserEntity entity) UserDto
+            #toEntity(UserDto dto) UserEntity
+            #validateBeforeCreate(UserDto dto) void
+            +createUser(UserDto userDto) UserDto
+        }
+
+        class UserRepository {
+            <<package-private>>
+            +findByUsername(String username) Optional~UserEntity~
+            +existsByUsername(String username) boolean
+        }
+
+        class UserEntity {
+            <<Entity app_users>>
+            -UUID id
+            -String username
+            -String password
+            -String role
+        }
+
+        class UserDto {
+            <<record>>
+            +UUID id
+            +String username
+            +String password
+            +String role
+        }
+    }
+
+    UserFeature ..> UserController : indkapsler
+    BaseController <|-- UserController : nedarver fra
+    BaseService <|-- UserService : nedarver fra
+    BaseRepository <|-- UserRepository : udvider
+    Identifiable <|.. UserEntity : implementerer
+
+    UserController --> UserService : delegerer CRUD til
+    ProfileController ..> UserService : læser OIDC JWT claims
+    UserService --> UserRepository : persisterer via
+    UserService ..> UserDto : mapper (skjuler password)
+    UserRepository --> UserEntity : håndterer entitet

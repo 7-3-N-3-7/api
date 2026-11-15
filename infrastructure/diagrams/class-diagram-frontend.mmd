@@ -1,0 +1,95 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'flowchart': {'curve': 'basis', 'nodeSpacing': 75, 'rankSpacing': 90, 'padding': 20, 'subGraphTitleMargin': {'top': 12, 'bottom': 12}}}}%%
+flowchart TB
+    subgraph LandingTier ["1. Offentlig Gateway App (apps/landing — Port 5173)"]
+        direction LR
+        LandingView["LandingFeature.tsx
+<LandingFeatureView />
+Værdiforslag & rollevalg"]
+        AuthGw["authGateway.ts
+AuthGateway.buildLoginUrl(roleHint)
+AuthGateway.initiateLogin(roleHint)"]
+        LandingView -->|"1. Initiérer login"| AuthGw
+    end
+
+    subgraph BffTier ["2. Next.js 16 BFF & Middleware (Port 3000)"]
+        direction LR
+        Middleware["proxy.ts & auth-cookies.ts
+Session/JWT cookie-håndtering
+& BFF proxy (/api/backend/[...path])"]
+        I18nRouting["src/i18n/routing.ts & request.ts
+Locale routing (da, en, de, es, fr)
+& NEXT_LOCALE cookie"]
+    end
+
+    subgraph CoreTier ["3. Konsolideret 2-Fils Frontend Core (apps/dashboard :5174 & src/core)"]
+        direction LR
+        UiCore["baseUiCore.tsx
+• AuthProvider & useAuth()
+• RoleGuard allowed={...}
+• useBaseCrud<DTO, ID>()
+• ProblemAlert & PortalWorkspaceShell"]
+        DomainCore["baseDomainCore.ts
+• HasId<ID> & PageResponse<DTO>
+• UserRole & expandRoleAliases()
+• ErrorCode & ProblemDetail (RFC 7807)
+• DomainGuard & BaseApiService<DTO, ID>"]
+        UiCore -->|"2. Bruger typer & fejlhåndtering"| DomainCore
+    end
+
+    subgraph SlicesTier ["4. Rollebeskyttede Vertical Slices (src/features/* — modul-private ApiServices)"]
+        direction TB
+        subgraph ClientProvider ["Klient & Behandler Slices"]
+            direction LR
+            FApp["AppointmentFeature.tsx
+AppointmentApiService
+Timefold slots & vagtplan"]
+            FBook["BookingFeature.tsx
+BookingFeatureView
+(Alias til Booking-flow)"]
+            FClinic["ClinicPlatformFeature.tsx
+ClinicPlatformApiService
+CVR-validering, ydelser & handshakes"]
+        end
+
+        subgraph ClinicalDocs ["Klinisk Dokumentation & Screening"]
+            direction LR
+            FJournal["JournalFeature.tsx
+JournalApiService
+filterInternalNotes() & JGit diff"]
+            FPsycho["PsychotraumatologyFeature.tsx
+PsychotraumatologyApiService
+PCL-5 spørgsmål & severity scoring"]
+        end
+
+        subgraph FinanceAdmin ["Økonomi, Ledelse & System"]
+            direction LR
+            FFinance["FinanceFeature.tsx
+FinanceApiService
+Faktura, klippekort, afdrag & bilag"]
+            FMgmt["ManagementFeature.tsx
+ManagementApiService
+Ledelses-KPI'er (RoleGuard: MANAGEMENT)"]
+            FUserI18n["UserFeature.tsx & I18nFeature.tsx
+Brugerprofil, sprogskifter
+& CachedI18nProvider"]
+        end
+    end
+
+    AuthGw -.->|"3. OIDC Redirect (?roleHint=...)"| UiCore
+    SlicesTier -->|"4. Nedarver BaseApiService & anvender RoleGuard / useBaseCrud"| CoreTier
+    DomainCore -->|"5. HTTP fetch med RFC 7807 parsing"| Middleware
+    I18nRouting -.->|"Sprogkontekst"| CoreTier
+
+    class UiCore,DomainCore core
+    class FApp,FBook,FClinic,FJournal,FPsycho,FFinance,FMgmt,FUserI18n slice
+    class LandingView,AuthGw,Middleware,I18nRouting auth
+    style LandingTier fill:#FFFBEB,stroke:#F59E0B
+    style BffTier fill:#FFFBEB,stroke:#D97706
+    style CoreTier fill:#EFF6FF,stroke:#2563EB
+    style SlicesTier fill:#F5F3FF,stroke:#7C3AED
+
+    classDef core fill:#EFF6FF,stroke:#2563EB,stroke-width:1.8px,color:#0F172A
+    classDef slice fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.8px,color:#0F172A
+    classDef data fill:#ECFDF5,stroke:#059669,stroke-width:1.8px,color:#0F172A
+    classDef auth fill:#FFFBEB,stroke:#D97706,stroke-width:1.8px,color:#0F172A
+    classDef err fill:#FEF2F2,stroke:#DC2626,stroke-width:1.8px,color:#7F1D1D

@@ -122,10 +122,11 @@ mvn test jacoco:report jacoco:check
 
 ## 5. Arkitekturdiagrammer & Hovedopgavedokumentation
 
-- **PlantUML & Mermaid Diagrammer (`docs/diagrams/`):**
-  - [`docs/diagrams/fullstack-symmetry.puml`](docs/diagrams/fullstack-symmetry.puml): 1:1 Full-Stack Arkitektonisk Symmetri & Dual-App Frontend SoC.
-  - [`docs/diagrams/core-and-slice-class-diagram.puml`](docs/diagrams/core-and-slice-class-diagram.puml): Detaljeret UML-klassediagram over `BaseDomainCore`, `BaseWebCore` og vertikale slices.
-  - *(Bemærk: Begge `.puml`-filer bruger `!pragma layout smetana`, så de kan forhåndsvises direkte i VS Code PlantUML uden ekstern Graphviz `dot`-installation).*
+- **Mermaid Arkitekturdiagrammer & Interaktiv Vektorfremviser (`docs/diagrams/` & `infrastructure/diagrams/`):**
+  - [`docs/diagrams/diagram-oversigt.html`](docs/diagrams/diagram-oversigt.html): Samlet offline interaktiv Pan & Zoom vektoroversigt over alle 18 Mermaid-diagrammer.
+  - [`docs/diagrams/fullstack-symmetry.mmd`](docs/diagrams/fullstack-symmetry.mmd): 1:1 Full-Stack Arkitektonisk Symmetri & Dual-App Frontend SoC.
+  - [`docs/diagrams/core-and-slice-class-diagram.mmd`](docs/diagrams/core-and-slice-class-diagram.mmd): Detaljeret UML-klassediagram over `BaseDomainCore`, `BaseWebCore` og vertikale slices.
+  - [`docs/diagrams/double-loop-tdd.mmd`](docs/diagrams/double-loop-tdd.mmd): Outside-In Double-Loop TDD-arbejdsgang (Cucumber BDD + JUnit 5/Mockito).
 - **Rapport & Dokumentation:**
   - [`hovedopgave.tex`](hovedopgave.tex): LaTeX-kildekode til hovedopgaverapporten.
   - [`HOVEDOPGAVE_DRAFT.md`](HOVEDOPGAVE_DRAFT.md): Samlet Markdown-udgave af hovedopgaven.

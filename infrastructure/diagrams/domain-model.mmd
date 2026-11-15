@@ -1,0 +1,127 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'class': {'hideEmptyMembersBox': true}}}%%
+classDiagram
+    direction TB
+
+    class Bruger {
+        String brugernavn
+        String email
+        String rolle
+    }
+
+    class Klient {
+        String fuldeNavn
+        LocalDate foedselsdato
+        String adresse
+        String postnummer
+        String telefonnummer
+    }
+
+    class Terapeut {
+        String biografi
+        String arbejdstiderJson
+        String videoMoedeUrl
+    }
+
+    class Organisation {
+        String cvrNummer
+        String organisationsNavn
+        String iban
+        String valuta
+    }
+
+    class Handshake {
+        String status
+        LocalDateTime oprettetTidspunkt
+        LocalDateTime tilbagekaldtTidspunkt
+        LocalDate gyldigFra
+        LocalDate gyldigTil
+    }
+
+    class Ydelse {
+        String navn
+        String beskrivelse
+        Integer varighedMinutter
+        Double pris
+        String lokation
+        Boolean erAktiv
+    }
+
+    class Aftale {
+        String titel
+        LocalDateTime startTidspunkt
+        LocalDateTime slutTidspunkt
+        String status
+    }
+
+    class Journalindlaeg {
+        String titel
+        String indhold
+        Integer humoerVurdering
+        Boolean deltMedTerapeuter
+        LocalDateTime oprettetTidspunkt
+    }
+
+    class FortroligTerapeutnote {
+        String fortroligtIndhold
+        String forfatterTerapeut
+        LocalDateTime oprettetTidspunkt
+    }
+
+    class PsykotraumatologiskTest {
+        String testType
+        Integer score
+        String svaerhedsgrad
+        String besvarelserJson
+        LocalDateTime tidspunkt
+    }
+
+    class FakturaOgBetaling {
+        String fakturaNummer
+        BigDecimal bruttoBeloebDkk
+        String betalingsMetode
+        String status
+    }
+
+    class JGitVersionshistorik {
+        String commitHash
+        String forfatter
+        String commitBesked
+        String fuldtSnapshotMarkdown
+        LocalDateTime tidspunkt
+    }
+
+    class Sprogordbog {
+        String sprogkode
+        Map oversaettelser
+    }
+
+    Bruger <|-- Klient : er en
+    Bruger <|-- Terapeut : er en
+
+    Terapeut "1..*" -- "1" Organisation : tilknyttet / opretter
+    Organisation "0..1" -- "0..*" Ydelse : definerer skabelon
+    Terapeut "0..1" -- "0..*" Ydelse : udbyder
+
+    Klient "1" -- "0..*" Handshake : giver / tilbagekalder samtykke
+    Terapeut "1" -- "0..*" Handshake : modtager adgang via
+
+    Klient "1" -- "0..*" Aftale : booker / flytter
+    Terapeut "1" -- "0..*" Aftale : afholder
+    Ydelse "1" -- "0..*" Aftale : danner grundlag for
+
+    Klient "1" -- "0..*" Journalindlaeg : skriver / ejer
+    Terapeut "1" -- "0..*" FortroligTerapeutnote : skriver (INTERNAL_MEDICAL_NOTES)
+    Klient "1" -- "0..*" FortroligTerapeutnote : omhandler
+    Journalindlaeg "0..1" -- "0..*" FortroligTerapeutnote : tilknyttet
+
+    Klient "1" -- "0..*" PsykotraumatologiskTest : besvarer (PCL-5)
+    Terapeut "0..1" -- "0..*" PsykotraumatologiskTest : vurderer / tildeler
+
+    Klient "1" -- "0..*" FakturaOgBetaling : afregner for
+    Aftale "0..1" -- "0..1" FakturaOgBetaling : udloeser faktura
+
+    Journalindlaeg "1" -- "1..*" JGitVersionshistorik : versionsstyres i
+    FortroligTerapeutnote "1" -- "1..*" JGitVersionshistorik : versionsstyres i
+    FakturaOgBetaling "1" -- "1..*" JGitVersionshistorik : bogfoeres som bilag i
+
+    Bruger "0..*" -- "0..*" Sprogordbog : anvender lokalisering

@@ -1,0 +1,69 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'flowchart': {'curve': 'basis', 'nodeSpacing': 75, 'rankSpacing': 90, 'padding': 20, 'subGraphTitleMargin': {'top': 12, 'bottom': 12}}}}%%
+flowchart TD
+    subgraph Req ["Krav & Versionsstyring"]
+        direction TB
+        Step1["1. Taiga (Kravspecifikation)
+• User Story oprettes i backlog
+• Acceptkriterier defineres for både API og UI"]
+        Step2["2. GitHub Feature Branch
+• Opret branch: feature/tg-<id>-<navn>
+• Commit indledende .feature-filer (Gherkin)"]
+        Step1 -->|"1. Nedbrydes til branch"| Step2
+    end
+
+    subgraph Phase1 ["Fase 1: Backend Vertical Slice Loop (Outside-In / Zero-Mock)"]
+        direction TB
+        Step3["3. Backend BDD (Outer Loop)
+• Eksekvér Cucumber Gherkin mod Spring Boot + DB
+• Resultat: FEJLER (Rød) — manglende slice eller endpoint"]
+        Step4["4. Backend TDD (Inner Loop)
+• Skriv fejlende JUnit 5 unit-tests (<Name>ServiceTest)
+• Implementér <Name>Feature.java oven på BaseDomainCore & BaseWebCore
+• Resultat: BESTÅR (Grøn)"]
+        Step5["5. Backend Verifikation & Coverage Gate
+• Kør samlet JUnit 5 + Cucumber BDD testsuite
+• Verificér JaCoCo coverage gate -> BESTÅR (Grøn)"]
+        Step3 -->|"3. Driver implementation"| Step4
+        Step4 -->|"4. Kvalitetssikring"| Step5
+    end
+
+    subgraph Phase2 ["Fase 2: Frontend Dual-App & Full-Stack E2E (Outside-In / Zero-Mock)"]
+        direction TB
+        Step6["6. Frontend BDD (Outer Loop)
+• Udarbejd Gherkin UI/BFF-scenarier med Playwright
+• Eksekvér mod live BFF & Keycloak -> FEJLER (Rød)"]
+        Step7["7. Frontend TDD (Inner Loop)
+• Udvikl <Name>Feature.tsx med BaseApiService, RoleGuard & useBaseCrud
+• Eksekvér Vitest komponenttests -> BESTÅR (Grøn)"]
+        Step8["8. Fuldt System E2E Verifikation
+• Kør Docker-miljø (Keycloak + Dual-App + Spring Boot + PostgreSQL + MongoDB)
+• Playwright & Cucumber E2E-suite -> BESTÅR (Grøn)"]
+        Step6 -->|"6. Driver React-slice"| Step7
+        Step7 -->|"7. End-to-end validering"| Step8
+    end
+
+    subgraph Integration ["Integration & Sporbarhed"]
+        Step9["9. Pull Request & Afslutning
+• Push verificeret kodebase til GitHub
+• Opret PR m. reference: Closes TG-<id>
+• Merge lukker automatisk User Story som Done i Taiga"]
+    end
+
+    Step2 -->|"2. Start Backend-loop"| Step3
+    Step5 -->|"5. Backend-kontrakt klar -> Start Frontend-loop"| Step6
+    Step8 -->|"8. Alle tests grønne"| Step9
+
+    class Step1,Step2 auth
+    class Step3,Step6 err
+    class Step4,Step5,Step7,Step8 data
+    class Step9 slice
+    style Req fill:#FFFBEB,stroke:#F59E0B
+    style Phase1 fill:#F8FAFC,stroke:#64748B
+    style Phase2 fill:#F8FAFC,stroke:#64748B
+    style Integration fill:#F5F3FF,stroke:#8B5CF6
+
+    classDef core fill:#EFF6FF,stroke:#2563EB,stroke-width:1.8px,color:#0F172A
+    classDef slice fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.8px,color:#0F172A
+    classDef data fill:#ECFDF5,stroke:#059669,stroke-width:1.8px,color:#0F172A
+    classDef auth fill:#FFFBEB,stroke:#D97706,stroke-width:1.8px,color:#0F172A
+    classDef err fill:#FEF2F2,stroke:#DC2626,stroke-width:1.8px,color:#7F1D1D

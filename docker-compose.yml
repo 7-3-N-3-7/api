@@ -3,15 +3,17 @@ networks:
     driver: bridge
   backend-net:
     driver: bridge
-  zitadel-net:
+  keycloak-net:
     driver: bridge
   kafka-net:
     driver: bridge
+
 volumes:
   auth_db_data:
   business_db_data:
   mongo_data:
   redis_data:
+
 services:
   # ----------------------------------------------------
   # Reverse Proxy
@@ -19,21 +21,120 @@ services:
   traefik:
     image: traefik:v3.1
     container_name: traefik
+    restart: unless-stopped
     command:
-    - "--api.insecure=true"
-    - "--providers.file.directory=/etc/traefik/dynamic"
-    - "--providers.file.watch=true"
-    - "--providers.docker=true"
-    - "--providers.docker.exposedbydefault=false"
-    - "--entrypoints.web.address=:80"
+      - "--api.insecure=true"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
     ports:
-    - "80:80"
-    - "8080:8080"
+      - "80:80"
+      - "8080:8080"
     volumes:
-    - "./traefik/dynamic:/etc/traefik/dynamic:ro"
-    - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik/dynamic:/etc/traefik/dynamic:ro"
     networks:
-    - public-net
+      public-net:
+        aliases:
+          - platform.localhost
+
+  # ----------------------------------------------------
+  # Local IAM (PostgreSQL + Mailpit + Keycloak 24.0.4)
+  # ----------------------------------------------------
+  auth-db:
+    image: postgres:16-alpine
+    container_name: auth-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${AUTH_DB_NAME:-keycloak_auth}
+      - POSTGRES_USER=${AUTH_DB_USER:-keycloak_user}
+      - POSTGRES_PASSWORD=${AUTH_DB_PASSWORD:-keycloak_password}
+    ports:
+      - "5434:5432"
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    networks:
+      - keycloak-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER:-keycloak_user} -d ${AUTH_DB_NAME:-keycloak_auth}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - keycloak-net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.4
+    container_name: keycloak
+    restart: unless-stopped
+    command: ["start-dev", "--import-realm"]
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN:-admin}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://auth-db:5432/${AUTH_DB_NAME:-keycloak_auth}
+      - KC_DB_USERNAME=${AUTH_DB_USER:-keycloak_user}
+      - KC_DB_PASSWORD=${AUTH_DB_PASSWORD:-keycloak_password}
+      - KC_HTTP_ENABLED=true
+      - KC_HTTP_RELATIVE_PATH=/auth
+      - KC_PROXY_HEADERS=xforwarded
+      - KC_HOSTNAME_URL=http://platform.localhost/auth
+      - KC_HOSTNAME_ADMIN_URL=http://platform.localhost/auth
+      - KC_HOSTNAME_STRICT=false
+      - KC_HOSTNAME_STRICT_BACKCHANNEL=false
+      - KC_HEALTH_ENABLED=true
+    ports:
+      - "8090:8080"
+    volumes:
+      - "./infrastructure/keycloak/EduJournal-realm.json:/opt/keycloak/data/import/EduJournal-realm.json:ro"
+    networks:
+      - public-net
+      - backend-net
+      - keycloak-net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /auth/realms/EduJournal/.well-known/openid-configuration HTTP/1.0\\r\\nHost: platform.localhost\\r\\n\\r\\n' >&3 && IFS= read -r status <&3 && [[ \"$$status\" == *\"200\"* ]]"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 20s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=(Host(`localhost`) || Host(`platform.localhost`) || Host(`127.0.0.1`)) && PathPrefix(`/auth`)"
+      - "traefik.http.routers.keycloak.priority=100"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+
+  keycloak-init:
+    image: quay.io/keycloak/keycloak:24.0.4
+    container_name: keycloak-init
+    restart: "no"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    environment:
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN:-admin}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:-admin}
+    volumes:
+      - "./infrastructure/keycloak/init-keycloak.sh:/scripts/init-keycloak.sh:ro"
+    entrypoint: ["/bin/bash", "-c", "tr -d '\\r' < /scripts/init-keycloak.sh | /bin/bash"]
+    networks:
+      - keycloak-net
+
   # ----------------------------------------------------
   # Application Services
   # ----------------------------------------------------
@@ -41,144 +142,173 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      additional_contexts:
+        specs: ./specs
     container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
     environment:
       - BACKEND_INTERNAL_URL=http://backend:8081
     networks:
-    - public-net
+      - public-net
     depends_on:
-    - backend
+      backend:
+        condition: service_started
+      keycloak-init:
+        condition: service_completed_successfully
     labels:
-    - "traefik.enable=true"
-    - "traefik.http.routers.frontend.rule=Host(`${DOMAIN:-127.0.0.1.nip.io}`) || Host(`platform.${DOMAIN:-127.0.0.1.nip.io}`)"
-    - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`) || Host(`platform.localhost`) || Host(`127.0.0.1`)"
+      - "traefik.http.routers.frontend.priority=10"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
     secrets:
-    - nextauth_url
-    - nextauth_cookie_domain
-    - nextauth_secret
-    - node_options
-    - keycloak_client_id
-    - keycloak_client_secret
-    - keycloak_issuer
-    - keycloak_admin_client_id
-    - keycloak_admin_client_secret
+      - nextauth_url
+      - nextauth_cookie_domain
+      - nextauth_secret
+      - node_options
+      - keycloak_client_id
+      - keycloak_client_secret
+      - keycloak_issuer
+      - keycloak_admin_client_id
+      - keycloak_admin_client_secret
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      additional_contexts:
+        specs: ./specs
     container_name: backend
+    restart: unless-stopped
     ports:
-    - "8081:8081"
+      - "8081:8081"
+    environment:
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${KEYCLOAK_ISSUER:-http://platform.localhost/auth/realms/EduJournal}
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=${KEYCLOAK_ISSUER:-http://platform.localhost/auth/realms/EduJournal}/protocol/openid-connect/certs
     networks:
-    - public-net
-    - backend-net
+      - public-net
+      - backend-net
     depends_on:
-    - business-db
-    - mongodb
-    - redis
-    - kafka
+      keycloak-init:
+        condition: service_completed_successfully
+      business-db:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_started
     labels:
-    - "traefik.enable=true"
-    - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN:-127.0.0.1.nip.io}`)"
-    - "traefik.http.services.backend.loadbalancer.server.port=8081"
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=((Host(`localhost`) || Host(`platform.localhost`) || Host(`127.0.0.1`)) && (PathPrefix(`/api/v1`) || PathPrefix(`/actuator`) || PathPrefix(`/swagger-ui`) || PathPrefix(`/v3/api-docs`) || PathPrefix(`/backend-coverage`) || PathPrefix(`/backend-cucumber`))) || Host(`api.localhost`)"
+      - "traefik.http.routers.backend.priority=90"
+      - "traefik.http.services.backend.loadbalancer.server.port=8081"
+    secrets:
+      - spring_datasource_url
+      - spring_datasource_username
+      - spring_datasource_password
+      - spring_data_mongodb_host
+      - spring_data_redis_host
+      - spring_kafka_bootstrap_servers
+
   # ----------------------------------------------------
   # Infrastructure Services
   # ----------------------------------------------------
-    secrets:
-    - spring_datasource_url
-    - spring_datasource_username
-    - spring_datasource_password
-    - spring_data_mongodb_host
-    - spring_data_redis_host
-    - spring_kafka_bootstrap_servers
   business-db:
     image: postgres:16-alpine
     container_name: business-db
     restart: always
     environment:
-    - POSTGRES_DB_FILE=/run/secrets/postgres_db
-    - POSTGRES_USER_FILE=/run/secrets/postgres_user
-    - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+      - POSTGRES_DB_FILE=/run/secrets/postgres_db
+      - POSTGRES_USER_FILE=/run/secrets/postgres_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
     ports:
-    - "5433:5432"
+      - "5433:5432"
     volumes:
-    - business_db_data:/var/lib/postgresql/data
+      - business_db_data:/var/lib/postgresql/data
     networks:
-    - backend-net
+      - backend-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U app_user -d business_db"]
       interval: 5s
       timeout: 5s
       retries: 5
     secrets:
-    - postgres_db
-    - postgres_user
-    - postgres_password
+      - postgres_db
+      - postgres_user
+      - postgres_password
+
   mongodb:
     image: mongo:7.0
     container_name: mongodb
     restart: always
     environment:
-    - MONGO_INITDB_ROOT_USERNAME_FILE=/run/secrets/mongo_initdb_root_username
-    - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/mongo_initdb_root_password
+      - MONGO_INITDB_ROOT_USERNAME_FILE=/run/secrets/mongo_initdb_root_username
+      - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/mongo_initdb_root_password
     ports:
-    - "27017:27017"
+      - "27017:27017"
     volumes:
-    - mongo_data:/data/db
+      - mongo_data:/data/db
     networks:
-    - backend-net
+      - backend-net
     secrets:
-    - mongo_initdb_root_username
-    - mongo_initdb_root_password
+      - mongo_initdb_root_username
+      - mongo_initdb_root_password
+
   redis:
     image: redis:7-alpine
     container_name: redis
     restart: always
     ports:
-    - "6379:6379"
+      - "6379:6379"
     volumes:
-    - redis_data:/data
+      - redis_data:/data
     networks:
-    - backend-net
+      - backend-net
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
     container_name: zookeeper
     networks:
-    - kafka-net
+      - kafka-net
     secrets:
-    - zookeeper_client_port
-    - zookeeper_tick_time
-    command: /bin/sh -c "export ZOOKEEPER_CLIENT_PORT=$(cat 
-      /run/secrets/zookeeper_client_port) && export ZOOKEEPER_TICK_TIME=$(cat 
+      - zookeeper_client_port
+      - zookeeper_tick_time
+    command: /bin/sh -c "export ZOOKEEPER_CLIENT_PORT=$(cat
+      /run/secrets/zookeeper_client_port) && export ZOOKEEPER_TICK_TIME=$(cat
       /run/secrets/zookeeper_tick_time) && exec /etc/confluent/docker/run"
+
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     container_name: kafka
     depends_on:
-    - zookeeper
+      - zookeeper
     ports:
-    - "9092:9092"
+      - "9092:9092"
     networks:
-    - backend-net
-    - kafka-net
+      - backend-net
+      - kafka-net
     secrets:
-    - kafka_broker_id
-    - kafka_zookeeper_connect
-    - kafka_advertised_listeners
-    - kafka_listener_security_protocol_map
-    - kafka_inter_broker_listener_name
-    - kafka_offsets_topic_replication_factor
-    command: /bin/sh -c "export KAFKA_BROKER_ID=$(cat 
-      /run/secrets/kafka_broker_id) && export KAFKA_ZOOKEEPER_CONNECT=$(cat 
-      /run/secrets/kafka_zookeeper_connect) && export 
-      KAFKA_ADVERTISED_LISTENERS=$(cat /run/secrets/kafka_advertised_listeners) 
-      && export KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=$(cat 
-      /run/secrets/kafka_listener_security_protocol_map) && export 
-      KAFKA_INTER_BROKER_LISTENER_NAME=$(cat 
-      /run/secrets/kafka_inter_broker_listener_name) && export 
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=$(cat 
-      /run/secrets/kafka_offsets_topic_replication_factor) && exec 
+      - kafka_broker_id
+      - kafka_zookeeper_connect
+      - kafka_advertised_listeners
+      - kafka_listener_security_protocol_map
+      - kafka_inter_broker_listener_name
+      - kafka_offsets_topic_replication_factor
+    command: /bin/sh -c "export KAFKA_BROKER_ID=$(cat
+      /run/secrets/kafka_broker_id) && export KAFKA_ZOOKEEPER_CONNECT=$(cat
+      /run/secrets/kafka_zookeeper_connect) && export
+      KAFKA_ADVERTISED_LISTENERS=$(cat /run/secrets/kafka_advertised_listeners)
+      && export KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=$(cat
+      /run/secrets/kafka_listener_security_protocol_map) && export
+      KAFKA_INTER_BROKER_LISTENER_NAME=$(cat
+      /run/secrets/kafka_inter_broker_listener_name) && export
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=$(cat
+      /run/secrets/kafka_offsets_topic_replication_factor) && exec
       /etc/confluent/docker/run"
+
 secrets:
   kafka_listener_security_protocol_map:
     environment: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
