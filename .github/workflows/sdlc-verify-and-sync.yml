@@ -227,11 +227,12 @@ jobs:
           BE_RESULT: ${{ needs.backend-verify.result }}
           FE_RESULT: ${{ needs.frontend-verify.result }}
         run: |
+          set -o pipefail
           MERGED_FLAG=""
           if [ "$IS_MERGED" = "true" ]; then
             MERGED_FLAG="--merged"
           fi
-          npm run sdlc:verify -- --branch "$BRANCH_NAME" $MERGED_FLAG
+          npm run sdlc:verify -- --branch "$BRANCH_NAME" $MERGED_FLAG | tee -a "$GITHUB_STEP_SUMMARY"
           if [ "$SEC_RESULT" != "success" ] || [ "$BE_RESULT" != "success" ] || [ "$FE_RESULT" != "success" ]; then
             echo "One or more upstream jobs failed (security=$SEC_RESULT, backend=$BE_RESULT, frontend=$FE_RESULT)."
             exit 1

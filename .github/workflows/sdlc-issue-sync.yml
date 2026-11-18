@@ -47,15 +47,16 @@ jobs:
       - name: Sync Issue to .feature Contract & Tree Branch
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.mode == 'bootstrap') }}
         env:
-          SDLC_PROJECT_TOKEN: ${{ secrets.SDLC_PROJECT_TOKEN || github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
-          ISSUE_TITLE: ${{ github.event.issue.title || format('Issue #{0}', inputs.issue_number) }}
-          ISSUE_BODY: ${{ github.event.issue.body || '' }}
+          SDLC_PROJECT_TOKEN: "${{ secrets.SDLC_PROJECT_TOKEN || github.token }}"
+          GITHUB_REPOSITORY: "${{ github.repository }}"
+          ISSUE_NUMBER: "${{ github.event.issue.number || inputs.issue_number }}"
+          ISSUE_TITLE: "${{ github.event.issue.title }}"
+          ISSUE_BODY: "${{ github.event.issue.body }}"
         run: |
           if [ -n "$ISSUE_NUMBER" ]; then
+            EFFECTIVE_TITLE="${ISSUE_TITLE:-Issue $ISSUE_NUMBER}"
             BODY_TMP="$(mktemp)"
             printf '%s' "$ISSUE_BODY" > "$BODY_TMP"
-            npm run sdlc:sync-issue -- --issue "$ISSUE_NUMBER" --title "$ISSUE_TITLE" --body-file "$BODY_TMP"
+            npm run sdlc:sync-issue -- --issue "$ISSUE_NUMBER" --title "$EFFECTIVE_TITLE" --body-file "$BODY_TMP"
             rm -f "$BODY_TMP"
           fi

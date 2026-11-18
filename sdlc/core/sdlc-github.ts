@@ -214,33 +214,77 @@ export async function bootstrapProject(
   }
 
   const ownerData = await ctx.graphql<{
-    repository: { id: string; owner: { id: string } };
+    repository: {
+      id: string;
+      owner: { id: string };
+      projectsV2?: {
+        nodes?: Array<{
+          id: string;
+          number: number;
+          url: string;
+          title: string;
+          fields?: { nodes?: Array<{ id?: string; name?: string }> };
+        }>;
+      };
+    };
   }>(
     `query($owner: String!, $repo: String!) {
-      repository(owner: $owner, name: $repo) { id owner { id } }
+      repository(owner: $owner, name: $repo) {
+        id
+        owner { id }
+        projectsV2(first: 20) {
+          nodes {
+            id
+            number
+            url
+            title
+            fields(first: 50) {
+              nodes { ... on ProjectV2Field { id name } }
+            }
+          }
+        }
+      }
     }`,
     { owner: ctx.owner, repo: ctx.repo },
     ctx.token
   );
 
-  const created = await ctx.graphql<{
-    createProjectV2: { projectV2: { id: string; number: number; url: string } };
-  }>(
-    `mutation($ownerId: ID!, $title: String!, $repositoryId: ID!) {
-      createProjectV2(input: { ownerId: $ownerId, title: $title, repositoryId: $repositoryId }) {
-        projectV2 { id number url }
-      }
-    }`,
-    {
-      ownerId: ownerData.repository.owner.id,
-      title: config.projectTitle,
-      repositoryId: ownerData.repository.id,
-    },
-    ctx.token
+  const existingProject = ownerData.repository.projectsV2?.nodes?.find(
+    (p) => p.title === config.projectTitle
   );
 
-  const projectId = created.createProjectV2.projectV2.id;
+  let targetProject: { id: string; number: number; url: string };
+  if (existingProject) {
+    targetProject = {
+      id: existingProject.id,
+      number: existingProject.number,
+      url: existingProject.url,
+    };
+  } else {
+    const created = await ctx.graphql<{
+      createProjectV2: { projectV2: { id: string; number: number; url: string } };
+    }>(
+      `mutation($ownerId: ID!, $title: String!, $repositoryId: ID!) {
+        createProjectV2(input: { ownerId: $ownerId, title: $title, repositoryId: $repositoryId }) {
+          projectV2 { id number url }
+        }
+      }`,
+      {
+        ownerId: ownerData.repository.owner.id,
+        title: config.projectTitle,
+        repositoryId: ownerData.repository.id,
+      },
+      ctx.token
+    );
+    targetProject = created.createProjectV2.projectV2;
+  }
+
+  const existingFieldNames = new Set(
+    (existingProject?.fields?.nodes || []).map((f) => f.name || "")
+  );
+  const projectId = targetProject.id;
   for (const field of customFields) {
+    if (existingFieldNames.has(field.name)) continue;
     await ctx.graphql(
       `mutation($projectId: ID!, $name: String!, $dataType: ProjectV2CustomFieldType!) {
         createProjectV2Field(input: { projectId: $projectId, name: $name, dataType: $dataType }) {
@@ -252,18 +296,24 @@ export async function bootstrapProject(
     );
   }
 
-  ctx.runGh([
-    "api",
-    "--method",
-    "PUT",
-    `repos/${ctx.owner}/${ctx.repo}/actions/permissions/workflow`,
-    "-f",
-    "default_workflow_permissions=write",
-    "-F",
-    "can_approve_pull_request_reviews=true",
-  ]);
+  try {
+    ctx.runGh([
+      "api",
+      "--method",
+      "PUT",
+      `repos/${ctx.owner}/${ctx.repo}/actions/permissions/workflow`,
+      "-f",
+      "default_workflow_permissions=write",
+      "-F",
+      "can_approve_pull_request_reviews=true",
+    ]);
+  } catch {
+    ctx.log(
+      "Organization policy manages default GITHUB_TOKEN workflow permissions; relying on explicit workflow permissions and SDLC_PROJECT_TOKEN."
+    );
+  }
 
-  ctx.log(`Bootstrapped GitHub Project v2 #${created.createProjectV2.projectV2.number}: ${created.createProjectV2.projectV2.url}`);
+  ctx.log(`Bootstrapped GitHub Project v2 #${targetProject.number}: ${targetProject.url}`);
   return { projectTitle: config.projectTitle, dryRun: false, operations };
 }
 
@@ -461,6 +511,9 @@ export async function verifyWorkspaceAndSync(
   const ctx = resolveContext(options.rootDir, deps);
 
   const issueId = options.issueId ?? parseBranchIssueId(options.branch, config);
+  const isTrunkBranch =
+    options.branch === config.branches.integration ||
+    options.branch === config.branches.release;
   const beCucumberRaw = readOptionalFile(
     path.join(options.rootDir, config.gates.targets.backend.cucumberJson)
   );
@@ -491,7 +544,7 @@ export async function verifyWorkspaceAndSync(
     {
       issueId: issueId ?? 0,
       target: options.target || (config.specs.fullstackTag as SpecTarget),
-      specValid: issueId !== null,
+      specValid: isTrunkBranch || issueId !== null,
       hasLinkedBranch: Boolean(options.branch),
       hasImplementationCommits: options.hasImplementationCommits ?? true,
       isPreviouslyDone: options.isPreviouslyDone ?? false,

@@ -915,4 +915,84 @@ describe("sdlc-github adapter, GraphQL live path, --dry-run, and CLI", () => {
     expect(liveCalls.some((c) => c.includes("repos/7-3-N-3-7/frontend/git/ref/heads/dev"))).toBe(true);
     expect(logs.some((m) => m.includes("already exists or could not be created"))).toBe(true);
   });
+
+  it("reuses existing Project v2 board on bootstrap, tolerates org 409, and passes trunk verification on dev/main", async () => {
+    const rootDir = trackTempDir();
+    const cfg = loadSdlcConfig(rootDir);
+    const writeJson = (rel: string, obj: unknown) => {
+      const p = path.join(rootDir, rel);
+      makeDirs(path.dirname(p));
+      fs.writeFileSync(p, JSON.stringify(obj), "utf8");
+    };
+    writeJson(cfg.gates.targets.backend.cucumberJson, [
+      { tags: [{ name: "@issue-1" }], elements: [{ type: "scenario", tags: [], steps: [{ result: { status: "passed" } }] }] },
+    ]);
+    const jacocoPath = path.join(rootDir, cfg.gates.targets.backend.jacocoXml);
+    makeDirs(path.dirname(jacocoPath));
+    fs.writeFileSync(
+      jacocoPath,
+      `<report name="b">
+        <counter type="LINE" missed="0" covered="100"/>
+        <counter type="BRANCH" missed="0" covered="100"/>
+        <counter type="INSTRUCTION" missed="0" covered="100"/>
+        <counter type="COMPLEXITY" missed="0" covered="100"/>
+        <counter type="METHOD" missed="0" covered="50"/>
+        <counter type="CLASS" missed="0" covered="10"/>
+      </report>`,
+      "utf8"
+    );
+    writeJson(cfg.gates.targets.frontend.cucumberJson, [
+      { tags: [{ name: "@issue-1" }], elements: [{ type: "scenario", tags: [], steps: [{ result: { status: "passed" } }] }] },
+    ]);
+    writeJson(cfg.gates.targets.frontend.vitestSummaryJson, {
+      total: { lines: { pct: 99 }, statements: { pct: 99 }, functions: { pct: 99 }, branches: { pct: 99 } },
+    });
+
+    expect(
+      await runCli(["verify", "--root", rootDir, "--branch", "dev", "--merged", "--dry-run"], { log: () => {} })
+    ).toBe(0);
+    expect(
+      await runCli(["verify", "--root", rootDir, "--branch", "feature/missing-id", "--dry-run"], { log: () => {} })
+    ).toBe(1);
+
+    const gqlCalls: string[] = [];
+    const logs: string[] = [];
+    const res = await bootstrapProject(
+      { rootDir },
+      {
+        dryRun: false,
+        token: "tok",
+        log: (m) => logs.push(m),
+        graphql: async <T>(query: string) => {
+          gqlCalls.push(query);
+          if (query.includes("projectsV2(first: 20)")) {
+            return {
+              repository: {
+                id: "R_1",
+                owner: { id: "O_1" },
+                projectsV2: {
+                  nodes: [
+                    {
+                      id: "P_EXISTING",
+                      number: 4,
+                      url: "https://github.com/users/7-3-N-3-7/projects/4",
+                      title: cfg.projectTitle,
+                      fields: { nodes: [{ id: "F_1", name: "Slice" }] },
+                    },
+                  ],
+                },
+              },
+            } as T;
+          }
+          return { createProjectV2Field: { projectV2Field: { id: "F_X", name: "X" } } } as T;
+        },
+        runGh: () => {
+          throw new Error("409 Conflict");
+        },
+      }
+    );
+    expect(res.dryRun).toBe(false);
+    expect(gqlCalls.some((q) => q.includes("createProjectV2("))).toBe(false);
+    expect(logs.some((m) => m.includes("Organization policy manages"))).toBe(true);
+  });
 });
