@@ -1,0 +1,96 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'class': {'hideEmptyMembersBox': true}}}%%
+classDiagram
+    direction TB
+
+    namespace Core_Og_Infrastruktur {
+        class Identifiable {
+            <<interface>>
+            +getId() UUID
+            +setId(UUID id) void
+        }
+        class MongoRepository~I18nDictionary, UUID~ {
+            <<interface Spring Data MongoDB>>
+        }
+        class PlatformCacheService {
+            <<Service Redis L2>>
+            +put(String key, Object value) void
+            +evict(String key) void
+        }
+    }
+
+    namespace I18nFeature_Slice {
+        class I18nFeature {
+            <<final>>
+            -I18nFeature()
+        }
+
+        class I18nController {
+            <<package-private RestController /api/v1/i18n>>
+            +getLocales() ResponseEntity~List~Map~~
+            +createOrUpdateLocale(Map payload) ResponseEntity~I18nDictionary~
+            +updateLocaleStatus(String locale, Map payload) ResponseEntity~I18nDictionary~
+            +deleteLocale(String locale) ResponseEntity~Map~
+            +getDictionary(String locale) ResponseEntity~Map~
+            +updateTranslation(String locale, String key, TranslationUpdateRequest req) ResponseEntity~Void~
+            +deleteTranslationKey(String locale, String key) ResponseEntity~Void~
+        }
+
+        class I18nService {
+            <<package-private Service>>
+            -I18nDictionaryRepository repository
+            +getDictionary(String locale) Optional~I18nDictionary~
+            +getAllDictionaries() List~I18nDictionary~
+            +updateTranslation(String locale, String key, String value) I18nDictionary
+            +deleteTranslationKey(String locale, String key) I18nDictionary
+            +createOrUpdateLocale(...) I18nDictionary
+            +getLocaleSummaries(String referenceLocale) List~Map~
+        }
+
+        class ClinicDatabaseInitializer {
+            <<package-private CommandLineRunner>>
+            +run(String... args) void
+            -seedI18nDictionaries() void
+        }
+
+        class I18nDictionaryRepository {
+            <<package-private>>
+            +findByLocale(String locale) Optional~I18nDictionary~
+        }
+
+        class I18nDictionary {
+            <<Document i18n_dictionaries>>
+            -UUID id
+            -String locale
+            -String displayName
+            -String flag
+            -Boolean published
+            -Instant updatedAt
+            -Map~String, Object~ translations
+        }
+
+        class I18nDictionaryDto {
+            <<record>>
+            +UUID id
+            +String locale
+            +String displayName
+            +Boolean published
+            +Map~String, Object~ translations
+        }
+
+        class TranslationUpdateRequest {
+            <<record>>
+            +String value
+        }
+    }
+
+    I18nFeature ..> I18nController : indkapsler
+    Identifiable <|.. I18nDictionary : implementerer
+    MongoRepository <|-- I18nDictionaryRepository : udvider
+
+    I18nController --> I18nService : delegerer til
+    ClinicDatabaseInitializer --> I18nService : seeder da/en/de/es/fr ved opstart
+    I18nService --> I18nDictionaryRepository : persisterer i MongoDB
+    I18nService ..> PlatformCacheService : cacher oversættelser
+    I18nDictionaryRepository --> I18nDictionary : gemmer dokument
+    I18nController ..> TranslationUpdateRequest : modtager opdatering
+    I18nService ..> I18nDictionaryDto : konverterer til DTO

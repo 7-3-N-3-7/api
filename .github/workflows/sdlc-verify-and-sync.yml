@@ -1,0 +1,239 @@
+name: SDLC Verify & Full-Stack Gate
+
+on:
+  push:
+    branches: ["feature/**", "dev", "main"]
+  pull_request:
+    branches: ["dev", "main", "feature/**"]
+  repository_dispatch:
+    types: [sdlc-verify]
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch name to verify across api/backend/frontend (defaults to current ref)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  security-and-subissues:
+    name: 1. Shift-Left Secret Scan & @spawn-subissue Sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog Secret Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Scan for Bottom-Up @spawn-subissue Tags
+        env:
+          SDLC_PROJECT_TOKEN: ${{ secrets.SDLC_PROJECT_TOKEN || github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BRANCH_NAME: ${{ inputs.target_branch || github.event.client_payload.branch || github.head_ref || github.ref_name }}
+        run: |
+          ISSUE_ID=$(echo "$BRANCH_NAME" | sed -nE 's#^feature/([0-9]+).*#\1#p')
+          if [ -n "$ISSUE_ID" ]; then
+            npm run sdlc:spawn -- --parent "$ISSUE_ID" --branch "$BRANCH_NAME"
+          fi
+
+  backend-verify:
+    name: 2a. Backend BDD (Cucumber-JVM) + 98% JaCoCo Gate (6 counters)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout control-plane repository (api & specs/features/)
+        uses: actions/checkout@v4
+
+      - name: Resolve matching backend branch
+        id: be-ref
+        env:
+          CROSS_REPO_TOKEN: ${{ secrets.SDLC_PROJECT_TOKEN || github.token }}
+          EFFECTIVE_BRANCH: ${{ inputs.target_branch || github.event.client_payload.branch || github.head_ref || github.ref_name }}
+        run: |
+          REMOTE="https://x-access-token:${CROSS_REPO_TOKEN}@github.com/7-3-N-3-7/backend.git"
+          RESOLVED="main"
+          for CANDIDATE in "$EFFECTIVE_BRANCH" "dev" "main"; do
+            if [ -n "$CANDIDATE" ] && git ls-remote --exit-code --heads "$REMOTE" "$CANDIDATE" >/dev/null 2>&1; then
+              RESOLVED="$CANDIDATE"
+              break
+            fi
+          done
+          echo "ref=$RESOLVED" >> "$GITHUB_OUTPUT"
+          echo "Resolved backend ref: $RESOLVED (requested: $EFFECTIVE_BRANCH)"
+
+      - name: Checkout Backend Repository (7-3-N-3-7/backend)
+        uses: actions/checkout@v4
+        with:
+          repository: 7-3-N-3-7/backend
+          ref: ${{ steps.be-ref.outputs.ref }}
+          path: backend
+          token: ${{ secrets.SDLC_PROJECT_TOKEN || github.token }}
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Configure Maven JDK 17 Toolchain
+        run: |
+          mkdir -p ~/.m2
+          cat <<EOF > ~/.m2/toolchains.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <toolchains>
+            <toolchain>
+              <type>jdk</type>
+              <provides><version>17</version></provides>
+              <configuration><jdkHome>${JAVA_HOME}</jdkHome></configuration>
+            </toolchain>
+          </toolchains>
+          EOF
+
+      - name: Run JUnit 5, Cucumber-JVM & Enforce 98% JaCoCo Gate
+        working-directory: backend
+        run: mvn -B test jacoco:report jacoco:check
+
+      - name: Upload Backend Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-verification-reports
+          path: |
+            backend/target/cucumber-reports/cucumber-report.json
+            backend/target/site/jacoco/jacoco.xml
+
+  frontend-verify:
+    name: 2b. Frontend + SDLC Core Vitest (98% Istanbul) & Cucumber.js BDD
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout control-plane repository (api, sdlc/ & specs/features/)
+        uses: actions/checkout@v4
+
+      - name: Resolve matching frontend branch
+        id: fe-ref
+        env:
+          CROSS_REPO_TOKEN: ${{ secrets.SDLC_PROJECT_TOKEN || github.token }}
+          EFFECTIVE_BRANCH: ${{ inputs.target_branch || github.event.client_payload.branch || github.head_ref || github.ref_name }}
+        run: |
+          REMOTE="https://x-access-token:${CROSS_REPO_TOKEN}@github.com/7-3-N-3-7/frontend.git"
+          RESOLVED="main"
+          for CANDIDATE in "$EFFECTIVE_BRANCH" "dev" "main"; do
+            if [ -n "$CANDIDATE" ] && git ls-remote --exit-code --heads "$REMOTE" "$CANDIDATE" >/dev/null 2>&1; then
+              RESOLVED="$CANDIDATE"
+              break
+            fi
+          done
+          echo "ref=$RESOLVED" >> "$GITHUB_OUTPUT"
+          echo "Resolved frontend ref: $RESOLVED (requested: $EFFECTIVE_BRANCH)"
+
+      - name: Checkout Frontend Repository (7-3-N-3-7/frontend)
+        uses: actions/checkout@v4
+        with:
+          repository: 7-3-N-3-7/frontend
+          ref: ${{ steps.fe-ref.outputs.ref }}
+          path: frontend
+          token: ${{ secrets.SDLC_PROJECT_TOKEN || github.token }}
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run Vitest + Enforce 98% Istanbul Gate (All 4 Counters)
+        working-directory: frontend
+        run: npm run test:coverage
+
+      - name: Install Playwright Chromium & Fonts
+        working-directory: frontend
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fonts-noto-color-emoji fonts-noto-core || sudo apt-get install -y --no-install-recommends fonts-noto || true
+          npx playwright install --with-deps chromium
+
+      - name: Build Next.js App & Run Cucumber.js BDD Suite (Shared specs/features/)
+        working-directory: frontend
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          npm run build
+          npm run test:bdd
+
+      - name: Upload Frontend Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-verification-reports
+          path: |
+            frontend/reports/cucumber-report.json
+            frontend/coverage/coverage-summary.json
+
+  sdlc-gate:
+    name: SDLC Full-Stack Gate
+    needs: [security-and-subissues, backend-verify, frontend-verify]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout control-plane repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Download Backend Reports
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: backend-verification-reports
+          path: backend/target
+
+      - name: Download Frontend Reports
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: frontend-verification-reports
+          path: frontend
+
+      - name: Evaluate SDLC State Machine & Sync GitHub Projects v2
+        env:
+          SDLC_PROJECT_TOKEN: ${{ secrets.SDLC_PROJECT_TOKEN || github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BRANCH_NAME: ${{ inputs.target_branch || github.event.client_payload.branch || github.head_ref || github.ref_name }}
+          IS_MERGED: ${{ (github.event_name == 'push' && (github.ref_name == 'dev' || github.ref_name == 'main')) || (github.event_name == 'repository_dispatch' && (github.event.client_payload.branch == 'dev' || github.event.client_payload.branch == 'main')) }}
+          SEC_RESULT: ${{ needs.security-and-subissues.result }}
+          BE_RESULT: ${{ needs.backend-verify.result }}
+          FE_RESULT: ${{ needs.frontend-verify.result }}
+        run: |
+          set -o pipefail
+          MERGED_FLAG=""
+          if [ "$IS_MERGED" = "true" ]; then
+            MERGED_FLAG="--merged"
+          fi
+          npm run sdlc:verify -- --branch "$BRANCH_NAME" $MERGED_FLAG | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$SEC_RESULT" != "success" ] || [ "$BE_RESULT" != "success" ] || [ "$FE_RESULT" != "success" ]; then
+            echo "One or more upstream jobs failed (security=$SEC_RESULT, backend=$BE_RESULT, frontend=$FE_RESULT)."
+            exit 1
+          fi

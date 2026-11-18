@@ -1,0 +1,88 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'flowchart': {'curve': 'basis', 'nodeSpacing': 75, 'rankSpacing': 90, 'padding': 20, 'subGraphTitleMargin': {'top': 12, 'bottom': 12}}}}%%
+flowchart TD
+    subgraph Symmetri ["1. Tredobbelt 2-Fils Generisk Core-Symmetri"]
+        direction LR
+        BC["Backend 2-Fils Core
+• BaseDomainCore.java
+• BaseWebCore.java"]
+        FC["Frontend 2-Fils Core
+• baseDomainCore.ts
+• baseUiCore.tsx"]
+        SC["SDLC 2-Fils Core
+• sdlc/core/sdlc-domain.ts
+• sdlc/core/sdlc-github.ts"]
+    end
+
+    CFG["sdlc.config.json
+• Deklarativ projektkontrakt
+• 100 % domæneuafhængig motor"]
+
+    subgraph ControlPlane ["2. GitHub Projects v2, CLI & Træ-isomorfe Branches"]
+        direction LR
+        GH["GitHub Issues & Projects v2
+• Backlog -> Spec Ready -> Red BDD
+• -> Inner TDD -> Green Gate -> Done
+• Hierarkiske Sub-Issues (#N -> #M)"]
+        BR["Træ-isomorfe Git Branches
+• dev -> feature/N-parent
+• feature/N -> feature/M-child
+• Linket via gh CLI / GraphQL"]
+    end
+
+    SPEC["3. Fælles Gherkin-Kontraktlag (specs/features/)
+• @fullstack: delt på tværs af BE & FE
+• @backend-only & @ui-only filtrering
+• @issue-N, @parent-N & @spawn-subissue"]
+
+    subgraph Gates ["4. Parallel Full-Stack Verifikation & Quality Gates"]
+        direction LR
+        BE["Backend Verifikation
+• Cucumber-JVM + JUnit 5
+• Alle 6 JaCoCo-tællere >= 98 %"]
+        FE["Frontend + SDLC Verifikation
+• Cucumber.js + Vitest
+• Alle 4 Istanbul-tællere >= 98 %"]
+        SEC["Shift-Left Sikkerhed
+• TruffleHog Secret Scan
+• Ingen lækkede nøgler"]
+    end
+
+    GATE["5. SDLC Full-Stack Gate
+• Evaluerer rapporter + Sub-Issues
+• Opdaterer Projects v2 status & felter
+• Blokerer merge hvis Sub-Issue != Done"]
+
+    FEEDBACK["6. To-vejs Feedback-Loop
+• Merge -> Living Spec synk til Issue
+• Fejlet @issue-N -> Regression"]
+
+    CFG -->|"Konfigurerer"| SC
+    SC <-->|"1. gh CLI & GraphQL"| GH
+    SC <-->|"2. createLinkedBranch"| BR
+    SC <-->|"3. AST & tag-synk"| SPEC
+
+    SPEC -->|"4a. Maven testResources"| BE
+    SPEC -->|"4b. Cucumber.mjs paths"| FE
+
+    BE -->|"cucumber-report.json & jacoco.xml"| GATE
+    FE -->|"cucumber-report.json & coverage-summary.json"| GATE
+    SEC -->|"Scan resultat"| GATE
+    GATE -->|"Opdaterer status"| GH
+    GATE -->|"Efter merge / fejl"| FEEDBACK
+    FEEDBACK -.->|"Genåbner eller synkroniserer"| GH
+
+    class BC,FC,SC,CFG core
+    class GH,BR auth
+    class SPEC,GATE slice
+    class BE,FE,SEC data
+    class FEEDBACK err
+
+    style Symmetri fill:#EFF6FF,stroke:#2563EB
+    style ControlPlane fill:#FFFBEB,stroke:#F59E0B
+    style Gates fill:#ECFDF5,stroke:#059669
+
+    classDef core fill:#EFF6FF,stroke:#2563EB,stroke-width:1.8px,color:#0F172A
+    classDef slice fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.8px,color:#0F172A
+    classDef data fill:#ECFDF5,stroke:#059669,stroke-width:1.8px,color:#0F172A
+    classDef auth fill:#FFFBEB,stroke:#D97706,stroke-width:1.8px,color:#0F172A
+    classDef err fill:#FEF2F2,stroke:#DC2626,stroke-width:1.8px,color:#7F1D1D

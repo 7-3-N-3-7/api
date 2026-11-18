@@ -1,0 +1,110 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'flowchart': {'curve': 'basis', 'nodeSpacing': 75, 'rankSpacing': 90, 'padding': 20, 'subGraphTitleMargin': {'top': 12, 'bottom': 12}}}}%%
+flowchart TB
+    subgraph ClientTier ["Klient & E2E Testmiljø"]
+        Browser["Webbrowser (Klient / Terapeut / Ledelse)
+& Playwright E2E Runner"]
+    end
+
+    subgraph DockerHost ["Docker Host / Cloud Server (Linux VM)"]
+        direction TB
+
+        subgraph EdgeLayer ["Edge & Sikkerheds-gateway (public-net)"]
+            direction LR
+            Traefik["traefik:v3.1
+Reverse Proxy & Let's Encrypt TLS
+Port 80 / 443"]
+            OAuth2Proxy["oauth2-proxy:v7.6.0
+OIDC Gatekeeper
+Port 4180"]
+            Traefik -->|"ForwardAuth"| OAuth2Proxy
+        end
+
+        subgraph IamLayer ["IAM & Sikkerhedslag (keycloak-net)"]
+            direction LR
+            Keycloak["keycloak:24.0.4
+Realm: EduJournal
+Port 8080"]
+            AuthDb[("auth-db (postgres:16)
+Keycloak IAM Database")]
+            Keycloak -->|"JDBC"| AuthDb
+        end
+
+        subgraph AppLayer ["Applikationslag (public-net & backend-net)"]
+            direction LR
+            Frontend["frontend (Dual-App & Next.js BFF)
+apps/landing (:5173) + apps/dashboard (:5174)
+NextAuth + /api/backend/* (:3000)"]
+            Backend["backend (Spring Boot 3.3 / Java 17)
+7 Single-File Vertical Slices + 2-Fils Core
+OAuth2 Resource Server (:8081)"]
+            JGitRepo[("JGit Fil-Repository
+journal-repo & finance-repo
+Uforanderlig SHA-1 Audit Log")]
+            Frontend -->|"BFF Proxy + Bearer JWT"| Backend
+            Backend -->|"Read / Commit Markdown & Bilag"| JGitRepo
+        end
+
+        subgraph FinanceEngines ["Finans- & Billing-motorer (backend-net)"]
+            direction LR
+            KillBill["killbill
+Fakturering, Klippekort
+& Abonnementer"]
+            Fineract["fineract (Apache Fineract)
+Dobbelt Bogholderi,
+Reskontro & Afdragslån"]
+        end
+
+        subgraph DataLayer ["Data-, Cache- & Event-lag (backend-net & kafka-net)"]
+            direction LR
+            BusinessDb[("business-db (postgres:16)
+Kerneforretning + killbill
++ fineract_tenants / fineract_default")]
+            MongoDb[("mongodb (mongo:7.0)
+integrate_mongo
+i18n_dictionaries")]
+            Redis[("redis (redis:7-alpine)
+Redisson L2 Cache
+& OAuth2 Sessions")]
+            Kafka["kafka + zookeeper
+appointment-events
+& domæne-topics (:29092)"]
+        end
+
+        Watchtower["watchtower
+Automatisk Container Rollout"]
+    end
+
+    Browser -->|"1. HTTPS (443) OIDC & API"| Traefik
+    Traefik -->|"2. Router UI"| Frontend
+    Traefik -->|"2. Router REST API"| Backend
+    Traefik -->|"2. Router Login"| Keycloak
+    OAuth2Proxy -->|"OIDC Validering"| Keycloak
+    OAuth2Proxy -->|"Session Store"| Redis
+    Frontend -->|"NextAuth OIDC"| Keycloak
+    Backend -->|"JWKS Public Keys"| Keycloak
+
+    Backend -->|"Spring Data JPA"| BusinessDb
+    Backend -->|"Spring Data MongoDB"| MongoDb
+    Backend -->|"L2 Cache"| Redis
+    Backend -->|"Event Producer"| Kafka
+    Backend -->|"REST Sync"| KillBill
+    Backend -->|"REST Sync"| Fineract
+    KillBill -->|"JDBC"| BusinessDb
+    Fineract -->|"JDBC"| BusinessDb
+
+    class Browser,Traefik,OAuth2Proxy,Keycloak,AuthDb auth
+    class Frontend,KillBill,Fineract slice
+    class Backend core
+    class JGitRepo,BusinessDb,MongoDb,Redis,Kafka,Watchtower data
+    style DockerHost fill:#F8FAFC,stroke:#64748B,stroke-width:1.5px
+    style EdgeLayer fill:#FFFBEB,stroke:#F59E0B
+    style IamLayer fill:#FFFBEB,stroke:#D97706
+    style AppLayer fill:#EFF6FF,stroke:#3B82F6
+    style FinanceEngines fill:#F5F3FF,stroke:#7C3AED
+    style DataLayer fill:#ECFDF5,stroke:#059669
+
+    classDef core fill:#EFF6FF,stroke:#2563EB,stroke-width:1.8px,color:#0F172A
+    classDef slice fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.8px,color:#0F172A
+    classDef data fill:#ECFDF5,stroke:#059669,stroke-width:1.8px,color:#0F172A
+    classDef auth fill:#FFFBEB,stroke:#D97706,stroke-width:1.8px,color:#0F172A
+    classDef err fill:#FEF2F2,stroke:#DC2626,stroke-width:1.8px,color:#7F1D1D

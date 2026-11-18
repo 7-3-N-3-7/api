@@ -1,0 +1,88 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'flowchart': {'curve': 'basis', 'nodeSpacing': 75, 'rankSpacing': 90, 'padding': 20, 'subGraphTitleMargin': {'top': 12, 'bottom': 12}}}}%%
+flowchart TD
+    subgraph UILayer ["1. Klient & BFF Gateway (Dual-App Frontend / Next.js :3000)"]
+        direction LR
+        UserAction["Brugerudført handling i React-slice
+(Onboarding, Booking, Handshake, Journal, PCL-5 eller Finans)"]
+        BffAuth["Next.js BFF (/api/backend/[...path])
+Validerer OIDC-session mod Keycloak IAM & vedhæfter Bearer JWT"]
+        UserAction -->|"1. Udløser API-kald"| BffAuth
+    end
+
+    subgraph WebLayer ["2. Web-lag (BaseWebCore.BaseController)"]
+        direction LR
+        Dispatcher["Spring DispatcherServlet & SecurityConfig
+Verificerer JWT-signatur & router til /api/v1/..."]
+        BaseCtrl["Slice-Controller (extends BaseController<E, D>)
+Validerer @Valid DTO & delegerer til BaseService"]
+        Dispatcher -->|"3. Router request"| BaseCtrl
+    end
+
+    subgraph DomainLayer ["3. Domæne-lag (BaseDomainCore.BaseService @Transactional)"]
+        direction TB
+        BeforeHooks["Åbner @Transactional kontekst
+Afvikler toEntity(), validateBeforeCreate/Update() & ErrorCode.require()"]
+        ValidationCheck{"Gyldig domænelogik
+og adgangsrettighed?"}
+        ErrorPath["GlobalExceptionHandler
+Returnerer RFC 7807 ProblemDetail (HTTP 400/403/404/409)"]
+        SliceLogic["Domænespecifik slice-logik:
+• ClinicPlatform: CVR & Handshake-samtykke
+• Appointment: Timefold AI & dobbeltbooking-tjek
+• Journal / PCL-5: INTERNAL_MEDICAL_NOTES filter
+• Finance: Moms, rabat, KillBill & Fineract"]
+
+        BeforeHooks -->|"5. Kører domæneregler"| ValidationCheck
+        ValidationCheck -->|"Nej — Fejl / Konflikt"| ErrorPath
+        ValidationCheck -->|"Ja — Godkendt"| SliceLogic
+    end
+
+    subgraph DataLayer ["4. Data-adgang & Eksterne Port-kald"]
+        direction LR
+        RepoCall["BaseRepository<E> (JpaSpecificationExecutor)
+eller I18nDictionaryRepository (MongoDB)"]
+        SideEffects{"Kræver ekstern
+systemsynkronisering?"}
+        AuditSideEffects["• JGit SHA-1 commit (Journal / Finance)
+• KillBill & Fineract bogføring
+• PlatformCacheService (Redis L2 invalidering)
+• PlatformEventService (Kafka event)"]
+
+        RepoCall -->|"8. Tjekker sideeffekter"| SideEffects
+        SideEffects -->|"Ja"| AuditSideEffects
+    end
+
+    subgraph PersistenceLayer ["5. Persistens & Retursvar"]
+        direction LR
+        DbStore[("PostgreSQL (business-db)
+MongoDB (i18n_dictionaries)
+JGit Repository")]
+        MapDto["BaseService.toDto(Entity)
+Pakker ResponseEntity<DTO> (HTTP 200 / 201)"]
+    end
+
+    BffAuth -->|"2. HTTP REST + Bearer JWT"| Dispatcher
+    BaseCtrl -->|"4. Kalder service"| BeforeHooks
+    SliceLogic -->|"6. Læser / skriver via repository"| RepoCall
+    RepoCall -->|"7. Hibernate ORM / MongoDB"| DbStore
+    AuditSideEffects -->|"9. Gemmer revisionsspor & bilag"| DbStore
+    DbStore -->|"10. Returnerer entitet"| MapDto
+    MapDto -->|"11. JSON-respons til UI"| UserAction
+    ErrorPath -.->|"Fejlrespons til ProblemAlert"| UserAction
+
+    class UserAction,BffAuth,Dispatcher auth
+    class BaseCtrl,BeforeHooks,RepoCall,MapDto core
+    class SliceLogic slice
+    class AuditSideEffects,DbStore data
+    class ErrorPath err
+    style UILayer fill:#FFFBEB,stroke:#F59E0B
+    style WebLayer fill:#EFF6FF,stroke:#3B82F6
+    style DomainLayer fill:#F5F3FF,stroke:#8B5CF6
+    style DataLayer fill:#ECFDF5,stroke:#10B981
+    style PersistenceLayer fill:#F8FAFC,stroke:#64748B
+
+    classDef core fill:#EFF6FF,stroke:#2563EB,stroke-width:1.8px,color:#0F172A
+    classDef slice fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.8px,color:#0F172A
+    classDef data fill:#ECFDF5,stroke:#059669,stroke-width:1.8px,color:#0F172A
+    classDef auth fill:#FFFBEB,stroke:#D97706,stroke-width:1.8px,color:#0F172A
+    classDef err fill:#FEF2F2,stroke:#DC2626,stroke-width:1.8px,color:#7F1D1D

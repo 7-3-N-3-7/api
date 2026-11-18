@@ -1,0 +1,139 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'class': {'hideEmptyMembersBox': true}}}%%
+classDiagram
+    direction TB
+
+    namespace Core_Kontrakter {
+        class HasId {
+            <<interface>>
+            +id() UUID
+        }
+        class ErrorCode {
+            <<enumeration>>
+            +require(boolean cond, String details) void
+        }
+    }
+
+    namespace FinanceFeature_Slice {
+        class FinanceFeature {
+            <<final>>
+            -FinanceFeature()
+        }
+
+        class FinanceController {
+            <<package-private RestController /api/v1/finance>>
+            +getClientFinanceOverview(UUID clientUuid, Authentication auth) ResponseEntity
+            +billSingleSession(Map payload, Authentication auth) ResponseEntity
+            +refundInvoice(String invoiceId, Map payload, Authentication auth) ResponseEntity
+            +topUpPrepaidCard(Map payload, Authentication auth) ResponseEntity
+            +consumePrepaidClip(Map payload, Authentication auth) ResponseEntity
+            +createSubscription(Map payload, Authentication auth) ResponseEntity
+            +createInstallmentPlan(Map payload, Authentication auth) ResponseEntity
+            +repayInstallment(String planId, Map payload, Authentication auth) ResponseEntity
+            +getLedgerSummary(Authentication auth) ResponseEntity
+            +getCommitSnapshot(String commitHash, Authentication auth) ResponseEntity
+        }
+
+        class FinanceService {
+            <<package-private Service>>
+            -KillBillClient killBillClient
+            -FineractClient fineractClient
+            -FinanceGitService financeGitService
+            +billSingleSession(Map payload, Authentication auth) Map
+            +refundInvoice(String invoiceId, Map payload, Authentication auth) Map
+            +topUpPrepaidCard(Map payload, Authentication auth) Map
+            +consumePrepaidClip(Map payload, Authentication auth) Map
+            +createSubscription(Map payload, Authentication auth) Map
+            +createInstallmentPlan(Map payload, Authentication auth) Map
+            +repayInstallment(String loanId, Map payload, Authentication auth) Map
+            +getClientFinanceOverview(UUID clientUuid, Authentication auth) Map
+            +getGeneralLedgerSummary(Authentication auth) Map
+        }
+
+        class KillBillClient {
+            <<Service Billing & Subscriptions>>
+            +ensureAccount(UUID clientUuid, String currency, String createdBy) Map
+            +createInvoiceAndCharge(...) Map
+            +refundInvoice(...) Map
+            +createSubscription(...) Map
+            +getClientInvoices(UUID clientUuid) List~Map~
+        }
+
+        class FineractClient {
+            <<Service Double-Entry Ledger & Loans>>
+            +initChartOfAccounts() void
+            +postJournalEntry(...) Map
+            +depositToSavings(...) Map
+            +withdrawFromSavings(...) Map
+            +createInstallmentLoan(...) Map
+            +repayInstallmentLoan(...) Map
+            +getChartOfAccounts() List~Map~
+        }
+
+        class FinanceGitService {
+            <<Service JGit Finansbilag>>
+            +init() void
+            +commitFinancialVoucher(...) String
+            +getClientFinanceHistory(UUID clientUuid) List~Map~
+            +getGeneralLedgerHistory() List~Map~
+            +getCommitSnapshot(String commitHashPrefix) Map
+        }
+
+        class InvoiceDto {
+            <<record>>
+            +UUID id
+            +UUID clientUuid
+            +UUID appointmentId
+            +String invoiceNumber
+            +BigDecimal amountGrossDkk
+            +String status
+            +String gitCommitHash
+        }
+
+        class PaymentDto {
+            <<record>>
+            +UUID id
+            +UUID invoiceId
+            +BigDecimal amountDkk
+            +String paymentMethod
+            +String gitCommitHash
+        }
+
+        class RefundDto {
+            <<record>>
+            +UUID id
+            +UUID invoiceId
+            +BigDecimal refundAmountDkk
+            +String reason
+        }
+
+        class FinancialVoucherDto {
+            <<record>>
+            +UUID id
+            +String voucherType
+            +String markdownBlock
+            +String commitHash
+        }
+
+        class LedgerSummaryDto {
+            <<record>>
+            +UUID id
+            +BigDecimal totalInvoicedGrossDkk
+            +BigDecimal totalPaidDkk
+            +BigDecimal outstandingReceivablesDkk
+        }
+    }
+
+    HasId <|.. InvoiceDto : implementerer
+    HasId <|.. PaymentDto : implementerer
+    HasId <|.. RefundDto : implementerer
+    HasId <|.. FinancialVoucherDto : implementerer
+    HasId <|.. LedgerSummaryDto : implementerer
+
+    FinanceFeature ..> FinanceController : indkapsler
+    FinanceController --> FinanceService : delegerer til
+    FinanceService ..> ErrorCode : validerer beløb & roller
+    FinanceService --> KillBillClient : fakturerer & opretter abonnement
+    FinanceService --> FineractClient : bogfører debet/kredit & afdrag
+    FinanceService --> FinanceGitService : committer SHA-1 finansbilag
+    FinanceService ..> InvoiceDto : returnerer kontrakter
+    FinanceService ..> LedgerSummaryDto : opsummerer reskontro

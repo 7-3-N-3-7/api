@@ -1,0 +1,39 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'flowchart': {'curve': 'basis', 'nodeSpacing': 75, 'rankSpacing': 90, 'padding': 20, 'subGraphTitleMargin': {'top': 12, 'bottom': 12}}}}%%
+flowchart TD
+    subgraph OuterLoop ["Ydre Loop: BDD / Cucumber (Forretningsværdi & API-kontrakt)"]
+        direction TB
+        Gherkin["1. Skriv Gherkin-scenarie (.feature)
+f.eks. 'Afvis dobbeltbooking med 409 Conflict'"]
+        StepDefs["2. Implementér Step Definitions (<Feature>Steps.java)
+Kør Cucumber-test -> FEJLER (Rød)"]
+        OuterGreen["6. Kør Cucumber E2E-test
+Verificér HTTP 409 & RFC 7807 ProblemDetail -> BESTÅR (Grøn)"]
+    end
+
+    subgraph InnerLoop ["Indre Loop: TDD / JUnit 5 & Mockito (Domænelogik i Isolation)"]
+        direction TB
+        UnitRed["3. Skriv JUnit 5 Unit Test (<Feature>ServiceTest.java)
+Mock Repository -> Test validateBeforeCreate() -> FEJLER (Rød)"]
+        ImplSlice["4. Implementér Vertical Slice (<Feature>Feature.java)
+Brug ErrorCode.CONFLICT.require(...) i Service -> BESTÅR (Grøn)"]
+        Refactor["5. Refaktorér med høj kohæsion
+Behold package-private indkapsling"]
+    end
+
+    Gherkin -->|"1. Definerer acceptkriterier"| StepDefs
+    StepDefs -->|"2. Skift til Indre Loop"| UnitRed
+    UnitRed -->|"3. Kør rød unit-test"| ImplSlice
+    ImplSlice -->|"4. Gør test grøn"| Refactor
+    Refactor -->|"5. Vend tilbage til Ydre Loop"| OuterGreen
+
+    class Gherkin,Refactor slice
+    class StepDefs,UnitRed err
+    class ImplSlice,OuterGreen data
+    style OuterLoop fill:#F8FAFC,stroke:#94A3B8,stroke-width:1.5px
+    style InnerLoop fill:#FFFBEB,stroke:#D97706,stroke-width:1.5px
+
+    classDef core fill:#EFF6FF,stroke:#2563EB,stroke-width:1.8px,color:#0F172A
+    classDef slice fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.8px,color:#0F172A
+    classDef data fill:#ECFDF5,stroke:#059669,stroke-width:1.8px,color:#0F172A
+    classDef auth fill:#FFFBEB,stroke:#D97706,stroke-width:1.8px,color:#0F172A
+    classDef err fill:#FEF2F2,stroke:#DC2626,stroke-width:1.8px,color:#7F1D1D

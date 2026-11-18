@@ -1,0 +1,99 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'flowchart': {'curve': 'basis', 'nodeSpacing': 75, 'rankSpacing': 90, 'padding': 20, 'subGraphTitleMargin': {'top': 12, 'bottom': 12}}}}%%
+flowchart TB
+    subgraph Backend ["Backend (Java 17 / Spring Boot 3.3 — Vertical Slice Arkitektur)"]
+        direction TB
+        subgraph BackendCore ["Generisk 2-Fils Core (com.platform.core)"]
+            direction LR
+            JavaDomainCore["BaseDomainCore.java
+• interface HasId / Identifiable
+• enum ErrorCode & DomainException
+• interface BaseRepository<E>
+• abstract class BaseService<E, D>"]
+            JavaWebCore["BaseWebCore.java
+• abstract class BaseController<E, D>
+• GlobalExceptionHandler (RFC 7807)"]
+            JavaWebCore -->|"afhænger af"| JavaDomainCore
+        end
+
+        subgraph BackendSlices ["Indkapslede Vertical Slices (com.platform.features.*)"]
+            direction LR
+            JavaSliceApp["AppointmentFeature.java
+ClinicPlatformFeature.java"]
+            JavaSliceClin["JournalFeature.java
+PsychotraumatologyFeature.java"]
+            JavaSliceFin["FinanceFeature.java
+UserFeature & I18nFeature"]
+            JavaNote["Backend-indkapsling:
+Service, Repository & Entity er package-private.
+Kun DTO, Port & Controller eksponeres."]
+        end
+
+        BackendSlices -->|"nedarver fra BaseService & BaseController"| BackendCore
+    end
+
+    subgraph Frontend ["Frontend Dual-App SoC (TypeScript 5 / React 19)"]
+        direction TB
+        subgraph LandingApp ["apps/landing (Port 5173 — Offentlig Zero-Trust Gateway)"]
+            direction LR
+            TsLandingFeature["LandingFeature.tsx
+<LandingFeatureView />
+Offentlig landingsside & login-trigger"]
+            TsAuthGateway["authGateway.ts
+GatewayRoleHint: CLIENT | PROVIDER | MANAGEMENT
+buildLoginUrl() & initiateLogin()"]
+            TsLandingFeature -->|"1. Trigger login-redirect"| TsAuthGateway
+        end
+
+        subgraph DashboardCore ["apps/dashboard (Port 5174) & src/core (2-Fils Core + Next.js BFF :3000)"]
+            direction LR
+            TsDomainCore["baseDomainCore.ts
+• HasId<ID> & UserRole
+• ErrorCode & ProblemDetail (RFC 7807)
+• DomainGuard & BaseApiService<D, ID>"]
+            TsUiCore["baseUiCore.tsx
+• AuthProvider & RoleGuard
+• useBaseCrud<D, ID>()
+• ProblemAlert & PortalWorkspaceShell"]
+            TsUiCore -->|"afhænger af"| TsDomainCore
+        end
+
+        subgraph FrontendSlices ["src/features/* (Rollebeskyttede Vertical Slices & modul-private ApiServices)"]
+            direction LR
+            TsSliceBooking["AppointmentFeature.tsx
+BookingFeature.tsx
+ClinicPlatformFeature.tsx"]
+            TsSliceClinical["JournalFeature.tsx
+PsychotraumatologyFeature.tsx
+(RoleGuard: PROVIDER / CLIENT)"]
+            TsSliceOps["FinanceFeature.tsx
+ManagementFeature.tsx
+UserFeature & I18nFeature"]
+            TsNote["Frontend-indkapsling:
+Hver <Name>ApiService er modul-privat (ingen export).
+Views isoleres via <RoleGuard allowed={[...]} />."]
+        end
+
+        TsAuthGateway -.->|"2. OIDC / Portal Redirect (:5173 -> :5174/?roleHint=...)"| TsUiCore
+        FrontendSlices -->|"udvider BaseApiService & RoleGuard / useBaseCrud"| DashboardCore
+    end
+
+    DashboardCore <==>|"3. 1:1 HTTP REST / JSON + Bearer JWT + RFC 7807 ProblemDetail"| BackendCore
+    FrontendSlices <==>|"4. 1:1 DTO & Slice-spejling (/api/backend/* <-> /api/v1/*)"| BackendSlices
+
+    class JavaDomainCore,JavaWebCore,TsDomainCore,TsUiCore core
+    class JavaSliceApp,JavaSliceClin,JavaSliceFin,TsSliceBooking,TsSliceClinical,TsSliceOps slice
+    class TsLandingFeature,TsAuthGateway auth
+    class JavaNote,TsNote data
+    style Backend fill:#F8FAFC,stroke:#64748B,stroke-width:1.5px
+    style Frontend fill:#F8FAFC,stroke:#64748B,stroke-width:1.5px
+    style BackendCore fill:#EFF6FF,stroke:#93C5FD
+    style DashboardCore fill:#EFF6FF,stroke:#93C5FD
+    style LandingApp fill:#FFFBEB,stroke:#FCD34D
+    style BackendSlices fill:#F5F3FF,stroke:#C4B5FD
+    style FrontendSlices fill:#F5F3FF,stroke:#C4B5FD
+
+    classDef core fill:#EFF6FF,stroke:#2563EB,stroke-width:1.8px,color:#0F172A
+    classDef slice fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.8px,color:#0F172A
+    classDef data fill:#ECFDF5,stroke:#059669,stroke-width:1.8px,color:#0F172A
+    classDef auth fill:#FFFBEB,stroke:#D97706,stroke-width:1.8px,color:#0F172A
+    classDef err fill:#FEF2F2,stroke:#DC2626,stroke-width:1.8px,color:#7F1D1D

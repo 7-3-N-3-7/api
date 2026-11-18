@@ -1,17 +1,27 @@
 http:
   routers:
-    frontend:
-      rule: "Host(`127.0.0.1.nip.io`) || Host(`platform.127.0.0.1.nip.io`)"
-      service: frontend
+    keycloak:
+      rule: "(Host(`localhost`) || Host(`platform.localhost`) || Host(`127.0.0.1`)) && PathPrefix(`/auth`)"
+      priority: 100
+      service: keycloak
     backend:
-      rule: "Host(`api.127.0.0.1.nip.io`)"
+      rule: "((Host(`localhost`) || Host(`platform.localhost`) || Host(`127.0.0.1`)) && (PathPrefix(`/api/v1`) || PathPrefix(`/actuator`) || PathPrefix(`/swagger-ui`) || PathPrefix(`/v3/api-docs`) || PathPrefix(`/backend-coverage`) || PathPrefix(`/backend-cucumber`))) || Host(`api.localhost`)"
+      priority: 90
       service: backend
-  services:
     frontend:
+      rule: "Host(`localhost`) || Host(`platform.localhost`) || Host(`127.0.0.1`)"
+      priority: 10
+      service: frontend
+  services:
+    keycloak:
       loadBalancer:
         servers:
-          - url: "http://frontend:3000"
+          - url: "http://keycloak:8080"
     backend:
       loadBalancer:
         servers:
           - url: "http://backend:8081"
+    frontend:
+      loadBalancer:
+        servers:
+          - url: "http://frontend:3000"

@@ -1,0 +1,58 @@
+{
+  "projectTitle": "EduJournal — Generic Full-Stack SDLC",
+  "repositories": {
+    "controlPlane": "7-3-N-3-7/api",
+    "backend": "7-3-N-3-7/backend",
+    "frontend": "7-3-N-3-7/frontend"
+  },
+  "branches": {
+    "release": "main",
+    "integration": "dev",
+    "prefix": "feature"
+  },
+  "specs": {
+    "rootDir": "specs/features",
+    "sharedDir": "specs/features/shared",
+    "backendOnlyTag": "@backend-only",
+    "frontendOnlyTag": "@ui-only",
+    "fullstackTag": "@fullstack",
+    "issueTagPrefix": "@issue-",
+    "parentTagPrefix": "@parent-",
+    "spawnSubIssueTag": "@spawn-subissue"
+  },
+  "gates": {
+    "requireSecretScan": true,
+    "requireAllSubIssuesDone": true,
+    "targets": {
+      "backend": {
+        "cucumberJson": "backend/target/cucumber-reports/cucumber-report.json",
+        "jacocoXml": "backend/target/site/jacoco/jacoco.xml",
+        "minLineCoverage": 0.98,
+        "minBranchCoverage": 0.98,
+        "minInstructionCoverage": 0.98,
+        "minComplexityCoverage": 0.98,
+        "minMethodCoverage": 0.98,
+        "minClassCoverage": 0.98
+      },
+      "frontend": {
+        "cucumberJson": "frontend/reports/cucumber-report.json",
+        "vitestSummaryJson": "frontend/coverage/coverage-summary.json",
+        "minLineCoverage": 0.98,
+        "minStatementCoverage": 0.98,
+        "minFunctionCoverage": 0.98,
+        "minBranchCoverage": 0.98
+      }
+    }
+  },
+  "projectBoard": {
+    "statuses": [
+      "Backlog",
+      "Spec Ready",
+      "Red (Outer BDD)",
+      "Inner TDD",
+      "Green Gate",
+      "Done",
+      "Regression"
+    ]
+  }
+}

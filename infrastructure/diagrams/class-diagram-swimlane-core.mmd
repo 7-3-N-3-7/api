@@ -1,0 +1,131 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'class': {'hideEmptyMembersBox': true}}}%%
+classDiagram
+    direction TB
+
+    namespace com_platform_core_web {
+        class BaseWebCore {
+            <<final>>
+            -BaseWebCore()
+        }
+
+        class BaseController~Entity, DTO~ {
+            <<abstract>>
+            #BaseService~Entity, DTO~ service
+            +getAll() ResponseEntity~List~DTO~~
+            +getAllPaged(Pageable pageable) ResponseEntity~Page~DTO~~
+            +getById(UUID id) ResponseEntity~DTO~
+            +create(DTO dto) ResponseEntity~DTO~
+            +update(UUID id, DTO dto) ResponseEntity~DTO~
+            +delete(UUID id) ResponseEntity~Void~
+        }
+
+        class GlobalExceptionHandler {
+            <<RestControllerAdvice>>
+            +handleDomainException(DomainException ex, HttpServletRequest req) ResponseEntity~ProblemDetail~
+            +handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest req) ResponseEntity~ProblemDetail~
+        }
+    }
+
+    namespace com_platform_core_domain {
+        class BaseDomainCore {
+            <<final>>
+            -BaseDomainCore()
+        }
+
+        class HasId {
+            <<interface>>
+            +id() UUID
+        }
+
+        class Identifiable {
+            <<interface>>
+            +getId() UUID
+            +setId(UUID id) void
+            +id() UUID
+        }
+
+        class BaseRepository~Entity~ {
+            <<interface>>
+            +findAll(Specification~Entity~ spec, Pageable pageable) Page~Entity~
+        }
+
+        class ErrorCode {
+            <<enumeration>>
+            NOT_FOUND(404)
+            CONFLICT(409)
+            BAD_REQUEST(400)
+            UNAUTHORIZED(401)
+            FORBIDDEN(403)
+            UNPROCESSABLE_ENTITY(422)
+            INTERNAL_ERROR(500)
+            +httpStatus() int
+            +title() String
+            +toException(String details) DomainException
+            +supply(String details) Supplier~DomainException~
+            +require(boolean cond, String details) void
+        }
+
+        class DomainException {
+            -ErrorCode errorCode
+            -Instant timestamp
+            +getErrorCode() ErrorCode
+            +getStatus() int
+            +getTitle() String
+            +getTimestamp() Instant
+        }
+
+        class BaseService~Entity, DTO~ {
+            <<abstract>>
+            #BaseRepository~Entity~ repository
+            #toDto(Entity entity)* DTO
+            #toEntity(DTO dto)* Entity
+            #mergeEntity(Entity existing, DTO dto) Entity
+            #validateBeforeCreate(DTO dto) void
+            #validateBeforeUpdate(UUID id, DTO dto) void
+            +findAll() List~DTO~
+            +findAllPaged(Pageable pageable) Page~DTO~
+            +findOptionalById(UUID id) Optional~DTO~
+            +findById(UUID id) DTO
+            +findEntityById(UUID id) Entity
+            +create(DTO dto) DTO
+            +update(UUID id, DTO dto) DTO
+            +deleteById(UUID id) void
+        }
+    }
+
+    namespace com_platform_config {
+        class SecurityConfig {
+            <<Configuration>>
+            +filterChain(HttpSecurity http) SecurityFilterChain
+            +jwtAuthenticationConverter() JwtAuthenticationConverter
+            +passwordEncoder() PasswordEncoder
+        }
+
+        class PlatformCacheService {
+            <<Service>>
+            +isConnected() boolean
+            +put(String key, Object value) void
+            +get(String key) T
+            +evict(String key) void
+            +evictByPrefix(String prefix) void
+        }
+
+        class PlatformEventService {
+            <<Service>>
+            +publishEvent(String topic, String action, String payloadId, Map metadata) void
+            +getPublishedEvents() List~PublishedEvent~
+            +hasEvent(String topic, String action) boolean
+        }
+    }
+
+    HasId <|-- Identifiable : udvider
+    BaseWebCore ..> BaseController : indkapsler
+    BaseDomainCore ..> BaseService : indkapsler
+    BaseController o--> BaseService : delegerer til
+    BaseService o--> BaseRepository : persisterer via
+    BaseService ..> ErrorCode : kaster fejl via
+    ErrorCode ..> DomainException : opretter
+    GlobalExceptionHandler ..> DomainException : konverterer til RFC 7807
+    SecurityConfig ..> GlobalExceptionHandler : sikrer HTTP-kald
+    BaseService ..> PlatformCacheService : cache-invalidering
+    BaseService ..> PlatformEventService : event-publicering

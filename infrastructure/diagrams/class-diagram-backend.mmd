@@ -1,0 +1,113 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'flowchart': {'curve': 'basis', 'nodeSpacing': 75, 'rankSpacing': 90, 'padding': 20, 'subGraphTitleMargin': {'top': 12, 'bottom': 12}}}}%%
+flowchart TB
+    subgraph ConfigTier ["1. Tværgående Infrastruktur (com.platform.config)"]
+        direction LR
+        SecurityCfg["SecurityConfig
+OAuth2 Resource Server JWT & RBAC
+(/api/v1/public/** vs. beskyttede endpoints)"]
+        CacheSvc["PlatformCacheService
+Distribueret L2 Cache (Redis)
+put(), get(), evictByPrefix()"]
+        EventSvc["PlatformEventService
+Domæne-events (Kafka)
+publishEvent(topic, action, payloadId)"]
+    end
+
+    subgraph CoreTier ["2. Konsolideret 2-Fils Core (com.platform.core)"]
+        direction LR
+        WebCore["BaseWebCore
+• BaseController<E, D> (GET/POST/PUT/DELETE/paged)
+• GlobalExceptionHandler -> RFC 7807 ProblemDetail"]
+        DomainCore["BaseDomainCore
+• HasId & Identifiable (UUID)
+• BaseRepository<E> (JpaRepository + JpaSpecificationExecutor)
+• ErrorCode & DomainException
+• BaseService<E, D> (@Transactional CRUD + hooks)"]
+        WebCore -->|"1. Delegerer & mapper fejl"| DomainCore
+    end
+
+    subgraph SliceTier ["3. Indkapslede Single-File Vertical Slices (com.platform.features.*)"]
+        direction TB
+        subgraph ClinicalSlices ["Kliniske & Booking Slices"]
+            direction LR
+            SliceApp["AppointmentFeature
+/api/v1/appointments
++ TimefoldBookingService
++ AppointmentPort"]
+            SliceClinic["ClinicPlatformFeature
+/api/v1/clinic & /api/public
++ CVR, Ydelser & Handshakes
++ ProviderProfilePort & HandshakePort"]
+            SliceJournal["JournalFeature
+/api/v1/journals
++ JournalGitService (JGit)
++ INTERNAL_MEDICAL_NOTES & JournalPort"]
+            SlicePsycho["PsychotraumatologyFeature
+/api/v1/psychotraumatology/tests
++ PCL-5 Scoring (0-80, cutoff 33)
++ PsychotraumatologyPort"]
+        end
+
+        subgraph OpsSlices ["Økonomi, Identitet & Lokalisering Slices"]
+            direction LR
+            SliceFinance["FinanceFeature
+/api/v1/finance
++ KillBillClient & FineractClient
++ FinanceGitService (SHA-1 Bilag)"]
+            SliceUser["UserFeature
+/api/users & /api/v1/user/profile
++ PublicHealth & SecureData Controllers
++ PasswordEncoder"]
+            SliceI18n["I18nFeature
+/api/v1/i18n
++ MongoDB @Document i18n_dictionaries
++ ClinicDatabaseInitializer"]
+        end
+    end
+
+    subgraph DataTier ["4. Persistens & Eksterne Motorer"]
+        direction LR
+        PgDb[("PostgreSQL (business-db)
+app_users, clinic, appointments,
+journals, pcl5, killbill & fineract_*")]
+        MongoDb[("MongoDB
+i18n_dictionaries")]
+        JGitRepo[("JGit Fil-Repository
+journal-repo & finance-repo")]
+        FinEngines["KillBill & Apache Fineract
+Faktura, Abonnement & Bogholderi"]
+    end
+
+    SliceApp -->|"2. Nedarver BaseController / BaseService"| CoreTier
+    SliceClinic -->|"2. Nedarver BaseController / BaseService"| CoreTier
+    SliceJournal -->|"2. Nedarver BaseController / BaseService"| CoreTier
+    SlicePsycho -->|"2. Nedarver BaseController / BaseService"| CoreTier
+    SliceUser -->|"2. Nedarver BaseController / BaseService"| CoreTier
+    SliceFinance -->|"3. Bruger ErrorCode & HasId"| DomainCore
+    SliceI18n -->|"3. Bruger Identifiable & ErrorCode"| DomainCore
+
+    SliceApp -.->|"Port-kontrakt (ingen direkte Repo-kobling)"| SliceClinic
+    SliceJournal -.->|"Port-kontrakt (samtykketjek)"| SliceClinic
+    SlicePsycho -.->|"Port-kontrakt (samtykketjek)"| SliceClinic
+
+    ConfigTier -.->|"JWT-beskyttelse, Cache & Events"| SliceTier
+    ClinicalSlices -->|"Spring Data JPA & JGit"| PgDb
+    SliceJournal -->|"SHA-1 snapshots"| JGitRepo
+    SliceFinance -->|"SHA-1 finansbilag"| JGitRepo
+    SliceFinance -->|"REST / Ledger sync"| FinEngines
+    SliceI18n -->|"Spring Data MongoDB"| MongoDb
+
+    class WebCore,DomainCore core
+    class SliceApp,SliceClinic,SliceJournal,SlicePsycho,SliceFinance,SliceUser,SliceI18n slice
+    class CacheSvc,EventSvc,PgDb,MongoDb,JGitRepo data
+    class SecurityCfg,FinEngines auth
+    style ConfigTier fill:#FFFBEB,stroke:#F59E0B
+    style CoreTier fill:#EFF6FF,stroke:#2563EB
+    style SliceTier fill:#F5F3FF,stroke:#7C3AED
+    style DataTier fill:#ECFDF5,stroke:#059669
+
+    classDef core fill:#EFF6FF,stroke:#2563EB,stroke-width:1.8px,color:#0F172A
+    classDef slice fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.8px,color:#0F172A
+    classDef data fill:#ECFDF5,stroke:#059669,stroke-width:1.8px,color:#0F172A
+    classDef auth fill:#FFFBEB,stroke:#D97706,stroke-width:1.8px,color:#0F172A
+    classDef err fill:#FEF2F2,stroke:#DC2626,stroke-width:1.8px,color:#7F1D1D

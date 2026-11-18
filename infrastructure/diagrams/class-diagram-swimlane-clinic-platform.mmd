@@ -1,0 +1,142 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'class': {'hideEmptyMembersBox': true}}}%%
+classDiagram
+    direction TB
+
+    namespace Core_Supertyper {
+        class BaseController~ClientProfile, ClientProfileDto~ {
+            <<abstract>>
+        }
+        class BaseService~ClientProfile, ClientProfileDto~ {
+            <<abstract>>
+        }
+        class BaseRepository~E~ {
+            <<interface>>
+        }
+    }
+
+    namespace ClinicPlatformFeature_Slice {
+        class ClinicPlatformFeature {
+            <<final>>
+            -ClinicPlatformFeature()
+        }
+
+        class ClinicPlatformController {
+            <<package-private RestController /api/v1>>
+            +getMe(Authentication auth) ResponseEntity
+            +getDirectory() ResponseEntity
+            +onboardTherapist(OnboardingRequestDto req) ResponseEntity
+            +createService(ServiceDto dto) ResponseEntity
+            +createHandshake(HandshakeRequestDto req) ResponseEntity
+            +updateHandshakeStatus(UUID id, Map payload) ResponseEntity
+        }
+
+        class ClinicPlatformService {
+            <<package-private Service>>
+            +getClientOverview(UUID clientUuid) Map
+            +getTherapistOverview(UUID therapistUuid) Map
+            +onboardTherapist(OnboardingRequestDto req) ProviderProfileDto
+            +createOrUpdateHandshake(HandshakeRequestDto req) ClientTherapistHandshakeDto
+        }
+
+        class ProviderProfilePort {
+            <<interface>>
+        }
+        class HandshakePort {
+            <<interface>>
+        }
+
+        class ClientProfileRepository {
+            <<package-private>>
+        }
+        class OrganisationRepository {
+            <<package-private>>
+        }
+        class ProviderProfileRepository {
+            <<package-private>>
+        }
+        class ServiceRepository {
+            <<package-private>>
+        }
+        class HandshakeRepository {
+            <<package-private>>
+        }
+
+        class ClientProfile {
+            <<Entity client_profiles>>
+            -UUID id
+            -UUID userId
+            -String fullName
+            -String dateOfBirth
+            -String homeAddress
+            -String postalCode
+            -String phoneNumber
+            -String email
+        }
+
+        class Organisation {
+            <<Entity organisations>>
+            -UUID id
+            -String cvrNumber
+            -String name
+            -String videoMeetingUrl
+            -String iban
+            -String currency
+        }
+
+        class ProviderProfile {
+            <<Entity provider_profiles>>
+            -UUID id
+            -UUID userUuid
+            -String displayName
+            -String workingHoursJson
+            -String currency
+        }
+
+        class Service {
+            <<Entity services>>
+            -UUID id
+            -String name
+            -Integer durationMinutes
+            -Double price
+            -String location
+            -Boolean isActive
+        }
+
+        class ClientTherapistHandshake {
+            <<Entity client_therapist_handshakes>>
+            -UUID id
+            -UUID clientUuid
+            -UUID therapistUuid
+            -String status
+            -LocalDateTime grantedAt
+            -LocalDateTime revokedAt
+            -LocalDate validFrom
+            -LocalDate validTo
+        }
+    }
+
+    ClinicPlatformFeature ..> ClinicPlatformController : indkapsler
+    BaseController <|-- ClinicPlatformController : nedarver fra
+    BaseService <|-- ClinicPlatformService : nedarver fra
+
+    BaseRepository <|-- ClientProfileRepository : udvider
+    BaseRepository <|-- OrganisationRepository : udvider
+    BaseRepository <|-- ProviderProfileRepository : udvider
+    BaseRepository <|-- ServiceRepository : udvider
+    BaseRepository <|-- HandshakeRepository : udvider
+
+    ProviderProfilePort <|.. ProviderProfileRepository : implementerer
+    HandshakePort <|.. HandshakeRepository : implementerer
+
+    ClinicPlatformController --> ClinicPlatformService : delegerer til
+    ClinicPlatformService --> ClientProfileRepository : bruger
+    ClinicPlatformService --> OrganisationRepository : bruger
+    ClinicPlatformService --> ProviderProfileRepository : bruger
+    ClinicPlatformService --> ServiceRepository : bruger
+    ClinicPlatformService --> HandshakeRepository : bruger
+
+    Organisation "1" --> "0..*" ProviderProfile : tilknytter
+    Organisation "0..1" --> "0..*" Service : skabelon for
+    ProviderProfile "0..1" --> "0..*" Service : udbyder
+    ClientProfile "1" --> "0..*" ClientTherapistHandshake : giver samtykke
+    ProviderProfile "1" --> "0..*" ClientTherapistHandshake : modtager adgang

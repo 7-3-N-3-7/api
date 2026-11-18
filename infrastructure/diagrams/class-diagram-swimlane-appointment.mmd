@@ -1,0 +1,124 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'class': {'hideEmptyMembersBox': true}}}%%
+classDiagram
+    direction TB
+
+    namespace Core_Supertyper {
+        class BaseController~Appointment, AppointmentDto~ {
+            <<abstract>>
+        }
+        class BaseService~Appointment, AppointmentDto~ {
+            <<abstract>>
+        }
+        class BaseRepository~Appointment~ {
+            <<interface>>
+        }
+        class Identifiable {
+            <<interface>>
+        }
+    }
+
+    namespace AppointmentFeature_Slice {
+        class AppointmentFeature {
+            <<final>>
+            -AppointmentFeature()
+        }
+
+        class AppointmentController {
+            <<package-private RestController>>
+            +getByClient(UUID clientUuid) ResponseEntity~List~AppointmentDto~~
+            +getByTherapist(UUID therapistUuid) ResponseEntity~List~AppointmentDto~~
+            +getTimefoldSlots(UUID therapistUuid) ResponseEntity~List~CandidateSlot~~
+            +create(AppointmentDto dto) ResponseEntity~AppointmentDto~
+            +update(UUID id, AppointmentDto dto) ResponseEntity~AppointmentDto~
+            +delete(UUID id) ResponseEntity~Void~
+            +getGitHistory(UUID id) ResponseEntity~List~Map~~
+        }
+
+        class AppointmentService {
+            <<package-private Service>>
+            -TimefoldBookingService timefoldBookingService
+            #validateBeforeCreate(AppointmentDto dto) void
+            #validateBeforeUpdate(UUID id, AppointmentDto dto) void
+            #toDto(Appointment entity) AppointmentDto
+            #toEntity(AppointmentDto dto) Appointment
+        }
+
+        class AppointmentRepository {
+            <<package-private>>
+            +existsByStartTime(LocalDateTime startTime) boolean
+        }
+
+        class AppointmentPort {
+            <<interface>>
+            +findByClientUuid(UUID clientUuid) List~Appointment~
+            +findByTherapistUuid(UUID therapistUuid) List~Appointment~
+        }
+
+        class Appointment {
+            <<Entity appointments>>
+            -UUID id
+            -UUID clientUuid
+            -UUID therapistUuid
+            -UUID serviceId
+            -String clientName
+            -String therapistName
+            -LocalDateTime startTime
+            -LocalDateTime endTime
+            -String status
+            -String gitCommitHash
+            -UUID journalEntryId
+        }
+
+        class AppointmentDto {
+            <<record>>
+            +UUID id
+            +UUID clientUuid
+            +UUID therapistUuid
+            +UUID serviceId
+            +LocalDateTime startTime
+            +LocalDateTime endTime
+            +String status
+            +String gitCommitHash
+        }
+    }
+
+    namespace Timefold_AI_Solver {
+        class TimefoldBookingService {
+            <<Service>>
+            +solveAvailableSlots(...) List~CandidateSlot~
+        }
+        class BookingConstraintProvider {
+            <<ConstraintProvider>>
+            +defineConstraints(ConstraintFactory factory) Constraint[]
+            -noOverlapWithExistingBookings(ConstraintFactory factory) Constraint
+        }
+        class TherapistScheduleSolution {
+            -List~CandidateSlot~ candidateSlots
+            -List~ExistingBookingFact~ existingBookings
+            -List~BookingAssignment~ assignments
+            -HardSoftScore score
+        }
+        class CandidateSlot {
+            -String id
+            -LocalDateTime startTime
+            -LocalDateTime endTime
+            -boolean withinWorkingHours
+            -boolean inPast
+        }
+    }
+
+    AppointmentFeature ..> AppointmentController : indkapsler
+    BaseController <|-- AppointmentController : nedarver fra
+    BaseService <|-- AppointmentService : nedarver fra
+    BaseRepository <|-- AppointmentRepository : udvider
+    AppointmentPort <|.. AppointmentRepository : implementerer
+    Identifiable <|.. Appointment : implementerer
+
+    AppointmentController --> AppointmentService : delegerer til
+    AppointmentService --> AppointmentRepository : persisterer via
+    AppointmentService --> TimefoldBookingService : beregner ledige tider
+    TimefoldBookingService --> BookingConstraintProvider : optimerer med
+    TimefoldBookingService ..> TherapistScheduleSolution : løser plan
+    TherapistScheduleSolution o--> CandidateSlot : foreslår slots
+    AppointmentService ..> AppointmentDto : mapper til/fra
+    AppointmentRepository --> Appointment : håndterer entitet

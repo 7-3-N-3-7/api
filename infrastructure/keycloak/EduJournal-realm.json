@@ -1,0 +1,271 @@
+{
+  "realm": "EduJournal",
+  "enabled": true,
+  "displayName": "EduJournal / Integr8te IAM",
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "verifyEmail": false,
+  "resetPasswordAllowed": true,
+  "loginWithEmailAllowed": true,
+  "rememberMe": true,
+  "accessTokenLifespan": 3600,
+  "ssoSessionIdleTimeout": 7200,
+  "ssoSessionMaxLifespan": 36000,
+  "defaultRoles": [
+    "offline_access",
+    "uma_authorization",
+    "client"
+  ],
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "noreply@edujournal.local",
+    "fromDisplayName": "EduJournal Klinik",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "client",
+        "description": "Standard client / patient role"
+      },
+      {
+        "name": "therapist",
+        "description": "Clinical therapist / provider role"
+      },
+      {
+        "name": "admin",
+        "description": "Clinic management / platform admin role"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "platform-frontend",
+      "name": "EduJournal Frontend BFF",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "VFbnGPXmCy8Cf9KwAbcy4ulLig3MzraN",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "http://localhost/*",
+        "http://localhost:3000/*",
+        "http://platform.localhost/*",
+        "http://platform.localhost:3000/*",
+        "http://localhost:5173/*",
+        "http://localhost:5174/*",
+        "http://127.0.0.1/*",
+        "http://127.0.0.1:3000/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "+"
+      },
+      "protocolMappers": [
+        {
+          "name": "sub",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper",
+          "consentRequired": false,
+          "config": {
+            "introspection.token.claim": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "full name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-full-name-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "username",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "username",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "preferred_username",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "email",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "email",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "email",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "platform-admin",
+      "name": "EduJournal Backend / BFF Admin Service Account",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "Eksf3Rd4uJtV1oW9eOrolcrvI3i4fxcg",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true
+    }
+  ],
+  "users": [
+    {
+      "id": "4c421f46-836c-4897-8dae-ba9587473273",
+      "username": "bijens",
+      "firstName": "Bo",
+      "lastName": "Jensen",
+      "email": "bjens@mail.com",
+      "enabled": true,
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "TestPass123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "offline_access",
+        "uma_authorization",
+        "client",
+        "therapist",
+        "admin"
+      ]
+    },
+    {
+      "id": "5e357ca1-4913-414f-91a6-81a7de9042ab",
+      "username": "client",
+      "firstName": "Anders",
+      "lastName": "Sand",
+      "email": "client@mail.com",
+      "enabled": true,
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "TestPass123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "offline_access",
+        "uma_authorization",
+        "client"
+      ]
+    },
+    {
+      "id": "f951db57-01ab-4693-bed4-17d03f0870f1",
+      "username": "client2",
+      "firstName": "Sofie",
+      "lastName": "Holm",
+      "email": "client2@mail.com",
+      "enabled": true,
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "TestPass123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "offline_access",
+        "uma_authorization",
+        "client"
+      ]
+    },
+    {
+      "id": "3229b65b-0e95-4dc6-8336-ac7a5a56edc1",
+      "username": "test",
+      "firstName": "Test",
+      "lastName": "Bruger",
+      "email": "test@mail.com",
+      "enabled": true,
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "TestPass123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "offline_access",
+        "uma_authorization",
+        "client"
+      ]
+    },
+    {
+      "id": "9a8b7c6d-1111-2222-3333-444455556666",
+      "username": "mette_lind",
+      "firstName": "Mette",
+      "lastName": "Lind",
+      "email": "mette_lind@klinik.dk",
+      "enabled": true,
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "TestPass123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "offline_access",
+        "uma_authorization",
+        "client"
+      ]
+    }
+  ]
+}

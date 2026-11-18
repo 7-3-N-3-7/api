@@ -1,0 +1,171 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}}}%%
+erDiagram
+    app_users {
+        UUID id PK "Identifiable UUID"
+        VARCHAR username UK "NOT NULL"
+        VARCHAR password "NOT NULL (BCrypt)"
+        VARCHAR role "CLIENT | THERAPIST | ADMIN"
+    }
+
+    client_profiles {
+        UUID id PK "Identifiable UUID"
+        UUID user_id FK "UK, NOT NULL"
+        VARCHAR full_name "NOT NULL"
+        VARCHAR date_of_birth "NOT NULL"
+        VARCHAR home_address "NOT NULL"
+        VARCHAR postal_code "NOT NULL"
+        VARCHAR phone_number "NOT NULL"
+        VARCHAR email "NOT NULL"
+    }
+
+    organisations {
+        UUID id PK "Identifiable UUID"
+        VARCHAR cvr_number UK "8 cifre, NOT NULL"
+        VARCHAR name "NOT NULL"
+        VARCHAR video_meeting_url "NULLABLE"
+        VARCHAR iban "NULLABLE"
+        VARCHAR currency "DKK standard"
+    }
+
+    provider_profiles {
+        UUID id PK "Identifiable UUID"
+        UUID user_uuid FK "UK, NOT NULL"
+        UUID organisation_id FK "NULLABLE"
+        VARCHAR display_name "NOT NULL"
+        TEXT biography "NULLABLE"
+        TEXT working_hours_json "JSON vagtplan"
+    }
+
+    client_therapist_handshakes {
+        UUID id PK "Identifiable UUID"
+        UUID client_uuid FK "NOT NULL"
+        UUID therapist_uuid FK "NOT NULL"
+        VARCHAR status "PENDING | ACCEPTED | REVOKED"
+        TIMESTAMP granted_at "NULLABLE"
+        TIMESTAMP revoked_at "NULLABLE"
+        DATE valid_from "NULLABLE"
+        DATE valid_to "NULLABLE"
+    }
+
+    services {
+        UUID id PK "Identifiable UUID"
+        UUID provider_id FK "NULLABLE"
+        UUID organisation_id FK "NULLABLE"
+        VARCHAR name "NOT NULL"
+        INTEGER duration_minutes "30 | 45 | 60 | 90"
+        DOUBLE price "DKK"
+        VARCHAR location "Clinic | Online"
+        BOOLEAN is_active "DEFAULT TRUE"
+    }
+
+    appointments {
+        UUID id PK "Identifiable UUID"
+        UUID client_uuid FK "NOT NULL"
+        UUID therapist_uuid FK "NOT NULL"
+        UUID service_id FK "NULLABLE"
+        UUID journal_entry_id FK "NULLABLE"
+        TIMESTAMP start_time "NOT NULL"
+        TIMESTAMP end_time "NOT NULL"
+        VARCHAR title "NOT NULL"
+        VARCHAR status "CONFIRMED | CANCELLED"
+        VARCHAR git_commit_hash "SHA-1 audit"
+    }
+
+    journal_entries {
+        UUID id PK "Identifiable UUID"
+        UUID client_uuid FK "NOT NULL"
+        UUID appointment_id FK "NULLABLE"
+        VARCHAR title "NOT NULL"
+        TEXT content "NOT NULL"
+        INTEGER mood_rating "1..10"
+        BOOLEAN shared_with_therapists "DEFAULT TRUE"
+        VARCHAR git_commit_hash "SHA-1 audit"
+        VARCHAR git_branch "DEFAULT main"
+        TIMESTAMP timestamp "NOT NULL"
+    }
+
+    therapist_clinical_notes {
+        UUID id PK "Identifiable UUID"
+        UUID client_uuid FK "NOT NULL"
+        UUID author_therapist_uuid FK "NOT NULL"
+        UUID journal_entry_id FK "NULLABLE"
+        UUID appointment_id FK "NULLABLE"
+        TEXT confidential_markdown "INTERNAL_MEDICAL_NOTES"
+        VARCHAR git_commit_hash "SHA-1 audit"
+        TIMESTAMP created_at "NOT NULL"
+    }
+
+    therapist_notes {
+        UUID id PK "Identifiable UUID"
+        UUID client_uuid FK "NOT NULL"
+        UUID therapist_uuid FK "NOT NULL"
+        TEXT note "NOT NULL"
+        TIMESTAMP timestamp "NOT NULL"
+    }
+
+    psychotraumatology_tests {
+        UUID id PK "Identifiable UUID"
+        UUID client_uuid FK "NOT NULL"
+        UUID therapist_uuid FK "NULLABLE"
+        VARCHAR test_type "PCL-5"
+        INTEGER score "0..80 (cutoff 33)"
+        VARCHAR severity "LOW | MODERATE | HIGH | SEVERE"
+        TEXT answers_json "NOT NULL"
+        TIMESTAMP timestamp "NOT NULL"
+    }
+
+    killbill_fineract_ledgers {
+        UUID id PK "Faktura / Bilag UUID"
+        UUID client_uuid FK "NOT NULL"
+        UUID appointment_id FK "NULLABLE"
+        VARCHAR invoice_number UK "KillBill / Fineract"
+        DECIMAL amount_gross_dkk "10,2"
+        VARCHAR status "PAID | REFUNDED | INSTALLMENT"
+        VARCHAR git_commit_hash "SHA-1 finansbilag"
+    }
+
+    i18n_dictionaries {
+        UUID id PK "MongoDB Document UUID"
+        VARCHAR locale UK "da | en | de | es | fr"
+        VARCHAR display_name "NOT NULL"
+        BOOLEAN published "DEFAULT TRUE"
+        JSON translations "Indlejret nøgle-map"
+    }
+
+    git_audit_commits {
+        VARCHAR commit_hash PK "SHA-1 (40 tegn)"
+        VARCHAR author_name "NOT NULL"
+        VARCHAR message "NOT NULL"
+        TEXT blob_markdown "Snapshot + Finansbilag"
+        VARCHAR parent_hash FK "Forrige commit"
+    }
+
+    app_users ||--o| client_profiles : "ISA 1:1 klientprofil"
+    app_users ||--o| provider_profiles : "ISA 1:1 behandlerprofil"
+
+    organisations ||--o{ provider_profiles : "tilknytter behandlere"
+    organisations ||--o{ services : "definerer ydelsesskabelon"
+    provider_profiles ||--o{ services : "udbyder ydelser"
+
+    client_profiles ||--o{ client_therapist_handshakes : "giver samtykke"
+    provider_profiles ||--o{ client_therapist_handshakes : "modtager adgang"
+
+    client_profiles ||--o{ appointments : "booker aftale"
+    provider_profiles ||--o{ appointments : "afholder aftale"
+    services ||--o{ appointments : "danne grundlag for"
+
+    client_profiles ||--o{ journal_entries : "skriver journal"
+    appointments ||--o{ journal_entries : "koblet til session"
+    journal_entries ||--o{ therapist_clinical_notes : "har fortrolige noter"
+    provider_profiles ||--o{ therapist_clinical_notes : "forfatter noter"
+    provider_profiles ||--o{ therapist_notes : "skriver laegenote"
+
+    client_profiles ||--o{ psychotraumatology_tests : "besvarer PCL-5"
+    provider_profiles ||--o{ psychotraumatology_tests : "vurderer test"
+
+    client_profiles ||--o{ killbill_fineract_ledgers : "afregnes via KillBill & Fineract"
+    appointments ||--o{ killbill_fineract_ledgers : "udloeser faktura"
+
+    journal_entries ||--o{ git_audit_commits : "versionsstyres i JGit"
+    therapist_clinical_notes ||--o{ git_audit_commits : "revisionsspores i JGit"
+    killbill_fineract_ledgers ||--o{ git_audit_commits : "arkiverer SHA-1 finansbilag"

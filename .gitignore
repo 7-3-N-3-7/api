@@ -89,5 +89,8 @@ backend/*
 
 .env
 *.txt
-infrastructure/docker-compose.yml
+*.log
+*.exec
+**/coverage/
+**/dist/
 infrastructure/docker-compose.yml

@@ -1,0 +1,87 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'class': {'hideEmptyMembersBox': true}}}%%
+classDiagram
+    direction TB
+
+    namespace Core_Og_Ekstern_Port {
+        class BaseController~PsychotraumatologyTest, PsychotraumatologyTestDto~ {
+            <<abstract>>
+        }
+        class BaseService~PsychotraumatologyTest, PsychotraumatologyTestDto~ {
+            <<abstract>>
+        }
+        class BaseRepository~PsychotraumatologyTest~ {
+            <<interface>>
+        }
+        class HandshakePort {
+            <<interface ClinicPlatformFeature>>
+            +hasAcceptedHandshake(UUID clientUuid, UUID therapistUuid) boolean
+        }
+    }
+
+    namespace PsychotraumatologyFeature_Slice {
+        class PsychotraumatologyFeature {
+            <<final>>
+            +int MIN_PCL5_SCORE = 0
+            +int MAX_PCL5_SCORE = 80
+            +int CLINICAL_PTSD_CUTOFF_SCORE = 33
+        }
+
+        class PsychotraumatologyController {
+            <<package-private RestController>>
+            +create(PsychotraumatologyTestDto testDto) ResponseEntity~PsychotraumatologyTestDto~
+            +getTestsByClient(UUID clientUuid, Authentication auth) ResponseEntity~List~PsychotraumatologyTestDto~~
+        }
+
+        class PsychotraumatologyService {
+            <<package-private Service>>
+            -HandshakePort handshakePort
+            #toDto(PsychotraumatologyTest entity) PsychotraumatologyTestDto
+            +toEntity(PsychotraumatologyTestDto dto) PsychotraumatologyTest
+            +submitTest(PsychotraumatologyTestDto dto) PsychotraumatologyTest
+            +getTestsByClient(UUID clientUuid, Authentication auth) List~PsychotraumatologyTest~
+        }
+
+        class PsychotraumatologyPort {
+            <<interface>>
+        }
+
+        class PsychotraumatologyTestRepository {
+            <<package-private>>
+            +findByClientUuidOrderByTimestampDesc(UUID clientUuid) List~PsychotraumatologyTest~
+        }
+
+        class PsychotraumatologyTest {
+            <<Entity psychotraumatology_tests>>
+            -UUID id
+            -UUID clientUuid
+            -UUID therapistUuid
+            -String testType
+            -Integer score
+            -String severity
+            -String answersJson
+            -LocalDateTime timestamp
+        }
+
+        class PsychotraumatologyTestDto {
+            <<record>>
+            +UUID id
+            +UUID clientUuid
+            +UUID therapistUuid
+            +String testType
+            +Integer score
+            +String severity
+            +String answersJson
+        }
+    }
+
+    PsychotraumatologyFeature ..> PsychotraumatologyController : indkapsler
+    BaseController <|-- PsychotraumatologyController : nedarver fra
+    BaseService <|-- PsychotraumatologyService : nedarver fra
+    BaseRepository <|-- PsychotraumatologyTestRepository : udvider
+    PsychotraumatologyPort <|.. PsychotraumatologyTestRepository : implementerer
+
+    PsychotraumatologyController --> PsychotraumatologyService : delegerer til
+    PsychotraumatologyService --> PsychotraumatologyTestRepository : persisterer PCL-5
+    PsychotraumatologyService ..> HandshakePort : verificerer terapeut-samtykke
+    PsychotraumatologyService ..> PsychotraumatologyTestDto : returnerer DTO
+    PsychotraumatologyTestRepository --> PsychotraumatologyTest : håndterer entitet
