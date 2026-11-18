@@ -21,6 +21,7 @@ import {
   parseJacocoXmlReport,
   replaceSpawnSubIssueTag,
   resolveBranchPlan,
+  resolveTargetRepositories,
   syncFeatureToIssueBody,
 } from "./sdlc-domain.ts";
 
@@ -266,6 +267,61 @@ export async function bootstrapProject(
   return { projectTitle: config.projectTitle, dryRun: false, operations };
 }
 
+function syncChildRepoBranches(
+  target: SpecTarget,
+  branchPlan: BranchPlan,
+  config: SdlcConfig,
+  ctx: ReturnType<typeof resolveContext>
+): SdlcDryRunOperation[] {
+  const repos = resolveTargetRepositories(target, config);
+  const ops: SdlcDryRunOperation[] = [];
+  for (const childRepo of repos) {
+    ops.push({
+      action: "sync_child_repo_branch",
+      details: {
+        repo: childRepo,
+        branchName: branchPlan.branchName,
+        baseBranch: branchPlan.baseBranch,
+      },
+    });
+    if (!ctx.dryRun) {
+      let baseSha = "";
+      try {
+        baseSha = ctx.runGh([
+          "api",
+          `repos/${childRepo}/git/ref/heads/${branchPlan.baseBranch}`,
+          "--jq",
+          ".object.sha",
+        ]);
+      } catch {
+        baseSha = ctx.runGh([
+          "api",
+          `repos/${childRepo}/git/ref/heads/${config.branches.integration}`,
+          "--jq",
+          ".object.sha",
+        ]);
+      }
+      try {
+        ctx.runGh([
+          "api",
+          "--method",
+          "POST",
+          `repos/${childRepo}/git/refs`,
+          "-f",
+          `ref=refs/heads/${branchPlan.branchName}`,
+          "-f",
+          `sha=${baseSha}`,
+        ]);
+      } catch {
+        ctx.log(
+          `Branch '${branchPlan.branchName}' already exists or could not be created in '${childRepo}'.`
+        );
+      }
+    }
+  }
+  return ops;
+}
+
 export async function syncIssueToFeature(
   options: SyncIssueOptions,
   deps: SdlcAdapterDeps = {}
@@ -301,10 +357,12 @@ export async function syncIssueToFeature(
   fs.writeFileSync(featureAbsPath, parsed.normalizedFeatureText, "utf8");
 
   const nextStatus: ProjectStatus = "Red (Outer BDD)";
+  const childOps = syncChildRepoBranches(parsed.target, branchPlan, config, ctx);
   const operations: SdlcDryRunOperation[] = [
     { action: "write_feature_file", details: { featurePath: featureRelPath, target: parsed.target } },
     { action: "create_linked_branch", details: { branchPlan } },
     { action: "set_project_status", details: { issueId: options.issueId, status: nextStatus } },
+    ...childOps,
   ];
 
   if (ctx.dryRun) {
@@ -379,10 +437,13 @@ export async function spawnSubIssues(
       );
 
       spawned.push({ scenarioTitle: candidate.title, childIssueId, childBranch: plan.branchName });
-      operations.push({
-        action: "spawn_sub_issue",
-        details: { parentIssueId: options.parentIssueId, childIssueId, branchPlan: plan },
-      });
+      operations.push(
+        {
+          action: "spawn_sub_issue",
+          details: { parentIssueId: options.parentIssueId, childIssueId, branchPlan: plan },
+        },
+        ...syncChildRepoBranches(meta.target, plan, config, ctx)
+      );
     }
 
     fs.writeFileSync(filePath, text, "utf8");

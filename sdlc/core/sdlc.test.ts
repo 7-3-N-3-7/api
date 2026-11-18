@@ -15,6 +15,7 @@ import {
   parseJacocoXmlReport,
   replaceSpawnSubIssueTag,
   resolveBranchPlan,
+  resolveTargetRepositories,
   slugifyTitle,
   syncFeatureToIssueBody,
 } from "./sdlc-domain.ts";
@@ -848,5 +849,70 @@ describe("sdlc-github adapter, GraphQL live path, --dry-run, and CLI", () => {
     expect(await runCli(["unknown-cmd"])).toBe(2);
     expect(errSpy).toHaveBeenCalled();
     expect(await runCli([], { log: () => {} })).toBe(2);
+  });
+
+  it("resolves target repositories and syncs child repo branches in dry-run and live modes", async () => {
+    expect(resolveTargetRepositories("@fullstack", baseConfig)).toEqual([]);
+
+    const multiConfig: SdlcConfig = {
+      ...baseConfig,
+      repositories: {
+        controlPlane: "7-3-N-3-7/api",
+        backend: "7-3-N-3-7/backend",
+        frontend: "7-3-N-3-7/frontend",
+      },
+    };
+    expect(resolveTargetRepositories("@backend-only", multiConfig)).toEqual(["7-3-N-3-7/backend"]);
+    expect(resolveTargetRepositories("@ui-only", multiConfig)).toEqual(["7-3-N-3-7/frontend"]);
+    expect(resolveTargetRepositories("@fullstack", multiConfig)).toEqual([
+      "7-3-N-3-7/backend",
+      "7-3-N-3-7/frontend",
+    ]);
+
+    const rootDir = trackTempDir();
+    fs.writeFileSync(path.join(rootDir, "sdlc.config.json"), JSON.stringify(multiConfig, null, 2), "utf8");
+
+    const dryMulti = await syncIssueToFeature(
+      {
+        rootDir,
+        issueId: 95,
+        title: "Multi Repo Sync",
+        body: "### Target\n@fullstack\nFeature: Multi\n  Scenario: M\n    Given m",
+      },
+      { dryRun: true, log: () => {} }
+    );
+    expect(
+      dryMulti.operations.filter((o) => o.action === "sync_child_repo_branch").map((o) => o.details.repo)
+    ).toEqual(["7-3-N-3-7/backend", "7-3-N-3-7/frontend"]);
+
+    const liveCalls: string[][] = [];
+    const logs: string[] = [];
+    await syncIssueToFeature(
+      {
+        rootDir,
+        issueId: 96,
+        title: "Live Multi Repo",
+        parentBranch: "feature/90-parent",
+        body: "### Target\n@fullstack\nFeature: Live Multi\n  Scenario: L\n    Given l",
+      },
+      {
+        dryRun: false,
+        token: "tok",
+        log: (m) => logs.push(m),
+        runGh: (args) => {
+          liveCalls.push(args);
+          if (args[0] === "api" && args.includes("repos/7-3-N-3-7/frontend/git/ref/heads/feature/90-parent")) {
+            throw new Error("missing parent branch in frontend");
+          }
+          if (args[0] === "api" && args.includes("--method") && args.includes("repos/7-3-N-3-7/backend/git/refs")) {
+            throw new Error("branch already exists");
+          }
+          return "deadbeef1234";
+        },
+      }
+    );
+
+    expect(liveCalls.some((c) => c.includes("repos/7-3-N-3-7/frontend/git/ref/heads/dev"))).toBe(true);
+    expect(logs.some((m) => m.includes("already exists or could not be created"))).toBe(true);
   });
 });

@@ -29,8 +29,15 @@ export interface FrontendTargetConfig {
   minBranchCoverage: number;
 }
 
+export interface RepositoryTargetsConfig {
+  controlPlane: string;
+  backend: string;
+  frontend: string;
+}
+
 export interface SdlcConfig {
   projectTitle: string;
+  repositories?: RepositoryTargetsConfig;
   branches: {
     release: string;
     integration: string;
@@ -730,4 +737,21 @@ export function evaluateSdlcState(
     coveragePassed: beCovOk && feCovOk,
     summaryMarkdown,
   };
+}
+
+/**
+ * Resolves which implementation repositories (`backend`, `frontend`) belong to a SpecTarget.
+ */
+export function resolveTargetRepositories(
+  target: SpecTarget,
+  config: SdlcConfig
+): string[] {
+  if (!config.repositories) return [];
+  if (target === config.specs.backendOnlyTag) {
+    return [config.repositories.backend];
+  }
+  if (target === config.specs.frontendOnlyTag) {
+    return [config.repositories.frontend];
+  }
+  return [config.repositories.backend, config.repositories.frontend];
 }

@@ -128,7 +128,7 @@ Repositoryet spejler den dobbeltsidede arkitektursymmetri i en **tredobbelt 2-fi
 - **Frontend 2-fils kerne:** [`baseDomainCore.ts`](frontend/src/core/baseDomainCore.ts) + [`baseUiCore.tsx`](frontend/src/core/baseUiCore.tsx)
 - **SDLC 2-fils procesmotor:** [`sdlc-domain.ts`](sdlc/core/sdlc-domain.ts) + [`sdlc-github.ts`](sdlc/core/sdlc-github.ts) styret deklarativt af [`sdlc.config.json`](sdlc.config.json) og fælles `.feature`-kontrakter i [`specs/features/`](specs/features/shared/generic_sdlc_framework.feature).
 
-Root CLI-kommandoer (fra projektets rod):
+Root CLI-kommandoer (fra projektets rod — køres direkte med `npm run sdlc:...` uden ekstra root-afhængigheder, inkl. Multi-Repo konfiguration i `sdlc.config.json` for `7-3-N-3-7/api`, `7-3-N-3-7/backend` og `7-3-N-3-7/frontend`):
 
 ```bash
 # 1. Klargør GitHub Projects v2 board, custom felter & branch protection 100% via gh CLI (--dry-run understøttes)

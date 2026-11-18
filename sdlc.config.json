@@ -1,5 +1,10 @@
 {
   "projectTitle": "EduJournal — Generic Full-Stack SDLC",
+  "repositories": {
+    "controlPlane": "7-3-N-3-7/api",
+    "backend": "7-3-N-3-7/backend",
+    "frontend": "7-3-N-3-7/frontend"
+  },
   "branches": {
     "release": "main",
     "integration": "dev",

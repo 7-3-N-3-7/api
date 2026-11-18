@@ -2,12 +2,12 @@
   "name": "edujournal-platform",
   "version": "1.0.0",
   "private": true,
-  "description": "EduJournal Monorepo & Generic GitHub SDLC Framework",
+  "description": "EduJournal Control-Plane & Generic GitHub SDLC Framework",
   "scripts": {
-    "sdlc:bootstrap": "node frontend/node_modules/tsx/dist/cli.mjs sdlc/core/sdlc-github.ts bootstrap",
-    "sdlc:sync-issue": "node frontend/node_modules/tsx/dist/cli.mjs sdlc/core/sdlc-github.ts sync-issue",
-    "sdlc:spawn": "node frontend/node_modules/tsx/dist/cli.mjs sdlc/core/sdlc-github.ts spawn",
-    "sdlc:verify": "node frontend/node_modules/tsx/dist/cli.mjs sdlc/core/sdlc-github.ts verify",
-    "sdlc:status": "node frontend/node_modules/tsx/dist/cli.mjs sdlc/core/sdlc-github.ts status"
+    "sdlc:bootstrap": "node scripts/run-sdlc.mjs bootstrap",
+    "sdlc:sync-issue": "node scripts/run-sdlc.mjs sync-issue",
+    "sdlc:spawn": "node scripts/run-sdlc.mjs spawn",
+    "sdlc:verify": "node scripts/run-sdlc.mjs verify",
+    "sdlc:status": "node scripts/run-sdlc.mjs status"
   }
 }
