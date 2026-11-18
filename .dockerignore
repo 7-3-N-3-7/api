@@ -1,0 +1,9 @@
+.git
+backend
+frontend
+node_modules
+infrastructure
+docs
+traefik
+*.pdf
+*.log
