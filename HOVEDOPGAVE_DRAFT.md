@@ -397,7 +397,7 @@ Scenario: AppointmentController and AppointmentService inherit generic CRUD oper
 
 | ID | Kategori | Målbart krav (Kvantificeret mål) | Verifikationsmetode |
 | :--- | :--- | :--- | :--- |
-| **NFR-01** | **Testdækning (Maintainability)** | Backend-kodebasen skal opretholde **minimum 98% dækning** på Line, Branch, Instruction, Method, Class og Complexity. | Automatisk `jacoco-maven-plugin` gate i [`pom.xml`](file:///z:/home/work/projects/api/backend/pom.xml#L210-L246). |
+| **NFR-01** | **Testdækning (Maintainability)** | Både backend (**JaCoCo:** `LINE`, `BRANCH`, `INSTRUCTION`, `COMPLEXITY`, `METHOD`, `CLASS`) og frontend + SDLC-kerne (**Istanbul:** `lines`, `statements`, `functions`, `branches`) skal opretholde **minimum 98% dækning** på samtlige tællere uden undtagelsesklausuler. | Automatisk `jacoco-maven-plugin` gate i [`pom.xml`](file:///z:/home/work/projects/api/backend/pom.xml#L210-L246) samt `@vitest/coverage-istanbul` i [`vitest.config.ts`](file:///z:/home/work/projects/api/frontend/vitest.config.ts#L19-L35) verificeret af [`sdlc:verify`](file:///z:/home/work/projects/api/sdlc/core/sdlc-github.ts). |
 | **NFR-02** | **Sikkerhed & Privatliv (Security)** | 100% af API-kald til beskyttede ressourcer skal valideres via OAuth2 JWT eller verificerede BFF-headers; terapeuter må have **0% adgang** til klientens private booking-commits i JGit. | Automatiserede sikkerhedstests i `SecurityTests.java` og `JournalPsychotraumatologySteps.java`. |
 | **NFR-03** | **Performance & Caching** | Sprogordbøger (`GET /api/v1/i18n/{locale}`) skal caches med Redisson L2 cache og HTTP `Cache-Control: public, max-age=300, stale-while-revalidate=600`. | Verificeret via BFF proxy ([`route.ts`](file:///z:/home/work/projects/api/frontend/src/app/api/backend/%5B...path%5D/route.ts#L128-L130)) og integrationstests. |
 | **NFR-04** | **Revisionssporbarhed (Auditability)** | Enhver oprettelse eller ændring af en journaltekst skal resultere i et uforanderligt Git-commit med SHA-1 hash, tidsstempel, forfatter og branch-tag. | Verificeret via `AppointmentGitVersioningTest.java` og `JournalGitService.java`. |
@@ -1022,12 +1022,12 @@ if (backendRes.ok && req.method === 'POST' && targetPath === 'clinic/therapist-o
 > - **Test cases tabel:** Med angivelse af **forventede resultater**, **faktiske resultater**, **fundne fejl/misforståelser** og **udførte rettelser**.
 
 ### 9.1 Systematisk teststrategi jf. SDLC V-Modellen
-På Slide 21 fremhæves **V-Modellen** som ramme for sammenhængen mellem krav-/designfaserne på venstre side (Verifikation) og testniveauerne på højre side (Validering). I dette projekt er V-modellen kombineret med et automatiseret **Outside-In BDD/TDD-loop** ([`bdd-tdd-workflow.puml`](file:///z:/home/work/projects/api/infrastructure/diagrams/bdd-tdd-workflow.puml)):
+På Slide 21 fremhæves **V-Modellen** som ramme for sammenhængen mellem krav-/designfaserne på venstre side (Verifikation) og testniveauerne på højre side (Validering). I dette projekt er V-modellen kombineret med et automatiseret **Outside-In BDD/TDD-loop** og **Generisk GitHub SDLC-Framework** ([`bdd-tdd-workflow.mmd`](file:///z:/home/work/projects/api/infrastructure/diagrams/bdd-tdd-workflow.mmd) & [`generic-sdlc-architecture.mmd`](file:///z:/home/work/projects/api/docs/diagrams/generic-sdlc-architecture.mmd)):
 
 ```mermaid
 flowchart TB
     subgraph Verification["Verifikationsfaser (Design & Specifikation)"]
-        R1["1. Kravanalyse & User Stories\n(Taiga & Gherkin .feature filer)"]
+        R1["1. Kravanalyse & User Stories\n(GitHub Projects v2 & fælles Gherkin .feature kontrakter)"]
         R2["2. Systemdesign\n(BFF, Keycloak & REST API kontrakter)"]
         R3["3. Arkitekturdesign\n(Docker-netværk, PostgreSQL, MongoDB, JGit)"]
         R4["4. Modul- & Kodedesign\n(BaseController, BaseService, Domæneklasser)"]
@@ -1037,9 +1037,9 @@ flowchart TB
 
     subgraph Validation["Valideringsfaser (Systematisk Test)"]
         T4["6. Unittest (Inner Loop TDD)\nJUnit 5 & Vitest komponenttests"]
-        T3["7. Integrationstest\nSpring MockMvc, JPA/H2, Testcontainers & JGit"]
-        T2["8. System- & API-test\nCucumber Java & REST Assured"]
-        T1["9. Accepttest / Full-Stack E2E (Outer Loop BDD)\nCucumber.js + Playwright mod fuldt miljø"]
+        T3["7. Integrationstest\nSpring Context, H2, Testcontainers & JGit"]
+        T2["8. System- & API-Kontrakttest\nCucumber-JVM + REST Assured (@api / @fullstack)"]
+        T1["9. Accepttest / Full-Stack E2E (Outer Loop BDD)\nCucumber.js + Playwright mod fælles specs/features/"]
     end
 
     R1 --> R2 --> R3 --> R4 --> Coding
@@ -1051,25 +1051,24 @@ flowchart TB
     R4 -. "Valideres af" .-> T4
 ```
 
-### 9.2 Automatiseret Code Coverage Gate (JaCoCo) og Test Cases
-For at håndhæve systematisk testdækning er `jacoco-maven-plugin` konfigureret i [`backend/pom.xml`](file:///z:/home/work/projects/api/backend/pom.xml#L203-L246) til at fejle bygget, hvis dækningen falder under **98%** på nogen metrik:
+### 9.2 Automatiserede 98% Code Coverage Gates (6 JaCoCo + 4 Istanbul) & Meta-BDD Dogfooding
+For at håndhæve systematisk testdækning på tværs af hele stakken stiller både backend og frontend + `sdlc/core` ufravigelige **98%-grænser** på samtlige officielle dækningsmetrikker, suppleret af fælles Meta-BDD dogfooding i [`generic_sdlc_framework.feature`](file:///z:/home/work/projects/api/specs/features/shared/generic_sdlc_framework.feature) (`@fullstack`, 3/3 scenarier bestået i både Cucumber-JVM og Cucumber.js):
+
+- **Backend (`jacoco-maven-plugin` i [`backend/pom.xml`](file:///z:/home/work/projects/api/backend/pom.xml#L203-L246)):** Alle **6** officielle JaCoCo-tællere $\ge 0.98$ (seneste verifikation: **LINE 99,78%**, **BRANCH 98,39%**, **INSTRUCTION 99,75%**, **COMPLEXITY 98,32%**, **METHOD 99,79%**, **CLASS 100,00%**).
+- **Frontend + SDLC 2-fils Kerne (`@vitest/coverage-istanbul` i [`frontend/vitest.config.ts`](file:///z:/home/work/projects/api/frontend/vitest.config.ts#L19-L35)):** Alle **4** officielle Istanbul-tællere $\ge 98\%$ uden `istanbul ignore`-undtagelser (seneste verifikation over **12 test-suites / 96 tests**: **Statements 99,49%**, **Branches 98,11%**, **Functions 99,21%**, **Lines 99,72%**).
 
 ```xml
-<!-- Fra: backend/pom.xml (Linje 210-245) -->
+<!-- Fra: backend/pom.xml (Linje 210-250) — samtlige 6 JaCoCo-tællere >= 0.98 -->
 <rules>
   <rule>
     <element>BUNDLE</element>
     <limits>
-      <limit>
-        <counter>LINE</counter>
-        <value>COVEREDRATIO</value>
-        <minimum>0.98</minimum>
-      </limit>
-      <limit>
-        <counter>BRANCH</counter>
-        <value>COVEREDRATIO</value>
-        <minimum>0.98</minimum>
-      </limit>
+      <limit><counter>LINE</counter><value>COVEREDRATIO</value><minimum>0.98</minimum></limit>
+      <limit><counter>BRANCH</counter><value>COVEREDRATIO</value><minimum>0.98</minimum></limit>
+      <limit><counter>INSTRUCTION</counter><value>COVEREDRATIO</value><minimum>0.98</minimum></limit>
+      <limit><counter>COMPLEXITY</counter><value>COVEREDRATIO</value><minimum>0.98</minimum></limit>
+      <limit><counter>METHOD</counter><value>COVEREDRATIO</value><minimum>0.98</minimum></limit>
+      <limit><counter>CLASS</counter><value>COVEREDRATIO</value><minimum>0.98</minimum></limit>
     </limits>
   </rule>
 </rules>
@@ -1083,7 +1082,7 @@ For at håndhæve systematisk testdækning er `jacoco-maven-plugin` konfigureret
 | **TC-02**<br>*Integrationstest*<br>(`AppointmentGitVersioningTest`) | Rollebaseret privatlivsfiltrering af JGit commit-historik mellem klient og terapeut. | Terapeuter må kun se delte journal-commits og kliniske noter – aldrig klientens rå booking-commits. | Terapeuter kunne i første iteration se commits med forfatteren `"Klinik Booking"`. | **Fejl:** `getCommitHistory()` returnerede alle commits på `<patientId>.md`.<br>**Rettelse:** Tilføjede striks rolle- og forfatterfiltrering i [`JournalGitService.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/service/JournalGitService.java#L147-L161) samt separat cache-nøgle `patientId + ":" + isTherapist`. **Status: Bestået.** |
 | **TC-03**<br>*System / BFF Test*<br>(`keycloak_rbac_and_bff.feature`) | Kald gennem Next.js BFF Proxy, når Keycloak JWT udløber under en aktiv NextAuth-session. | Request gennemføres uden at logge brugeren ud, og rolle-opgradering synkroniseres ved CVR-onboarding. | Backend returnerede `HTTP 401 Unauthorized` ved udløbet Bearer token trods gyldig BFF-session. | **Fejl:** BFF sendte udløbet `Authorization`-header videre.<br>**Rettelse:** Implementerede fallback-retry med verificerede `X-Auth-*` session-headers i [`route.ts`](file:///z:/home/work/projects/api/frontend/src/app/api/backend/%5B...path%5D/route.ts#L96-L105). **Status: Bestået.** |
 | **TC-04**<br>*Accepttest / E2E*<br>(`e2e_three_users_therapist_booking_payment.feature`) | Fuldt E2E-flow med 3 brugere: Klinik/Terapeut onboarding $\rightarrow$ Klient Handshake $\rightarrow$ Booking & Betaling. | Hele kæden gennemføres i Playwright og Cucumber uden mocks. | Bestået på tværs af alle 3 brugerroller (HTTP 200/201 og korrekt UI-opdatering). | Ingen fejl i slutevalueringen – bekræfter fuld sporbarhed mod kravspecifikationen. **Status: Bestået.** |
-| **TC-05**<br>*Frontend Dual-App SoC & RBAC*<br>(`baseCore.test.tsx`, `LandingFeature.test.tsx`, `BookingFeature.test.tsx`, `ManagementFeature.test.tsx`, `JournalFeature.test.tsx`) | Verifikation af Zero-Trust `AuthGateway`, `<RoleGuard />` rolle-isolering (`CLIENT`, `PROVIDER <-> THERAPIST`, `MANAGEMENT <-> ADMIN`), `DomainGuard` og RFC 7807 `<ProblemAlert />` på tværs af alle 11 frontend test-suites (45 tests) uden `istanbul ignore`-undtagelser. | Alle 45 tests består med 100% statement-, function- og line-dækning, og uautoriserede roller afvises med `data-testid="forbidden-notice"`. | **Bestået:** 11 test-suites (45 tests) bestået med **100% Statements, 96,92% Branches, 100% Functions og 100% Lines** i Vitest/Istanbul. | Bekræfter vandtæt Separation of Concerns mellem `apps/landing` (18 moduler) og `apps/dashboard` (31 moduler) samt 1:1 symmetri med backend. **Status: Bestået.** |
+| **TC-05**<br>*Frontend Dual-App SoC, SDLC & 98% Gate*<br>(`baseCore.test.tsx`, `sdlc.test.ts` m.fl. + `generic_sdlc_framework.feature`) | Verifikation af Zero-Trust `AuthGateway`, `<RoleGuard />`, `DomainGuard`, `<ProblemAlert />`, Vertical Feature Slices samt 2-fils `sdlc/core`-motoren på tværs af alle 12 test-suites (96 tests) + 39 fælles `@fullstack` Cucumber.js-scenarier uden `istanbul ignore`-undtagelser. | Alle 96 tests og alle 4 Istanbul-metrikker (`lines`, `statements`, `functions`, `branches`) består $\ge 98\%$, og `generic_sdlc_framework.feature` består identisk i BE & FE. | **Bestået:** 12 test-suites (96 tests) bestået med **99,49% Statements, 98,11% Branches, 99,21% Functions og 99,72% Lines** i Vitest/Istanbul samt **39/39** Cucumber.js-scenarier. | Bekræfter vandtæt Separation of Concerns mellem `apps/landing` og `apps/dashboard` samt tredobbelt 2-fils symmetri på tværs af Backend, Frontend og SDLC-procesmotor. **Status: Bestået.** |
 
 ### 9.3 Delkonklusion
 `[Opsummer hvordan testresultaterne dokumenterer kodens kvalitet og leder frem til produktevalueringen i Kapitel 10.]`
@@ -1177,24 +1176,24 @@ flowchart TB
 | Metodetilgang | Fordele ift. projektet | Ulemper ift. projektet | Beslutning |
 | :--- | :--- | :--- | :--- |
 | **1. Plan-drevet (Vandfald / V-Model som proces)** | Tydelig dokumentation og faste faser fra start til slut. | Ufleksibel ved videreudvikling og teknisk udforskning (f.eks. JGit og generisk arkitektur) og giver sen feedback. | **Fravalgt som procesramme** *(V-modellen bruges dog som test-verifikationsmodel i Kapitel 9)*. |
-| **2. Ren Kanban (Flow-baseret uden faste sprints)** | Lavt overhead, kontinuerligt flow på Taiga-boardet. | Mangler faste tidskasser (timeboxing) og strukturerede milepæls-evalueringer, hvilket øger risikoen for tidsचाप op mod rapportafleveringen d. 5. januar. | **Delvist integreret** (Kanban-board i Taiga anvendes inden for faste sprints). |
+| **2. Ren Kanban (Flow-baseret uden faste sprints)** | Lavt overhead, kontinuerligt flow på Kanban-boardet. | Mangler faste tidskasser (timeboxing) og strukturerede milepæls-evalueringer, hvilket øger risikoen for tidsnød op mod rapportafleveringen d. 5. januar. | **Delvist integreret** (Kanban-board i GitHub Projects v2 anvendes inden for faste sprints). |
 | **3. Tilpasset Scrum (*"Scrum for One"* ved 1 studerende / *Letvægts-Scrum* ved gruppe) kombineret med XP (BDD/TDD) (Valgt)** | Forener fast kadence (1-uges sprints, Sprint Planning, Review/Vejledermøde og Retrospective) med XP's tekniske praksisser (Test-Driven Development, Continuous Integration, Refactoring). | Kræver høj selvdisciplin, særligt ved 1 studerende (*Scrum for One*), hvor udvikleren selv skal skifte kasket mellem udførende og reflekterende rolle. | **Valgt.** |
 
 ### 12.2 Til- og fravalg af konkrete teknikker fra Scrum og XP (Jf. Slide 25)
 
 ```mermaid
 flowchart LR
-    subgraph Scrum["Tilpasset Scrum / 'Scrum for One' (Projektstyring)"]
-        PB["📋 Taiga Product Backlog\n(User Stories + Gherkin)"] --> SP["🗓️ Sprint Planning\n(1-uges Sprints)"]
-        SP --> SB["🔨 Sprint Backlog\n& Feature Branches"]
+    subgraph Scrum["Tilpasset Scrum / 'Scrum for One' & GitHub SDLC"]
+        PB["📋 GitHub Projects v2 & Sub-Issues\n(User Stories + Gherkin)"] --> SP["🗓️ Sprint Planning\n(1-uges Sprints)"]
+        SP --> SB["🔨 Træ-isomorfe Branches\n(dev -> feature/# -> child)"]
         SB --> SR["🔍 Sprint Review\n(Demo & Vejleder-feedback)"]
         SR --> SRet["🔄 Sprint Retrospective\n(Procestilpasning)"]
     end
 
     subgraph XP["Extreme Programming & BDD/TDD (Teknisk Kvalitet)"]
-        BDD["🧪 Outside-In BDD\n(Cucumber .feature)"] --> TDD["⚙️ Inner Loop TDD\n(JUnit 5 / Vitest)"]
-        TDD --> REF["♻️ Continuous Refactoring\n(BaseEntity/BaseService)"]
-        REF --> CI["🚀 GitHub Actions CI\n+ Taiga PR Auto-Sync"]
+        BDD["🧪 Outside-In BDD\n(Fælles specs/features/)"] --> TDD["⚙️ Inner Loop TDD\n(JUnit 5 / Vitest 98%)"]
+        TDD --> REF["♻️ Tredobbelt 2-Fils Refaktorering\n(BE + FE + sdlc/core)"]
+        REF --> CI["🚀 sdlc-verify-and-sync.yml\n(Green Gate & To-vejs Feedback)"]
     end
 
     SB --> BDD
@@ -1203,12 +1202,12 @@ flowchart LR
 
 | Teknik / Ceremoni | Status (Tilvalgt / Tilpasset / Fravalgt) | Faglig begrundelse ift. projektet (1 vs. flere studerende) |
 | :--- | :--- | :--- |
-| **Product Backlog & User Stories (Scrum/XP)** | **Tilvalgt (Taiga)** | Alle krav specificeres som User Stories i Taiga med eksekverbare Gherkin acceptkriterier, synkroniseret med GitHub via [`.github/workflows/taiga_bdd_sync.yml`](file:///z:/home/work/projects/api/.github/workflows/taiga_bdd_sync.yml). |
+| **Product Backlog & User Stories (Scrum/XP)** | **Tilvalgt (Taiga $\rightarrow$ GitHub Projects v2)** | I Sprint 1–2 dokumenterede Taiga behovet for tættere kobling mod kodebasen; i det samlede monorepo samles alle krav som GitHub Issues og hierarkiske Sub-Issues med eksekverbare Gherkin-kontrakter i `specs/features/`, styret af [`sdlc.config.json`](file:///z:/home/work/projects/api/sdlc.config.json) samt [`.github/workflows/sdlc-issue-sync.yml`](file:///z:/home/work/projects/api/.github/workflows/sdlc-issue-sync.yml) og [`sdlc-verify-and-sync.yml`](file:///z:/home/work/projects/api/.github/workflows/sdlc-verify-and-sync.yml). |
 | **Sprint-længde (Timeboxing)** | **Tilpasset (1-uges sprints)** | Da videreudviklingen i hovedopgaveforløbet strækker sig over 3–4 uger (50% tid), ville klassiske 2–4 ugers sprints give for få iterationer. 1-uges sprints sikrer hyppig re-prioritering. |
-| **Daily Scrum** | **Fravalgt (ved 1 stud.) / Tilpasset (ved gruppe)** | **Ved 1 studerende (*Scrum for One*):** Et dagligt møde med sig selv giver ingen værdi; erstattet af en kort daglig statuslog på Taiga-boardet.<br>**Ved gruppe:** Korte asynkrone/synkrone check-ins på arbejdsdage. |
+| **Daily Scrum** | **Fravalgt (ved 1 stud.) / Tilpasset (ved gruppe)** | **Ved 1 studerende (*Scrum for One*):** Et dagligt møde med sig selv giver ingen værdi; erstattet af automatiseret GitHub Projects v2 statusopdatering.<br>**Ved gruppe:** Korte asynkrone/synkrone check-ins på arbejdsdage. |
 | **Planning Poker (Estimering)** | **Fravalgt (ved 1 stud.) / Tilvalgt (ved gruppe)** | **Ved 1 studerende:** Konsensus-poker giver ikke mening alene; erstattet af T-shirt/Story Point estimering baseret på historisk velocity.<br>**Ved gruppe:** Anvendt til at afdække forskelle i teknisk forståelse. |
-| **Test-Driven Development (TDD) & BDD (XP)** | **Tilvalgt (Kernepraksis)** | Sikrer at al ny funktionalitet først defineres som fejlende Cucumber/JUnit-test før implementering, håndhævet af 98% JaCoCo coverage gate. |
-| **Pair Programming (XP)** | **Fravalgt (ved 1 stud.) / Selektivt (ved gruppe)** | Ved individuel hovedopgave erstattet af AI-assisteret parprogrammering (sparring og code review med AI-agent) samt automatiserede CI-tjek. |
+| **Test-Driven Development (TDD) & BDD (XP)** | **Tilvalgt (Kernepraksis)** | Sikrer at al ny funktionalitet først defineres som fejlende Cucumber/JUnit/Vitest-test før implementering, håndhævet af 98% coverage gates på alle 6 JaCoCo- og alle 4 Istanbul-tællere. |
+| **Pair Programming (XP)** | **Fravalgt (ved 1 stud.) / Selektivt (ved gruppe)** | Ved individuel hovedopgave erstattet af AI-assisteret parprogrammering (sparring og code review med AI-agent) samt automatiserede CI-tjek (`sdlc:verify`). |
 
 ### 12.3 Delkonklusion
 `[Opsummer hvordan den skræddersyede kombination af Scrum/Scrum for One og XP passer præcist til projektets rammer.]`
@@ -1326,8 +1325,8 @@ gitGraph
 | **Sprint 5**<br>*(13/10 – 25/10)* | `44238d6`, `6b6d01b`, `2da49bb`, `3124690`, `5c87524`, `403ffb1`, `7d6e4ea`, `d6e731d`, `9668e6a` | **Must / Should Have:** **Generisk Base-Arkitektur** (`403ffb1`), **Timefold Solver** (`3124690`), Multi-Window JGit UI (`6b6d01b`), Finans/IBAN & **98% JaCoCo gate** (`d6e731d`). | 18 SP / 20 SP | `+2 SP`: Opnåelse af $\ge 98\%$ line & branch coverage på tværs af alle services. |
 | **Hovedopgave**<br>*(27/10 – 05/01)* | Rapportskrivning, Skriveworkshop (24/11), Vejledermøder & Aflevering (05/01) | **Must Have:** Dokumentation af Produktdel (Kap. 1–10) og Procesdel (Kap. 11–14). | `[Udfyld]` | `[Udfyld ved afslutning]` |
 
-### 13.3 Automatiseret sporbarhed mellem Krav (Taiga), Kode og Test
-I [`.github/workflows/taiga_bdd_sync.yml`](file:///z:/home/work/projects/api/.github/workflows/taiga_bdd_sync.yml) er processtyringsværktøjet Taiga koblet direkte sammen med GitHub og BDD-testsuiten, så lukkede Pull Requests (`Closes TG-<id>`) automatisk opdaterer opgavestatus efter beståede tests.
+### 13.3 Automatiseret sporbarhed mellem Krav (GitHub Projects v2), Træ-isomorfe Branches, Kontrakter og Test
+Hvor Sprint 1–2 benyttede Taiga og en ekstern webhook-synkronisering (`taiga_bdd_sync.yml`), konsoliderer projektets **Generiske GitHub SDLC-Framework** ([`sdlc.config.json`](file:///z:/home/work/projects/api/sdlc.config.json), [`sdlc-domain.ts`](file:///z:/home/work/projects/api/sdlc/core/sdlc-domain.ts) og [`sdlc-github.ts`](file:///z:/home/work/projects/api/sdlc/core/sdlc-github.ts)) hele livscyklussen i ét repository via [`.github/workflows/sdlc-issue-sync.yml`](file:///z:/home/work/projects/api/.github/workflows/sdlc-issue-sync.yml) og [`.github/workflows/sdlc-verify-and-sync.yml`](file:///z:/home/work/projects/api/.github/workflows/sdlc-verify-and-sync.yml). GitHub Projects v2, hierarkiske Sub-Issues (`@spawn-subissue`), træ-isomorfe branches (`dev` $\rightarrow$ `feature/<id>-<slug>` $\rightarrow$ child-branches), fælles Gherkin-kontrakter i `specs/features/` samt `sdlc:verify` (6 JaCoCo- og 4 Istanbul-gates $\ge 98\%$) danner et lukket to-vejs *Living Spec & Regression feedback-loop*.
 
 ### 13.4 Delkonklusion
 `[Opsummer hvad tidsforløbet og estimaterne viser om projektets fremdrift, som evalueres i Kapitel 14.]`
@@ -1340,7 +1339,7 @@ I [`.github/workflows/taiga_bdd_sync.yml`](file:///z:/home/work/projects/api/.gi
 > **Krav til Refleksion over processen I & II (Slide 27 & Slide 28):**
 > - **Samlet afsluttende retrospective:** Beskriv hvordan processen har fungeret, hvad der **fungerede / ikke fungerede**, **hvorfor**, samt **hvad du/I gjorde for at ændre det** undervejs.
 > - **Tag udgangspunkt i en eller flere af vinklerne fra Slide 27:**
->   - *a) Anvendte procesteknikker:* F.eks. brugen af repository/branch-strategi, Outside-In BDD/TDD-test, Taiga-integration, bruger-/vejlederinddragelse.
+>   - *a) Anvendte procesteknikker:* F.eks. brugen af repository/branch-strategi, Outside-In BDD/TDD-test, GitHub Projects v2 & SDLC-integration, bruger-/vejlederinddragelse.
 >   - *b) Iterationer/sprints som basis:* Hvordan I har planlagt, evalueret og tilpasset metoden gennem projektet.
 >   - *c) Systematisk evaluering af metodevalg:* Fordele og ulemper ved de valgte metodedele.
 > - **Opsummering af processen som helhed & Feedforward (Slide 28):** Hvad er den vigtigste proceslæring, og **hvad ville du/I gøre anderledes en anden gang?**
@@ -1349,9 +1348,9 @@ I [`.github/workflows/taiga_bdd_sync.yml`](file:///z:/home/work/projects/api/.gi
 
 | Procesteknik / Område | Hvad fungerede godt – og hvorfor? | Hvad fungerede mindre godt – og hvilken tilpasning blev foretaget? |
 | :--- | :--- | :--- |
-| **Outside-In BDD/TDD & 98% JaCoCo Gate** | Sikrede at refaktoreringen til `BaseController`/`BaseService` kunne gennemføres uden regressioner i eksisterende endpoints. Gherkin-scenarierne fungerede samtidig som levende dokumentation til rapportens Kapitel 4 og 9. | Den høje grænse på 98% branch coverage kunne i starten bremse hurtige arkitektur-eksperimenter (spikes). **Tilpasning:** Spikes blev udarbejdet på midlertidige eksperiment-branches, før den endelige løsning blev skrevet TDD-baseret på feature-branchen. |
+| **Outside-In BDD/TDD & 98% Coverage Gates** | Sikrede at refaktoreringen til `BaseController`/`BaseService` og 2-fils frontend-kernen kunne gennemføres uden regressioner. Fælles Gherkin-scenarier i `specs/features/` fungerede som levende dokumentation for både backend og frontend. | Den høje grænse på 98% på samtlige 6 JaCoCo- og 4 Istanbul-tællere kunne i starten bremse hurtige arkitektur-eksperimenter (spikes). **Tilpasning:** Spikes blev afprøvet på isolerede branches, før løsningen blev skrevet TDD-baseret og håndhævet af `sdlc:verify`. |
 | **Parallelt udviklings- og skriveforløb (50%/50%)** | At skrive udkast til Kapitel 5 (Teknologi) og Kapitel 6 (Arkitektur) sideløbende med Sprint 1–2 skærpede argumentationen for de valgte designmønstre. | Risiko for kontekstskift mellem dyb kodning og akademisk rapportskrivning. **Tilpasning:** Faste ugedage blev opdelt i dedikerede "udviklingsdage" og "rapportdage" frem mod vejledermøderne. |
-| **Branch-strategi & Taiga-kobling** | Navngivningskonventionen `feature/tg-<id>-<navn>` gav et entydigt revisionsspor mellem backlog-krav, `.feature`-filer og kodecommits. | `[Tilføj evt. egne erfaringer fra solo- eller gruppearbejdet her]` |
+| **Fra Taiga-synk (Sprint 1–2) til Generisk GitHub SDLC-Framework** | Ekstern backlog-synkronisering mod Taiga afslørede i Sprint 1–2 værdien af formelle `.feature`-kontrakter og fast branch-navngivning (`feature/<id>-<navn>`). | To-systemsarkitekturen mellem ekstern Taiga-server og GitHub skabte webhook- og tilstandsdrift (*state drift*). **Tilpasning:** Processen blev konsolideret i det 100% GitHub-native **Generiske GitHub SDLC-Framework** (`sdlc/core/sdlc-domain.ts` + `sdlc-github.ts` + `sdlc.config.json`), der styrer Projects v2 via `gh` CLI og lukker feedback-loopet direkte i CI. |
 
 ### 14.2 Samlet proceskonklusion og Feedforward (Slide 28)
 `[Beskriv her det samlede retrospektiv på forløbet og "Feedforward": Hvad ville du/I gøre anderledes i et fremtidigt projekt? F.eks. tidligere fastlæggelse af den generiske base-arkitektur allerede i Sprint 0, automatiseret generering af arkitekturdiagrammer i CI-pipelinen, og endnu skarpere afgrænsning af scope på små features.]`

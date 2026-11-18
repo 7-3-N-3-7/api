@@ -1,0 +1,55 @@
+name: "Generisk SDLC Sub-Issue (Underkrav)"
+description: "Opret et hierarkisk Sub-Issue tilkoblet et forælder-issue (spawner træ-isomorf child-branch direkte fra forælder-branchen)."
+title: "[Sub-Issue]: "
+labels: ["sdlc:spec-ready", "sdlc:sub-issue"]
+body:
+  - type: input
+    id: parent_issue
+    attributes:
+      label: "Parent Issue"
+      description: "Angiv forælder-issuets nummer (f.eks. #42). Forælder-issuet holdes automatisk i Inner TDD indtil dette Sub-Issue når Done."
+      placeholder: "#42"
+    validations:
+      required: true
+  - type: dropdown
+    id: slice
+    attributes:
+      label: "Vertical Slice"
+      options:
+        - core
+        - appointment
+        - journal
+        - psychotraumatology
+        - user
+        - clinic
+        - i18n
+        - finance
+        - management
+        - sdlc
+    validations:
+      required: true
+  - type: dropdown
+    id: target
+    attributes:
+      label: "Target"
+      options:
+        - "@fullstack"
+        - "@backend-only"
+        - "@ui-only"
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: gherkin
+    attributes:
+      label: "Gherkin Specification"
+      description: "Skriv Gherkin acceptkriterier for dette delkrav."
+      render: gherkin
+      placeholder: |
+        Feature: Delkrav under forælder-issue
+          Scenario: Verificér delkravet
+            Given forælder-branchens tilstand er tilgængelig
+            When delkomponenten afprøves
+            Then opfyldes acceptkriteriet på begge lag
+    validations:
+      required: true

@@ -1,0 +1,49 @@
+name: "Generisk SDLC Feature-krav"
+description: "Opret et nyt Full-Stack, Backend eller Frontend feature-krav med Gherkin acceptkriterier (genererer automatisk linked branch & .feature-kontrakt)."
+title: "[SDLC Feature]: "
+labels: ["sdlc:spec-ready"]
+body:
+  - type: dropdown
+    id: slice
+    attributes:
+      label: "Vertical Slice"
+      description: "Vælg hvilket vertikalt modul (slice) dette krav tilhører."
+      options:
+        - core
+        - appointment
+        - journal
+        - psychotraumatology
+        - user
+        - clinic
+        - i18n
+        - finance
+        - management
+        - sdlc
+    validations:
+      required: true
+  - type: dropdown
+    id: target
+    attributes:
+      label: "Target"
+      description: "Vælg om kravet skal verificeres af både Backend + Frontend (@fullstack) eller kun ét lag."
+      options:
+        - "@fullstack"
+        - "@backend-only"
+        - "@ui-only"
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: gherkin
+    attributes:
+      label: "Gherkin Specification"
+      description: "Angiv gyldig Gherkin (Feature + mindst ét Scenario med Given/When/Then)."
+      render: gherkin
+      placeholder: |
+        Feature: Beskriv forretningsværdien her
+          Scenario: Beskriv hovedflowet
+            Given en forudsætning er opfyldt
+            When aktøren udfører en handling
+            Then forventes et målbart resultat
+    validations:
+      required: true

@@ -88,34 +88,63 @@ Frontenden understøtter både **Next.js 16 App Router (BFF på Port 3000)** og 
 
 ---
 
-## 4. Kørsel af Tests, Coverage Gates (>= 98%) & Builds
+## 4. Kørsel af Tests, Coverage Gates (>= 98%) & Generisk GitHub SDLC-Framework
 
-### Frontend (Vitest + Istanbul Coverage Gate >= 98%)
+### Frontend & SDLC-Kerne (Vitest + Istanbul Coverage Gate >= 98% & Cucumber.js)
 
 Kør fra `frontend/`-mappen:
 
 ```bash
 cd frontend
 
-# 1. Kør alle 11 Vitest-testsuiter (45 tests) med Istanbul coverage-gate (>= 98% krav)
+# 1. Kør alle 12 Vitest-testsuiter (96 tests inkl. sdlc/core) med Istanbul coverage-gate (>= 98% på lines, statements, functions & branches)
 npm run test:coverage
 
-# 2. Byg begge isolerede Vite-applikationer (@platform/landing + @platform/dashboard)
+# 2. Kør fælles Gherkin @fullstack BDD-kontrakter i Cucumber.js (mod ../specs/features/)
+npm run test:bdd:api
+
+# 3. Byg begge isolerede Vite-applikationer (@platform/landing + @platform/dashboard)
 npm run build:all
 
-# 3. Byg Next.js 16 BFF-applikationen
+# 4. Byg Next.js 16 BFF-applikationen
 npm run build
 ```
 
-### Backend (JUnit 5 + Cucumber BDD + JaCoCo Coverage Gate >= 98%)
+### Backend (JUnit 5 + Cucumber BDD + 6-Metrik JaCoCo Coverage Gate >= 98%)
 
 Kør fra `backend/`-mappen:
 
 ```bash
 cd backend
 
-# Kør samtlige enheds-, arkitektur- og Cucumber BDD-tests samt 98% JaCoCo gate
+# Kør samtlige enheds-, arkitektur- og 43 Cucumber BDD-tests samt 98% JaCoCo gate (LINE, BRANCH, INSTRUCTION, COMPLEXITY, METHOD, CLASS)
 mvn test jacoco:report jacoco:check
+```
+
+### Generisk GitHub SDLC-Framework (`sdlc/core/` & `sdlc.config.json`)
+
+Repositoryet spejler den dobbeltsidede arkitektursymmetri i en **tredobbelt 2-fils kerne-symmetri**:
+- **Backend 2-fils kerne:** [`BaseDomainCore.java`](backend/src/main/java/com/platform/core/BaseDomainCore.java) + [`BaseWebCore.java`](backend/src/main/java/com/platform/core/BaseWebCore.java)
+- **Frontend 2-fils kerne:** [`baseDomainCore.ts`](frontend/src/core/baseDomainCore.ts) + [`baseUiCore.tsx`](frontend/src/core/baseUiCore.tsx)
+- **SDLC 2-fils procesmotor:** [`sdlc-domain.ts`](sdlc/core/sdlc-domain.ts) + [`sdlc-github.ts`](sdlc/core/sdlc-github.ts) styret deklarativt af [`sdlc.config.json`](sdlc.config.json) og fælles `.feature`-kontrakter i [`specs/features/`](specs/features/shared/generic_sdlc_framework.feature).
+
+Root CLI-kommandoer (fra projektets rod):
+
+```bash
+# 1. Klargør GitHub Projects v2 board, custom felter & branch protection 100% via gh CLI (--dry-run understøttes)
+npm run sdlc:bootstrap
+
+# 2. Synkronisér Issue -> linked branch (dev -> feature/<id>-<slug> -> child-branch) & Gherkin-kontrakt
+npm run sdlc:sync-issue -- --issue <nr> --title "<titel>"
+
+# 3. Opret hierarkisk Sub-Issue & træ-isomorf child-branch fra parent-branch
+npm run sdlc:spawn -- --parent <parentNr> --child <childNr> --title "<delopgave>"
+
+# 4. Verificér begge BDD-rapporter + 98% JaCoCo (6 tællere) & Istanbul (4 tællere) + Sub-Issues (Green Gate)
+npm run sdlc:verify -- --branch feature/<id>-<slug> --dry-run
+
+# 5. Vis lokal SDLC-status
+npm run sdlc:status
 ```
 
 ---
@@ -123,7 +152,9 @@ mvn test jacoco:report jacoco:check
 ## 5. Arkitekturdiagrammer & Hovedopgavedokumentation
 
 - **Mermaid Arkitekturdiagrammer & Interaktiv Vektorfremviser (`docs/diagrams/` & `infrastructure/diagrams/`):**
-  - [`docs/diagrams/diagram-oversigt.html`](docs/diagrams/diagram-oversigt.html): Samlet offline interaktiv Pan & Zoom vektoroversigt over alle 18 Mermaid-diagrammer.
+  - [`docs/diagrams/diagram-oversigt.html`](docs/diagrams/diagram-oversigt.html): Samlet offline interaktiv Pan & Zoom vektoroversigt over alle 19 Mermaid-diagrammer.
+  - [`docs/diagrams/generic-sdlc-architecture.mmd`](docs/diagrams/generic-sdlc-architecture.mmd): Generisk GitHub SDLC-Framework (Tredobbelt 2-fils Symmetri, GitHub Projects v2, træ-isomorfe branches & to-vejs feedback-loop).
+  - [`infrastructure/diagrams/bdd-tdd-workflow.mmd`](infrastructure/diagrams/bdd-tdd-workflow.mmd): 9-trins lukket Outside-In BDD/TDD & SDLC Full-Stack Gate workflow.
   - [`docs/diagrams/fullstack-symmetry.mmd`](docs/diagrams/fullstack-symmetry.mmd): 1:1 Full-Stack Arkitektonisk Symmetri & Dual-App Frontend SoC.
   - [`docs/diagrams/core-and-slice-class-diagram.mmd`](docs/diagrams/core-and-slice-class-diagram.mmd): Detaljeret UML-klassediagram over `BaseDomainCore`, `BaseWebCore` og vertikale slices.
   - [`docs/diagrams/double-loop-tdd.mmd`](docs/diagrams/double-loop-tdd.mmd): Outside-In Double-Loop TDD-arbejdsgang (Cucumber BDD + JUnit 5/Mockito).

@@ -1,0 +1,156 @@
+name: SDLC Verify & Full-Stack Gate
+
+on:
+  push:
+    branches: ["feature/**", "dev", "main"]
+  pull_request:
+    branches: ["dev", "main", "feature/**"]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  security-and-subissues:
+    name: 1. Shift-Left Secret Scan & @spawn-subissue Sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog Secret Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Scan for Bottom-Up @spawn-subissue Tags
+        env:
+          SDLC_PROJECT_TOKEN: ${{ secrets.SDLC_PROJECT_TOKEN || github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        run: |
+          ISSUE_ID=$(echo "$BRANCH_NAME" | sed -nE 's#^feature/([0-9]+).*#\1#p')
+          if [ -n "$ISSUE_ID" ]; then
+            npm run sdlc:spawn -- --parent "$ISSUE_ID" --branch "$BRANCH_NAME"
+          fi
+
+  backend-verify:
+    name: 2a. Backend BDD (Cucumber-JVM) + 98% JaCoCo Gate (6 counters)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Run JUnit 5, Cucumber-JVM & Enforce 98% JaCoCo Gate
+        working-directory: backend
+        run: mvn -B test jacoco:report jacoco:check
+
+      - name: Upload Backend Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-verification-reports
+          path: |
+            backend/target/cucumber-reports/cucumber-report.json
+            backend/target/site/jacoco/jacoco.xml
+
+  frontend-verify:
+    name: 2b. Frontend + SDLC Core Vitest (98% Istanbul) & Cucumber.js BDD
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run Vitest + Enforce 98% Istanbul Gate (All 4 Counters)
+        working-directory: frontend
+        run: npm run test:coverage
+
+      - name: Run Cucumber.js BDD Suite (Shared specs/features/)
+        working-directory: frontend
+        run: npm run test:bdd
+
+      - name: Upload Frontend Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-verification-reports
+          path: |
+            frontend/reports/cucumber-report.json
+            frontend/coverage/coverage-summary.json
+
+  sdlc-gate:
+    name: SDLC Full-Stack Gate
+    needs: [security-and-subissues, backend-verify, frontend-verify]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Download Backend Reports
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-verification-reports
+          path: backend/target
+
+      - name: Download Frontend Reports
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-verification-reports
+          path: frontend
+
+      - name: Evaluate SDLC State Machine & Sync GitHub Projects v2
+        env:
+          SDLC_PROJECT_TOKEN: ${{ secrets.SDLC_PROJECT_TOKEN || github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          IS_MERGED: ${{ github.event_name == 'push' && (github.ref_name == 'dev' || github.ref_name == 'main') }}
+        run: |
+          MERGED_FLAG=""
+          if [ "$IS_MERGED" = "true" ]; then
+            MERGED_FLAG="--merged"
+          fi
+          npm run sdlc:verify -- --branch "$BRANCH_NAME" $MERGED_FLAG

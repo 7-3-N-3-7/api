@@ -1,57 +1,57 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}, 'flowchart': {'curve': 'basis', 'nodeSpacing': 75, 'rankSpacing': 90, 'padding': 20, 'subGraphTitleMargin': {'top': 12, 'bottom': 12}}}}%%
 flowchart TD
-    subgraph Req ["Krav & Versionsstyring"]
+    subgraph Req ["Krav, GitHub Projects v2 & Træ-isomorfe Branches"]
         direction TB
-        Step1["1. Taiga (Kravspecifikation)
-• User Story oprettes i backlog
-• Acceptkriterier defineres for både API og UI"]
-        Step2["2. GitHub Feature Branch
-• Opret branch: feature/tg-<id>-<navn>
-• Commit indledende .feature-filer (Gherkin)"]
-        Step1 -->|"1. Nedbrydes til branch"| Step2
+        Step1["1. GitHub Issue & Projects v2 (Single Source of Truth)
+• Opret Issue via form eller gh issue create (status: Spec Ready)
+• Validér Gherkin-acceptkriterier for @fullstack / @backend-only / @ui-only"]
+        Step2["2. Linked Branch & Fælles specs/features/
+• Opret branch feature/<id>-<slug> fra dev (eller fra parent-branch)
+• Skriv/synkronisér fælles .feature-kontrakt i specs/features/"]
+        Step1 -->|"1. sdlc:sync-issue"| Step2
     end
 
     subgraph Phase1 ["Fase 1: Backend Vertical Slice Loop (Outside-In / Zero-Mock)"]
         direction TB
-        Step3["3. Backend BDD (Outer Loop)
-• Eksekvér Cucumber Gherkin mod Spring Boot + DB
+        Step3["3. Backend BDD (Outer Loop — Red)
+• Eksekvér Cucumber-JVM mod specs/features/ (not @ui-only)
 • Resultat: FEJLER (Rød) — manglende slice eller endpoint"]
         Step4["4. Backend TDD (Inner Loop)
-• Skriv fejlende JUnit 5 unit-tests (<Name>ServiceTest)
-• Implementér <Name>Feature.java oven på BaseDomainCore & BaseWebCore
-• Resultat: BESTÅR (Grøn)"]
-        Step5["5. Backend Verifikation & Coverage Gate
-• Kør samlet JUnit 5 + Cucumber BDD testsuite
-• Verificér JaCoCo coverage gate -> BESTÅR (Grøn)"]
+• Skriv fejlende JUnit 5 unit-tests oven på BaseDomainCore & BaseWebCore
+• Implementér <Name>Feature.java -> BESTÅR (Grøn)"]
+        Step5["5. Backend Verifikation & 98 % JaCoCo Gate
+• Kør JUnit 5 + Cucumber-JVM (cucumber-report.json)
+• Alle 6 JaCoCo-tællere >= 98 % -> BESTÅR (Grøn)"]
         Step3 -->|"3. Driver implementation"| Step4
         Step4 -->|"4. Kvalitetssikring"| Step5
     end
 
-    subgraph Phase2 ["Fase 2: Frontend Dual-App & Full-Stack E2E (Outside-In / Zero-Mock)"]
+    subgraph Phase2 ["Fase 2: Frontend Dual-App & Fælles Kontraktverifikation"]
         direction TB
-        Step6["6. Frontend BDD (Outer Loop)
-• Udarbejd Gherkin UI/BFF-scenarier med Playwright
-• Eksekvér mod live BFF & Keycloak -> FEJLER (Rød)"]
-        Step7["7. Frontend TDD (Inner Loop)
-• Udvikl <Name>Feature.tsx med BaseApiService, RoleGuard & useBaseCrud
-• Eksekvér Vitest komponenttests -> BESTÅR (Grøn)"]
-        Step8["8. Fuldt System E2E Verifikation
-• Kør Docker-miljø (Keycloak + Dual-App + Spring Boot + PostgreSQL + MongoDB)
-• Playwright & Cucumber E2E-suite -> BESTÅR (Grøn)"]
+        Step6["6. Frontend BDD (Outer Loop — Red)
+• Kør Cucumber.js mod præcis samme specs/features/
+• Eksekvér BFF- & Playwright UI-scenarier -> FEJLER (Rød)"]
+        Step7["7. Frontend TDD & 98 % Istanbul Gate
+• Implementér <Name>Feature.tsx med 2-fils TypeScript Core
+• Vitest + Istanbul: alle 4 metrikker >= 98 % -> BESTÅR (Grøn)"]
+        Step8["8. Samlet E2E & Shift-Left Security Gate
+• Verificér fuldt system (Keycloak, Dual-App, Spring Boot, DB, Kafka)
+• TruffleHog secret scan & @spawn-subissue tjek -> BESTÅR (Grøn)"]
         Step6 -->|"6. Driver React-slice"| Step7
         Step7 -->|"7. End-to-end validering"| Step8
     end
 
-    subgraph Integration ["Integration & Sporbarhed"]
-        Step9["9. Pull Request & Afslutning
-• Push verificeret kodebase til GitHub
-• Opret PR m. reference: Closes TG-<id>
-• Merge lukker automatisk User Story som Done i Taiga"]
+    subgraph Integration ["Integration, Sub-Issue Gating & To-vejs Feedback-Loop"]
+        Step9["9. SDLC Full-Stack Gate & Pull Request
+• Verificér at alle hierarkiske Sub-Issues er Done
+• Merge til parent-branch / dev -> status Done + Living Spec synk
+• Ved fremtidig testfejl på @issue-<id> -> status Regression"]
     end
 
     Step2 -->|"2. Start Backend-loop"| Step3
-    Step5 -->|"5. Backend-kontrakt klar -> Start Frontend-loop"| Step6
-    Step8 -->|"8. Alle tests grønne"| Step9
+    Step5 -->|"5. Backend grøn -> Start Frontend-loop"| Step6
+    Step8 -->|"8. Alle 98 %-gates & checks grønne"| Step9
+    Step9 -.->|"9. Living Spec & Regression feedback"| Step1
 
     class Step1,Step2 auth
     class Step3,Step6 err
