@@ -1,0 +1,136 @@
+@startuml
+!pragma layout smetana
+set namespaceSeparator none
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2C3E50
+skinparam ArrowThickness 1.3
+skinparam packageStyle rectangle
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #2C3E50
+    BorderThickness 1.3
+    HeaderBackgroundColor #F4F6F7
+}
+
+title Swimlane 0: Generic Core Framework (Route -> BaseController -> BaseService -> BaseRepository -> BaseEntity/BaseDTO -> Hibernate)
+
+package "1. Route & Interface Swimlane (com.platform.core.controller)" as LaneCtrl #EBF5FB {
+    abstract class "BaseController<E extends BaseEntity<ID>, D extends BaseDTO<ID>, ID extends Serializable>" as BaseController <<AbstractController>> {
+        #service: BaseService<E, D, ID> <<@Autowired(required=false)>>
+        #BaseController()
+        #BaseController(service: BaseService<E, D, ID>)
+        +getService(): BaseService<E, D, ID>
+        +setService(service: BaseService<E, D, ID>): void
+        +getAll(): ResponseEntity<List<D>> <<@GetMapping>>
+        +getById(id: ID): ResponseEntity<D> <<@GetMapping("/{id}")>>
+        +create(dto: D): ResponseEntity<?> <<@PostMapping>>
+        +update(id: ID, dto: D): ResponseEntity<?> <<@PutMapping("/{id}")>>
+        +delete(id: ID): ResponseEntity<Void> <<@DeleteMapping("/{id}")>>
+    }
+}
+
+package "2. DTO Contract Swimlane (com.platform.core.dto)" as LaneDto #FEF9E7 {
+    interface "BaseDTO<ID extends Serializable>" as BaseDTO <<Serializable>> {
+        +getId(): ID
+        +setId(id: ID): void
+    }
+}
+
+package "3. Application & Business Logic Swimlane (com.platform.core.service)" as LaneSvc #F4ECF7 {
+    class "BaseService<E extends BaseEntity<ID>, D extends BaseDTO<ID>, ID extends Serializable>" as BaseService <<@Transactional>> {
+        #repository: BaseRepository<E, ID> <<@Autowired(required=false)>>
+        #interceptors: List<CrudInterceptor<E, ID>>
+        #entityClass: Class<E>
+        #dtoClass: Class<D>
+        +BaseService()
+        +BaseService(repository: BaseRepository<E, ID>)
+        +getRepository(): BaseRepository<E, ID>
+        +setRepository(repository: BaseRepository<E, ID>): void
+        +getEntityClass(): Class<E>
+        +setEntityClass(entityClass: Class<E>): void
+        +getDtoClass(): Class<D>
+        +setDtoClass(dtoClass: Class<D>): void
+        +setInterceptors(discoveredInterceptors: List<CrudInterceptor<E, ID>>): void <<@Autowired(required=false)>>
+        +addInterceptor(interceptor: CrudInterceptor<E, ID>): void
+        +getInterceptors(): List<CrudInterceptor<E, ID>>
+        +toEntity(dto: D): E
+        +toDto(entity: E): D
+        +findAll(): List<E> <<@Transactional(readOnly=true)>>
+        +findAllDtos(): List<D> <<@Transactional(readOnly=true)>>
+        +findAllDynamic(offset: int, limit: int, filters: Map<String, String>, sortParam: String): List<E> <<@Transactional(readOnly=true)>>
+        +findById(id: ID): Optional<E> <<@Transactional(readOnly=true)>>
+        +findDtoById(id: ID): Optional<D> <<@Transactional(readOnly=true)>>
+        +getByIdOrThrow(id: ID): E <<@Transactional(readOnly=true)>>
+        +create(entity: E): E
+        +createFromDto(dto: D): D
+        +save(entity: E): E
+        +update(id: ID, entity: E): E
+        +updateFromDto(id: ID, dto: D): D
+        +deleteById(id: ID): void
+        +existsById(id: ID): boolean <<@Transactional(readOnly=true)>>
+        +count(): long <<@Transactional(readOnly=true)>>
+        +buildSpecification(filters: Map<String, String>): Specification<E>
+        +buildSort(sortParam: String): Sort
+        #convertFilterValue(val: String, targetType: Class<?>): Object
+    }
+
+    interface "CrudInterceptor<E extends BaseEntity<ID>, ID extends Serializable>" as CrudInterceptor <<LifecycleHook>> {
+        +beforeCreate(entity: E): void
+        +afterCreate(entity: E): void
+        +beforeUpdate(entity: E): void
+        +afterUpdate(entity: E): void
+        +beforeDelete(id: ID): void
+        +afterDelete(id: ID): void
+    }
+}
+
+package "4. Data Access & Repository Swimlane (com.platform.core.repository & dao)" as LaneRepo #E8F8F5 {
+    interface "BaseRepository<E extends BaseEntity<ID>, ID extends Serializable>" as BaseRepository <<@NoRepositoryBean>> {
+        ' Extends JpaRepository<E, ID> & JpaSpecificationExecutor<E>
+        +findAll(spec: Specification<E>, pageable: Pageable): Page<E>
+        +findAll(spec: Specification<E>, sort: Sort): List<E>
+    }
+
+    abstract class "BaseDAO<T extends BaseEntity<ID>, ID extends Serializable>" as BaseDAO <<GenericCriteriaDAO>> {
+        #entityManager: EntityManager <<@PersistenceContext>>
+        #entityClass: Class<T>
+        +findAll(): List<T>
+        +findById(id: ID): Optional<T>
+        +save(entity: T): T
+        +deleteById(id: ID): void
+        +existsById(id: ID): boolean
+        +count(): long
+        +findAllDynamic(offset: int, limit: int, filters: Map<String, String>, sortParam: String): List<T>
+        #convertValue(val: String, targetType: Class<?>): Object
+    }
+}
+
+package "5. Hibernate ORM & Entity Swimlane (com.platform.core.entity)" as LaneEntity #FDEDEC {
+    abstract class "BaseEntity<ID extends Serializable>" as BaseEntity <<@MappedSuperclass>> {
+        #id: ID <<@Id @GeneratedValue(strategy=UUID)>>
+        +getId(): ID
+        +setId(id: ID): void
+    }
+
+    abstract class "BaseEntity.UuidEntity" as UuidEntity <<@MappedSuperclass>> {
+        +getId(): UUID
+        +setId(id: UUID): void
+    }
+}
+
+BaseController --> BaseService : "@Autowired Spring IoC\nResolvableType<E, D, ID>"
+BaseController ..> BaseDTO : "Request / Response D"
+BaseService --> BaseRepository : "@Autowired Spring IoC\nResolvableType<E, ID>"
+BaseService o-- CrudInterceptor : "@Autowired lifecycle hooks"
+BaseService ..> BaseDTO : "BeanUtils toEntity(D) / toDto(E)"
+BaseService ..> BaseEntity : "Manages @Transactional E"
+BaseRepository --> BaseEntity : "Hibernate Session /PreparedStatement"
+BaseDAO --> BaseEntity : "JPA CriteriaBuilder"
+BaseDTO <|.. BaseEntity
+BaseEntity <|-- UuidEntity
+
+@enduml

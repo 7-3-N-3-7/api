@@ -1,0 +1,196 @@
+@startuml
+!pragma layout smetana
+set namespaceSeparator none
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2C3E50
+skinparam ArrowThickness 1.3
+skinparam packageStyle rectangle
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #2C3E50
+    BorderThickness 1.3
+    HeaderBackgroundColor #F4F6F7
+}
+
+title Swimlane 5: Clinic Platform, Marketplace, Onboarding & Handshakes Flow (/api/v1/clinic & /api/public)
+
+package "1. Route & Controller Swimlane" as LaneCtrl #EBF5FB {
+    abstract class "BaseController<ClientProfile, ClientProfile, UUID>" as BaseCtrl <<AbstractController>> {
+        #service: BaseService<ClientProfile, ClientProfile, UUID> <<@Autowired>>
+        +getAll(): ResponseEntity<List<ClientProfile>>
+        +getById(id: UUID): ResponseEntity<ClientProfile>
+        +create(dto: ClientProfile): ResponseEntity<?>
+        +update(id: UUID, dto: ClientProfile): ResponseEntity<?>
+        +delete(id: UUID): ResponseEntity<Void>
+    }
+
+    class ClinicPlatformController <<@RestController /api/v1 & /api>> {
+        -clinicPlatformService: ClinicPlatformService
+        +getCurrentUserContext(auth: Authentication): ResponseEntity<Map<String, Object>> <<@GetMapping("/clinic/me")>>
+        +getMarketplaceDirectory(): ResponseEntity<Map<String, Object>> <<@GetMapping("/clinic/directory")>>
+        +getClientOverview(clientUuid: UUID): ResponseEntity<Map<String, Object>> <<@GetMapping("/clinic/client/{clientUuid}/overview")>>
+        +getTherapistOverview(therapistUuid: UUID): ResponseEntity<Map<String, Object>> <<@GetMapping("/clinic/therapist/{therapistUuid}/overview")>>
+        +savePublicClientProfile(profile: ClientProfile): ResponseEntity<ClientProfile> <<@PostMapping("/public/client-profile")>>
+        +updateClientProfile(profile: ClientProfile): ResponseEntity<ClientProfile> <<@PutMapping("/clinic/client-profile")>>
+        +getClientProfile(userUuid: UUID): ResponseEntity<ClientProfile> <<@GetMapping("/clinic/client-profile/{userUuid}")>>
+        +getOrganisations(): ResponseEntity<List<Organisation>> <<@GetMapping("/clinic/organisations")>>
+        +onboardTherapist(payload: Map<String, String>, auth: Authentication): ResponseEntity<ProviderProfile> <<@PostMapping("/clinic/therapist-onboarding")>>
+        +getAllServices(): ResponseEntity<List<Service>> <<@GetMapping("/clinic/services")>>
+        +createService(payload: Map<String, Object>, auth: Authentication): ResponseEntity<Service> <<@PostMapping("/clinic/services")>>
+        +updateService(id: UUID, payload: Map<String, Object>, auth: Authentication): ResponseEntity<Service> <<@PutMapping("/clinic/services/{id}")>>
+        +deleteService(id: UUID): ResponseEntity<Map<String, Object>> <<@DeleteMapping("/clinic/services/{id}")>>
+        +toggleServiceActive(id: UUID): ResponseEntity<Service> <<@PatchMapping("/clinic/services/{id}/toggle")>>
+        +getClientHandshakes(clientUuid: UUID): ResponseEntity<List<ClientTherapistHandshake>> <<@GetMapping("/clinic/handshakes/client/{clientUuid}")>>
+        +getTherapistHandshakes(therapistUuid: UUID): ResponseEntity<List<ClientTherapistHandshake>> <<@GetMapping("/clinic/handshakes/therapist/{therapistUuid}")>>
+        +createOrUpdateHandshake(req: ClientTherapistHandshake): ResponseEntity<ClientTherapistHandshake> <<@PostMapping("/clinic/handshakes")>>
+        +updateHandshakeStatus(id: UUID, body: Map<String, String>): ResponseEntity<ClientTherapistHandshake> <<@PatchMapping("/clinic/handshakes/{id}")>>
+    }
+}
+
+package "2. Service Swimlane" as LaneSvc #F4ECF7 {
+    class "BaseService<ClientProfile, ClientProfile, UUID>" as BaseSvc <<@Transactional>> {
+        #repository: BaseRepository<ClientProfile, UUID> <<@Autowired>>
+    }
+
+    class ClinicPlatformService <<@Service>> {
+        -clientProfileRepository: ClientProfileRepository
+        -organisationRepository: OrganisationRepository
+        -providerProfileRepository: ProviderProfileRepository
+        -serviceRepository: ServiceRepository
+        -handshakeRepository: HandshakeRepository
+        -appointmentRepository: AppointmentRepository
+        -journalEntryRepository: JournalEntryRepository
+        -psychotraumatologyTestRepository: PsychotraumatologyTestRepository
+        +getCurrentUserContext(auth: Authentication): Map<String, Object>
+        +getMarketplaceDirectory(): Map<String, Object>
+        +getClientOverview(clientUuid: UUID): Map<String, Object>
+        +getTherapistOverview(therapistUuid: UUID): Map<String, Object>
+        +savePublicClientProfile(profile: ClientProfile): ResponseEntity<ClientProfile>
+        +onboardTherapist(payload: Map<String, String>, auth: Authentication): ProviderProfile
+        +getMissingProfileFields(provider: ProviderProfile, org: Organisation, client: ClientProfile): List<String>
+        +createService(payload: Map<String, Object>, auth: Authentication): Service
+        +updateService(id: UUID, payload: Map<String, Object>, auth: Authentication): Service
+        +deleteService(id: UUID): Map<String, Object>
+        +toggleServiceActive(id: UUID): Service
+        +createOrUpdateHandshake(req: ClientTherapistHandshake): ResponseEntity<ClientTherapistHandshake>
+        +updateHandshakeStatus(id: UUID, body: Map<String, String>): ClientTherapistHandshake
+    }
+}
+
+package "3. Repository Swimlane" as LaneRepo #E8F8F5 {
+    interface "BaseRepository<E, UUID>" as BaseRepo <<@NoRepositoryBean>> {
+    }
+
+    interface ClientProfileRepository <<@Repository>> {
+        +findByUserId(userId: UUID): Optional<ClientProfile>
+    }
+
+    interface OrganisationRepository <<@Repository>> {
+        +findByCvrNumber(cvrNumber: String): Optional<Organisation>
+    }
+
+    interface ProviderProfileRepository <<@Repository>> {
+        +findByUserUuid(userUuid: UUID): Optional<ProviderProfile>
+    }
+
+    interface ServiceRepository <<@Repository>> {
+        +findByOrganisation_Id(orgId: UUID): List<Service>
+        +findByProvider_Id(providerId: UUID): List<Service>
+    }
+
+    interface HandshakeRepository <<@Repository>> {
+        +findByClientUuid(clientUuid: UUID): List<ClientTherapistHandshake>
+        +findByTherapistUuid(therapistUuid: UUID): List<ClientTherapistHandshake>
+        +findByClientUuidAndTherapistUuid(c: UUID, t: UUID): Optional<ClientTherapistHandshake>
+    }
+}
+
+package "4. Hibernate Entity & DTO Swimlane" as LaneEntity #FDEDEC {
+    abstract class "BaseEntity<UUID>" as BaseEnt <<@MappedSuperclass>> {
+        #id: UUID <<@Id @GeneratedValue(UUID)>>
+    }
+
+    class ClientProfile <<@Entity client_profiles>> {
+        -userId: UUID
+        -fullName: String
+        -dateOfBirth: String
+        -homeAddress: String
+        -postalCode: String
+        -phoneNumber: String
+        -email: String
+    }
+
+    class Organisation <<@Entity organisations>> {
+        -cvrNumber: String
+        -name: String
+        -address: String
+        -postalCode: String
+        -phoneNumber: String
+        -email: String
+        -videoMeetingUrl: String
+    }
+
+    class ProviderProfile <<@Entity provider_profiles>> {
+        -userUuid: UUID
+        -displayName: String
+        -organisation: Organisation
+        -biography: String
+        -workingHoursJson: String
+        -videoMeetingUrl: String
+    }
+
+    class Service <<@Entity services>> {
+        -provider: ProviderProfile
+        -organisation: Organisation
+        -name: String
+        -description: String
+        -durationMinutes: Integer
+        -price: Double
+        -location: String
+        -isActive: Boolean
+    }
+
+    class ClientTherapistHandshake <<@Entity client_therapist_handshakes>> {
+        -clientUuid: UUID
+        -therapistUuid: UUID
+        -status: String
+        -validFrom: LocalDate
+        -validTo: LocalDate
+        -historyStartDate: LocalDate
+        -historyEndDate: LocalDate
+    }
+}
+
+BaseCtrl <|-- ClinicPlatformController
+BaseSvc <|-- ClinicPlatformService
+BaseRepo <|-- ClientProfileRepository
+BaseRepo <|-- OrganisationRepository
+BaseRepo <|-- ProviderProfileRepository
+BaseRepo <|-- ServiceRepository
+BaseRepo <|-- HandshakeRepository
+BaseEnt <|-- ClientProfile
+BaseEnt <|-- Organisation
+BaseEnt <|-- ProviderProfile
+BaseEnt <|-- Service
+BaseEnt <|-- ClientTherapistHandshake
+
+ClinicPlatformController --> ClinicPlatformService : "@Autowired service"
+ClinicPlatformService --> ClientProfileRepository : "@Autowired primary repo"
+ClinicPlatformService --> OrganisationRepository : "@Autowired"
+ClinicPlatformService --> ProviderProfileRepository : "@Autowired"
+ClinicPlatformService --> ServiceRepository : "@Autowired"
+ClinicPlatformService --> HandshakeRepository : "@Autowired"
+ClientProfileRepository --> ClientProfile : "Hibernate ORM"
+OrganisationRepository --> Organisation : "Hibernate ORM"
+ProviderProfileRepository --> ProviderProfile : "Hibernate ORM"
+ServiceRepository --> Service : "Hibernate ORM"
+HandshakeRepository --> ClientTherapistHandshake : "Hibernate ORM"
+ProviderProfile "0..*" --> "0..1" Organisation
+Service "0..*" --> "0..1" ProviderProfile
+Service "0..*" --> "0..1" Organisation
+
+@enduml
