@@ -64,7 +64,6 @@ const baseConfig: SdlcConfig = {
     spawnSubIssueTag: "@spawn-subissue",
   },
   gates: {
-    requireSecretScan: true,
     requireAllSubIssuesDone: true,
     targets: {
       backend: {
@@ -375,7 +374,6 @@ describe("sdlc-domain pure contract & state machine", () => {
           hasImplementationCommits: false,
           isPreviouslyDone: false,
           isMerged: false,
-          secretScanPassed: true,
           subIssues: [],
         },
         baseConfig
@@ -392,7 +390,6 @@ describe("sdlc-domain pure contract & state machine", () => {
           hasImplementationCommits: false,
           isPreviouslyDone: false,
           isMerged: false,
-          secretScanPassed: true,
           subIssues: [],
         },
         baseConfig
@@ -409,14 +406,13 @@ describe("sdlc-domain pure contract & state machine", () => {
           hasImplementationCommits: false,
           isPreviouslyDone: false,
           isMerged: false,
-          secretScanPassed: true,
           subIssues: [],
         },
         baseConfig
       ).status
     ).toBe("Red (Outer BDD)");
 
-    const blockedBySubAndSecret = evaluateSdlcState(
+    const blockedBySub = evaluateSdlcState(
       {
         issueId: 1,
         target: "@backend-only",
@@ -425,16 +421,14 @@ describe("sdlc-domain pure contract & state machine", () => {
         hasImplementationCommits: true,
         isPreviouslyDone: false,
         isMerged: false,
-        secretScanPassed: false,
         subIssues: [{ issueId: 2, title: "Child", status: "Inner TDD" }],
         backend: { cucumber: passCuc, jacoco: passJaCoCo },
       },
       baseConfig
     );
-    expect(blockedBySubAndSecret.status).toBe("Inner TDD");
-    expect(blockedBySubAndSecret.canMerge).toBe(false);
-    expect(blockedBySubAndSecret.reasons).toEqual([
-      "Secret scan failed (TruffleHog).",
+    expect(blockedBySub.status).toBe("Inner TDD");
+    expect(blockedBySub.canMerge).toBe(false);
+    expect(blockedBySub.reasons).toEqual([
       "Waiting on 1 unfinished Sub-Issue(s): #2.",
     ]);
 
@@ -447,7 +441,6 @@ describe("sdlc-domain pure contract & state machine", () => {
         hasImplementationCommits: true,
         isPreviouslyDone: false,
         isMerged: false,
-        secretScanPassed: true,
         subIssues: [],
         frontend: { cucumber: passCuc, istanbul: passIstanbul },
       },
@@ -465,7 +458,6 @@ describe("sdlc-domain pure contract & state machine", () => {
         hasImplementationCommits: true,
         isPreviouslyDone: false,
         isMerged: true,
-        secretScanPassed: true,
         subIssues: [],
         backend: { cucumber: passCuc, jacoco: passJaCoCo },
         frontend: { cucumber: passCuc, istanbul: passIstanbul },
@@ -483,7 +475,6 @@ describe("sdlc-domain pure contract & state machine", () => {
         hasImplementationCommits: true,
         isPreviouslyDone: true,
         isMerged: true,
-        secretScanPassed: true,
         subIssues: [],
         backend: {
           cucumber: { ...passCuc, passedScenarios: 1, failedScenarios: 1, brokenIssueIds: [1] },
@@ -504,7 +495,6 @@ describe("sdlc-domain pure contract & state machine", () => {
         hasImplementationCommits: true,
         isPreviouslyDone: true,
         isMerged: false,
-        secretScanPassed: true,
         subIssues: [],
         frontend: {
           cucumber: { ...passCuc, passedScenarios: 0, failedScenarios: 1, brokenIssueIds: [] },
@@ -524,7 +514,6 @@ describe("sdlc-domain pure contract & state machine", () => {
         hasImplementationCommits: true,
         isPreviouslyDone: true,
         isMerged: false,
-        secretScanPassed: true,
         subIssues: [],
         backend: {
           cucumber: { ...passCuc, brokenIssueIds: [20, 10] },

@@ -1,9 +1,10 @@
+@issue-70
 Feature: Psychotraumatology PCL-5 Screening and Privacy Isolation
   As a therapist and client
   I want PCL-5 trauma assessments recorded accurately and restricted to authorized participants
   So that clinical progress can be measured without exposing sensitive mental health data
 
-  @fullstack @api
+  @fullstack @api @issue-71 @parent-70
   Scenario: Therapist submits and retrieves a PCL-5 trauma assessment for an active client
     Given an onboarded therapist "maja_terapeut" with IBAN "DK5000400440116243", currency "DKK", and service "Traumeterapi" priced at 2 DKK for 60 minutes in branch "PSYCHOLOGY"
     And a registered client "anders_sand" with an active handshake with therapist "maja_terapeut"
@@ -11,7 +12,7 @@ Feature: Psychotraumatology PCL-5 Screening and Privacy Isolation
     Then the PCL-5 assessment should be stored with score 48 and severity "SEVERE"
     And client "anders_sand" retrieving their PCL-5 assessments should include score 48
 
-  @fullstack @api
+  @fullstack @api @issue-72 @parent-70
   Scenario: Cross-client access to PCL-5 assessments is denied
     Given a registered user account exists with username "anders_sand", full name "Anders Sand", email "anders@example.dk", and role "CLIENT"
     And a registered user account exists with username "other_client", full name "Anden Klient", email "other@example.dk", and role "CLIENT"
@@ -19,7 +20,7 @@ Feature: Psychotraumatology PCL-5 Screening and Privacy Isolation
     When client "other_client" attempts to retrieve PCL-5 assessments for "anders_sand"
     Then access should be denied due to insufficient permissions
 
-  @ui-only @ui
+  @ui-only @ui @issue-73 @parent-70
   Scenario: Client navigates 4 PCL-5 symptom cluster wizard and tracks live progress bar
     Given a registered user account exists with username "anders_sand", full name "Anders Sand", email "anders@example.dk", and role "CLIENT"
     When in the portal UI client "anders_sand" opens "/da/dashboard/personal?tab=pcl5"
@@ -27,14 +28,14 @@ Feature: Psychotraumatology PCL-5 Screening and Privacy Isolation
     Then element "pcl5-progress-bar" should report progress 1 and cluster tab "pcl5-cluster-tab-1" should be active
     And the visual snapshot "pcl5-cluster-wizard" of the PCL-5 form should match baseline
 
-  @ui-only @ui
+  @ui-only @ui @issue-74 @parent-70
   Scenario: Client completes all 20 PCL-5 questionnaire items and records computed severity score
     Given a registered user account exists with username "anders_sand", full name "Anders Sand", email "anders@example.dk", and role "CLIENT"
     When in the portal UI client "anders_sand" opens "/da/dashboard/personal?tab=pcl5"
     And in the portal UI client completes all 20 PCL-5 items with Likert value 2 and submits
     Then the PCL-5 results list in the UI should contain score 40
 
-  @ui-only @ui
+  @ui-only @ui @issue-75 @parent-70
   Scenario: Therapist uses manual quick-entry PCL-5 scoring mode for an active handshake client
     Given an onboarded therapist "maja_terapeut" with IBAN "DK5000400440116243", currency "DKK", and service "Individuel Terapi" priced at 2 DKK for 60 minutes in branch "PSYCHOLOGY"
     And a registered client "anders_sand" with an active handshake with therapist "maja_terapeut"

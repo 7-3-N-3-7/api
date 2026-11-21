@@ -42,9 +42,6 @@ flowchart TD
         FE["Frontend + SDLC Verifikation
 • Cucumber.js + Vitest
 • Alle 4 Istanbul-tællere = 100 %"]
-        SEC["Shift-Left Sikkerhed
-• TruffleHog Secret Scan
-• Ingen lækkede nøgler"]
     end
 
     GATE["5. SDLC Full-Stack Gate
@@ -66,7 +63,6 @@ flowchart TD
 
     BE -->|"cucumber-report.json & jacoco.xml"| GATE
     FE -->|"cucumber-report.json & coverage-summary.json"| GATE
-    SEC -->|"Scan resultat"| GATE
     GATE -->|"Opdaterer status"| GH
     GATE -->|"Efter merge / fejl"| FEEDBACK
     FEEDBACK -.->|"Genåbner eller synkroniserer"| GH
@@ -74,7 +70,7 @@ flowchart TD
     class BC,FC,SC,CFG core
     class GH,BR auth
     class SPEC,GATE slice
-    class BE,FE,SEC data
+    class BE,FE data
     class FEEDBACK err
 
     style Symmetri fill:#EFF6FF,stroke:#2563EB
