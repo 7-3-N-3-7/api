@@ -792,7 +792,11 @@ const STATUS_OPTION_META: Record<ProjectStatus, { color: string; description: st
   "Spec Ready": { color: "BLUE", description: "Valid Gherkin specification ready for branch sync" },
   "Red (Outer BDD)": { color: "RED", description: "Outer BDD contract failing on linked branch" },
   "Inner TDD": { color: "YELLOW", description: "Implementation in progress or blocked by Sub-Issues" },
+<<<<<<< HEAD
   "Green Gate": { color: "PURPLE", description: "All BDD and 100% coverage gates passed" },
+=======
+  "Green Gate": { color: "PURPLE", description: "All BDD, 100% coverage, and security gates passed" },
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   Done: { color: "GREEN", description: "Merged and verified on release/integration branch" },
   Regression: { color: "ORANGE", description: "Previously Done scenario failed in CI" },
 };

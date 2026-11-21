@@ -7,6 +7,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+<<<<<<< HEAD
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 
@@ -18,16 +19,36 @@ export const CATALOG_MD_PATH = path.join(ROOT_DIR, "HOVEDOPGAVE_DIAGRAMMER.md");
 const OUT_DIR = path.join(ROOT_DIR, "overleaf-export", "diagrams");
 const MANIFEST_PATH = path.join(ROOT_DIR, "overleaf-export", "diagrams-manifest.json");
 export const MERMAID_MIN_JS = path.join(ROOT_DIR, "node_modules", "mermaid", "dist", "mermaid.min.js");
+=======
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = path.resolve(__dirname, "..");
+const INFRA_DIAGRAMS_DIR = path.join(ROOT_DIR, "infrastructure", "diagrams");
+const DOCS_DIAGRAMS_DIR = path.join(ROOT_DIR, "docs", "diagrams");
+const CATALOG_MD_PATH = path.join(ROOT_DIR, "HOVEDOPGAVE_DIAGRAMMER.md");
+const OUT_DIR = path.join(ROOT_DIR, "overleaf-export", "diagrams");
+const MANIFEST_PATH = path.join(ROOT_DIR, "overleaf-export", "diagrams-manifest.json");
+const MERMAID_MIN_JS = path.join(ROOT_DIR, "node_modules", "mermaid", "dist", "mermaid.min.js");
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
 
 const MAX_PDF_DIM_PX = 1600;
 const PAD_PX = 16;
 const LANDSCAPE_ASPECT_THRESHOLD = 1.35;
 const REFRESH_PUML = process.argv.includes("--refresh-puml");
 
+<<<<<<< HEAD
 export const DEFAULT_THEME_INIT =
   "%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}}}%%";
 
 export const KATALOG_SLUGS = [
+=======
+const DEFAULT_THEME_INIT =
+  "%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}}}%%";
+
+const KATALOG_SLUGS = [
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   "katalog-01-gantt-projektforloeb",
   "katalog-02-commit-tidslinje",
   "katalog-03-gitgraph-github-branches",
@@ -55,7 +76,11 @@ export const KATALOG_SLUGS = [
   "katalog-25-sequence-landing-to-roleguard",
 ];
 
+<<<<<<< HEAD
 export function sanitizeFlowchartPlaceholders(code) {
+=======
+function sanitizeFlowchartPlaceholders(code) {
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   const withoutInit = code.replace(/^\s*%%\{[\s\S]*?\}%%\s*/u, "").trimStart();
   if (!/^(?:flowchart|graph)\b/i.test(withoutInit)) {
     return code;
@@ -69,7 +94,11 @@ export function sanitizeFlowchartPlaceholders(code) {
   });
 }
 
+<<<<<<< HEAD
 export function injectDefaultThemeIfMissing(source) {
+=======
+function injectDefaultThemeIfMissing(source) {
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   const trimmed = source.replace(/^\uFEFF/, "").trimStart();
   const themed =
     trimmed.startsWith("%%{init:") || trimmed.startsWith("%%{ init:")
@@ -78,7 +107,11 @@ export function injectDefaultThemeIfMissing(source) {
   return sanitizeFlowchartPlaceholders(themed);
 }
 
+<<<<<<< HEAD
 export function parseKatalogMermaidJobs() {
+=======
+function parseKatalogMermaidJobs() {
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   const md = fs.readFileSync(CATALOG_MD_PATH, "utf8");
   const blockRegex = /```mermaid\s*\r?\n([\s\S]*?)```/g;
   const jobs = [];
@@ -225,7 +258,11 @@ function hasVectorContent(pdfBuffer) {
   return /\/Type\s*\/Font\b/.test(raw) || pdfBuffer.length > 1000;
 }
 
+<<<<<<< HEAD
 export async function launchBrowser() {
+=======
+async function launchBrowser() {
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   const require = createRequire(import.meta.url);
   const { chromium } = require(path.join(ROOT_DIR, "frontend", "node_modules", "playwright", "index.js"));
   const candidates = [
@@ -624,6 +661,7 @@ async function main() {
   }
 }
 
+<<<<<<< HEAD
 const isDirectEntry =
   process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
 
@@ -633,3 +671,9 @@ if (isDirectEntry) {
     process.exit(1);
   });
 }
+=======
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b

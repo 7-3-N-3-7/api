@@ -11,7 +11,10 @@ Feature: Generic GitHub SDLC Framework (Dual-Layer Spec & Gate Contract)
     Then SDLC resolves linked branch "feature/101-automated-board-sync" from base branch "dev"
     And SDLC transitions Issue 101 to project status "Red (Outer BDD)"
 
+<<<<<<< HEAD
   @issue-78 @parent-76
+=======
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   Scenario: Hierarchical Sub-Issue blocks Parent Issue in Inner TDD until child reaches Done and all 100% gates pass
     Given SDLC configuration loaded from "sdlc.config.json" with strict 100% thresholds on JaCoCo and Istanbul
     When SDLC resolves child branch for Sub-Issue 102 titled "GraphQL Field Mapping" under parent branch "feature/101-automated-board-sync"

@@ -4,7 +4,10 @@
   "private": true,
   "description": "EduJournal Control-Plane & Generic GitHub SDLC Framework",
   "scripts": {
+<<<<<<< HEAD
     "diagrams:html": "node scripts/build-diagram-viewer.mjs",
+=======
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
     "diagrams:pdf": "node scripts/render-diagrams-pdf.mjs",
     "sdlc:bootstrap": "node scripts/run-sdlc.mjs bootstrap",
     "sdlc:sync-issue": "node scripts/run-sdlc.mjs sync-issue",

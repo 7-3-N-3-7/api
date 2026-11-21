@@ -29,7 +29,11 @@
     "aspectRatio": 0.167,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 62015
+=======
+    "bytes": 62067
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "class-diagram-backend",
@@ -77,7 +81,11 @@
     "aspectRatio": 0.511,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 96494
+=======
+    "bytes": 96476
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "class-diagram-swimlane-clinic-platform",
@@ -93,7 +101,11 @@
     "aspectRatio": 1.1,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 88313
+=======
+    "bytes": 88284
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "class-diagram-swimlane-core",
@@ -109,7 +121,11 @@
     "aspectRatio": 0.686,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 132280
+=======
+    "bytes": 132266
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "class-diagram-swimlane-finance",
@@ -125,7 +141,11 @@
     "aspectRatio": 1.272,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 113337
+=======
+    "bytes": 113318
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "class-diagram-swimlane-i18n",
@@ -141,7 +161,11 @@
     "aspectRatio": 0.643,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 94502
+=======
+    "bytes": 94510
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "class-diagram-swimlane-journal",
@@ -157,7 +181,11 @@
     "aspectRatio": 1.118,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 88497
+=======
+    "bytes": 88463
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "class-diagram-swimlane-psychotraumatology",
@@ -173,7 +201,11 @@
     "aspectRatio": 1.011,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 83423
+=======
+    "bytes": 83416
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "class-diagram-swimlane-user",
@@ -189,7 +221,11 @@
     "aspectRatio": 0.853,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 93237
+=======
+    "bytes": 93250
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "deployment-diagram",
@@ -221,7 +257,11 @@
     "aspectRatio": 0.741,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 85610
+=======
+    "bytes": 85634
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "eer-diagram",
@@ -237,7 +277,11 @@
     "aspectRatio": 0.842,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 143468
+=======
+    "bytes": 143439
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "backend_class_diagram",
@@ -269,7 +313,11 @@
     "aspectRatio": 0.708,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 132473
+=======
+    "bytes": 132486
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "double-loop-tdd",
@@ -310,6 +358,7 @@
     "group": "docs/diagrams",
     "title": "generic-sdlc-architecture",
     "kind": "mermaid",
+<<<<<<< HEAD
     "rawWidth": 851,
     "rawHeight": 2325,
     "pdfWidthPt": 453,
@@ -318,6 +367,16 @@
     "orientation": "portrait",
     "rasterImageCount": 0,
     "bytes": 52751
+=======
+    "rawWidth": 909,
+    "rawHeight": 2325,
+    "pdfWidthPt": 482.25,
+    "pdfHeightPt": 1203,
+    "aspectRatio": 0.401,
+    "orientation": "portrait",
+    "rasterImageCount": 0,
+    "bytes": 53395
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "katalog-01-gantt-projektforloeb",
@@ -413,7 +472,11 @@
     "aspectRatio": 0.631,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 144948
+=======
+    "bytes": 144893
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "katalog-07-state-samtykke-handshake",
@@ -429,7 +492,11 @@
     "aspectRatio": 0.552,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 55396
+=======
+    "bytes": 55394
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "katalog-08-state-aftale-finans",
@@ -461,7 +528,11 @@
     "aspectRatio": 0.508,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 83853
+=======
+    "bytes": 83837
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "katalog-10-activity-core",
@@ -477,7 +548,11 @@
     "aspectRatio": 0.201,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 83827
+=======
+    "bytes": 83787
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "katalog-11-sequence-core",
@@ -509,7 +584,11 @@
     "aspectRatio": 0.37,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 78044
+=======
+    "bytes": 78105
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "katalog-13-sequence-appointment",
@@ -541,7 +620,11 @@
     "aspectRatio": 0.454,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 71622
+=======
+    "bytes": 71602
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "katalog-15-sequence-clinic-platform",
@@ -573,7 +656,11 @@
     "aspectRatio": 1.588,
     "orientation": "landscape",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 82096
+=======
+    "bytes": 82025
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "katalog-17-sequence-i18n",
@@ -605,7 +692,11 @@
     "aspectRatio": 0.509,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 68025
+=======
+    "bytes": 68114
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "katalog-19-sequence-journal",
@@ -637,7 +728,11 @@
     "aspectRatio": 0.44,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 73527
+=======
+    "bytes": 73551
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "katalog-21-sequence-psychotraumatology",
@@ -669,7 +764,11 @@
     "aspectRatio": 0.314,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 78537
+=======
+    "bytes": 78506
+>>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
   },
   {
     "slug": "katalog-23-sequence-user",
