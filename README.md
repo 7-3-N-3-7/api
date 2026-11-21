@@ -152,7 +152,7 @@ npm run sdlc:status
 ## 5. Arkitekturdiagrammer & Hovedopgavedokumentation
 
 - **Mermaid Arkitekturdiagrammer & Interaktiv Vektorfremviser (`docs/diagrams/` & `infrastructure/diagrams/`):**
-  - [`docs/diagrams/diagram-oversigt.html`](docs/diagrams/diagram-oversigt.html): Samlet offline interaktiv Pan & Zoom vektoroversigt over alle 19 Mermaid-diagrammer.
+  - [`docs/diagrams/diagram-oversigt.html`](docs/diagrams/diagram-oversigt.html): Samlet offline interaktiv Pan & Zoom vektoroversigt over alle 45 diagrammer (44 Mermaid + 1 PlantUML), også udgivet via GitHub Pages på `https://7-3-n-3-7.github.io/api/diagrams/diagram-oversigt.html`.
   - [`docs/diagrams/generic-sdlc-architecture.mmd`](docs/diagrams/generic-sdlc-architecture.mmd): Generisk GitHub SDLC-Framework (Tredobbelt 2-fils Symmetri, GitHub Projects v2, træ-isomorfe branches & to-vejs feedback-loop).
   - [`infrastructure/diagrams/bdd-tdd-workflow.mmd`](infrastructure/diagrams/bdd-tdd-workflow.mmd): 9-trins lukket Outside-In BDD/TDD & SDLC Full-Stack Gate workflow.
   - [`docs/diagrams/fullstack-symmetry.mmd`](docs/diagrams/fullstack-symmetry.mmd): 1:1 Full-Stack Arkitektonisk Symmetri & Dual-App Frontend SoC.

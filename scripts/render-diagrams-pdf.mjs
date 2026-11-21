@@ -7,27 +7,27 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = path.resolve(__dirname, "..");
-const INFRA_DIAGRAMS_DIR = path.join(ROOT_DIR, "infrastructure", "diagrams");
-const DOCS_DIAGRAMS_DIR = path.join(ROOT_DIR, "docs", "diagrams");
-const CATALOG_MD_PATH = path.join(ROOT_DIR, "HOVEDOPGAVE_DIAGRAMMER.md");
+export const ROOT_DIR = path.resolve(__dirname, "..");
+export const INFRA_DIAGRAMS_DIR = path.join(ROOT_DIR, "infrastructure", "diagrams");
+export const DOCS_DIAGRAMS_DIR = path.join(ROOT_DIR, "docs", "diagrams");
+export const CATALOG_MD_PATH = path.join(ROOT_DIR, "HOVEDOPGAVE_DIAGRAMMER.md");
 const OUT_DIR = path.join(ROOT_DIR, "overleaf-export", "diagrams");
 const MANIFEST_PATH = path.join(ROOT_DIR, "overleaf-export", "diagrams-manifest.json");
-const MERMAID_MIN_JS = path.join(ROOT_DIR, "node_modules", "mermaid", "dist", "mermaid.min.js");
+export const MERMAID_MIN_JS = path.join(ROOT_DIR, "node_modules", "mermaid", "dist", "mermaid.min.js");
 
 const MAX_PDF_DIM_PX = 1600;
 const PAD_PX = 16;
 const LANDSCAPE_ASPECT_THRESHOLD = 1.35;
 const REFRESH_PUML = process.argv.includes("--refresh-puml");
 
-const DEFAULT_THEME_INIT =
+export const DEFAULT_THEME_INIT =
   "%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}}}%%";
 
-const KATALOG_SLUGS = [
+export const KATALOG_SLUGS = [
   "katalog-01-gantt-projektforloeb",
   "katalog-02-commit-tidslinje",
   "katalog-03-gitgraph-github-branches",
@@ -55,7 +55,7 @@ const KATALOG_SLUGS = [
   "katalog-25-sequence-landing-to-roleguard",
 ];
 
-function sanitizeFlowchartPlaceholders(code) {
+export function sanitizeFlowchartPlaceholders(code) {
   const withoutInit = code.replace(/^\s*%%\{[\s\S]*?\}%%\s*/u, "").trimStart();
   if (!/^(?:flowchart|graph)\b/i.test(withoutInit)) {
     return code;
@@ -69,7 +69,7 @@ function sanitizeFlowchartPlaceholders(code) {
   });
 }
 
-function injectDefaultThemeIfMissing(source) {
+export function injectDefaultThemeIfMissing(source) {
   const trimmed = source.replace(/^\uFEFF/, "").trimStart();
   const themed =
     trimmed.startsWith("%%{init:") || trimmed.startsWith("%%{ init:")
@@ -78,7 +78,7 @@ function injectDefaultThemeIfMissing(source) {
   return sanitizeFlowchartPlaceholders(themed);
 }
 
-function parseKatalogMermaidJobs() {
+export function parseKatalogMermaidJobs() {
   const md = fs.readFileSync(CATALOG_MD_PATH, "utf8");
   const blockRegex = /```mermaid\s*\r?\n([\s\S]*?)```/g;
   const jobs = [];
@@ -225,7 +225,7 @@ function hasVectorContent(pdfBuffer) {
   return /\/Type\s*\/Font\b/.test(raw) || pdfBuffer.length > 1000;
 }
 
-async function launchBrowser() {
+export async function launchBrowser() {
   const require = createRequire(import.meta.url);
   const { chromium } = require(path.join(ROOT_DIR, "frontend", "node_modules", "playwright", "index.js"));
   const candidates = [
@@ -624,7 +624,12 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+const isDirectEntry =
+  process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+
+if (isDirectEntry) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
