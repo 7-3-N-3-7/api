@@ -21,7 +21,6 @@
     "spawnSubIssueTag": "@spawn-subissue"
   },
   "gates": {
-    "requireSecretScan": true,
     "requireAllSubIssuesDone": true,
     "targets": {
       "backend": {

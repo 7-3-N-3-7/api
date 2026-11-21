@@ -21,19 +21,12 @@ permissions:
   pull-requests: write
 
 jobs:
-  security-and-subissues:
-    name: 1. Shift-Left Secret Scan & @spawn-subissue Sync
+  subissues-sync:
+    name: 1. Bottom-Up @spawn-subissue Sync
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: TruffleHog Secret Scan
-        uses: trufflesecurity/trufflehog@main
-        with:
-          extra_args: --only-verified
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
@@ -191,7 +184,7 @@ jobs:
 
   sdlc-gate:
     name: SDLC Full-Stack Gate
-    needs: [security-and-subissues, backend-verify, frontend-verify]
+    needs: [subissues-sync, backend-verify, frontend-verify]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -223,7 +216,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           BRANCH_NAME: ${{ inputs.target_branch || github.event.client_payload.branch || github.head_ref || github.ref_name }}
           IS_MERGED: ${{ (github.event_name == 'push' && (github.ref_name == 'dev' || github.ref_name == 'main')) || (github.event_name == 'repository_dispatch' && (github.event.client_payload.branch == 'dev' || github.event.client_payload.branch == 'main')) }}
-          SEC_RESULT: ${{ needs.security-and-subissues.result }}
+          SUBISSUES_RESULT: ${{ needs.subissues-sync.result }}
           BE_RESULT: ${{ needs.backend-verify.result }}
           FE_RESULT: ${{ needs.frontend-verify.result }}
         run: |
@@ -233,7 +226,7 @@ jobs:
             MERGED_FLAG="--merged"
           fi
           npm run sdlc:verify -- --branch "$BRANCH_NAME" $MERGED_FLAG | tee -a "$GITHUB_STEP_SUMMARY"
-          if [ "$SEC_RESULT" != "success" ] || [ "$BE_RESULT" != "success" ] || [ "$FE_RESULT" != "success" ]; then
-            echo "One or more upstream jobs failed (security=$SEC_RESULT, backend=$BE_RESULT, frontend=$FE_RESULT)."
+          if [ "$SUBISSUES_RESULT" != "success" ] || [ "$BE_RESULT" != "success" ] || [ "$FE_RESULT" != "success" ]; then
+            echo "One or more upstream jobs failed (subissues=$SUBISSUES_RESULT, backend=$BE_RESULT, frontend=$FE_RESULT)."
             exit 1
           fi

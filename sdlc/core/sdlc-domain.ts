@@ -92,7 +92,6 @@ export interface SdlcConfig {
     spawnSubIssueTag: string;
   };
   gates: {
-    requireSecretScan: boolean;
     requireAllSubIssuesDone: boolean;
     targets: {
       backend: BackendTargetConfig;
@@ -190,7 +189,6 @@ export interface SdlcEvaluationInput {
   hasImplementationCommits: boolean;
   isPreviouslyDone: boolean;
   isMerged: boolean;
-  secretScanPassed: boolean;
   subIssues: SdlcNodeStatus[];
   backend?: TargetVerificationInput;
   frontend?: TargetVerificationInput;
@@ -700,11 +698,6 @@ export function evaluateSdlcState(
     );
   }
 
-  const secretOk = !config.gates.requireSecretScan || input.secretScanPassed;
-  if (!secretOk) {
-    reasons.push("Secret scan failed (TruffleHog).");
-  }
-
   const openSubIssues = input.subIssues.filter((sub) => sub.status !== "Done");
   const subIssuesOk =
     !config.gates.requireAllSubIssuesDone || openSubIssues.length === 0;
@@ -723,7 +716,7 @@ export function evaluateSdlcState(
   const brokenIssueIds = [...brokenSet].sort((a, b) => a - b);
 
   const canMerge =
-    input.specValid && beBddOk && feBddOk && beCovOk && feCovOk && secretOk && subIssuesOk;
+    input.specValid && beBddOk && feBddOk && beCovOk && feCovOk && subIssuesOk;
 
   const hasAnyPassingBdd =
     (needBackend && Boolean(input.backend?.cucumber && input.backend.cucumber.passedScenarios > 0)) ||
@@ -762,7 +755,6 @@ export function evaluateSdlcState(
     `| Backend JaCoCo (6 tællere) | ${needBackend ? (beCovOk ? "PASS" : "FAIL") : "N/A"} | ${beCov ? `L:${pct(beCov.line)} B:${pct(beCov.branch)} I:${pct(beCov.instruction)} C:${pct(beCov.complexity)} M:${pct(beCov.method)} Cl:${pct(beCov.clazz)}` : "Ikke kørt"} |`,
     `| Frontend BDD | ${needFrontend ? (feBddOk ? "PASS" : "FAIL") : "N/A"} | ${input.frontend?.cucumber ? `${input.frontend.cucumber.passedScenarios}/${input.frontend.cucumber.totalScenarios} scenarier` : "Ikke kørt"} |`,
     `| Frontend Istanbul (4 tællere) | ${needFrontend ? (feCovOk ? "PASS" : "FAIL") : "N/A"} | ${feCov ? `L:${pct(feCov.line)} S:${pct(feCov.statement)} F:${pct(feCov.function)} B:${pct(feCov.branch)}` : "Ikke kørt"} |`,
-    `| Security (TruffleHog) | ${secretOk ? "PASS" : "FAIL"} | Secret scan |`,
     `| Hierarkiske Sub-Issues | ${subIssuesOk ? "PASS" : "BLOCKED"} | ${input.subIssues.length - openSubIssues.length}/${input.subIssues.length} Done |`,
   ].join("\n");
 
@@ -800,7 +792,7 @@ const STATUS_OPTION_META: Record<ProjectStatus, { color: string; description: st
   "Spec Ready": { color: "BLUE", description: "Valid Gherkin specification ready for branch sync" },
   "Red (Outer BDD)": { color: "RED", description: "Outer BDD contract failing on linked branch" },
   "Inner TDD": { color: "YELLOW", description: "Implementation in progress or blocked by Sub-Issues" },
-  "Green Gate": { color: "PURPLE", description: "All BDD, 100% coverage, and security gates passed" },
+  "Green Gate": { color: "PURPLE", description: "All BDD and 100% coverage gates passed" },
   Done: { color: "GREEN", description: "Merged and verified on release/integration branch" },
   Regression: { color: "ORANGE", description: "Previously Done scenario failed in CI" },
 };

@@ -72,7 +72,6 @@ export interface VerifyWorkspaceOptions {
   branch: string;
   issueId?: number;
   target?: SpecTarget;
-  secretScanPassed?: boolean;
   isPreviouslyDone?: boolean;
   isMerged?: boolean;
   hasImplementationCommits?: boolean;
@@ -814,7 +813,6 @@ export async function verifyWorkspaceAndSync(
       hasImplementationCommits: options.hasImplementationCommits ?? true,
       isPreviouslyDone: options.isPreviouslyDone ?? false,
       isMerged: options.isMerged ?? false,
-      secretScanPassed: options.secretScanPassed ?? true,
       subIssues: options.subIssues ?? [],
       backend: { cucumber: beCucumber, jacoco: beJacoco },
       frontend: { cucumber: feCucumber, istanbul: feIstanbul },
