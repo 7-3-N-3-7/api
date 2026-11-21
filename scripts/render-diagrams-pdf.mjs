@@ -24,12 +24,18 @@ const PAD_PX = 16;
 const LANDSCAPE_ASPECT_THRESHOLD = 1.35;
 const REFRESH_PUML = process.argv.includes("--refresh-puml");
 
+<<<<<<< HEAD
 const INIT_FONT_FAMILY = "Arial, Liberation Sans, Helvetica Neue, sans-serif";
 export const DIAGRAM_FONT_FAMILY = 'Arial, "Liberation Sans", "Helvetica Neue", sans-serif';
 
 export const DEFAULT_THEME_INIT =
   `%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': '${INIT_FONT_FAMILY}', 'fontSize': '14px'}}}%%`;
 
+=======
+export const DEFAULT_THEME_INIT =
+  "%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}}}%%";
+
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
 export const KATALOG_SLUGS = [
   "katalog-01-gantt-projektforloeb",
   "katalog-02-commit-tidslinje",
@@ -72,6 +78,7 @@ export function sanitizeFlowchartPlaceholders(code) {
   });
 }
 
+<<<<<<< HEAD
 export function normalizeMermaidLineBreaks(code) {
   const withoutInit = code.replace(/^\s*%%\{[\s\S]*?\}%%\s*/u, "").trimStart();
   if (!/^(?:sequenceDiagram|stateDiagram(?:-v2)?)\b/i.test(withoutInit)) {
@@ -80,6 +87,8 @@ export function normalizeMermaidLineBreaks(code) {
   return code.replace(/\\n(?!")/g, "<br/>");
 }
 
+=======
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
 export function injectDefaultThemeIfMissing(source) {
   const trimmed = source.replace(/^\uFEFF/, "").trimStart();
   const themed =
