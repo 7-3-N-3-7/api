@@ -74,11 +74,7 @@
         {
           "title": "Interactive offline Mermaid architecture diagram viewer and documentation",
           "target": "@ui-only",
-<<<<<<< HEAD
           "description": "Offline Pan & Zoom vector viewer in docs/diagrams/diagram-oversigt.html covering all 45 architecture, UML, C4, catalog, and workflow diagrams (published via GitHub Pages)."
-=======
-          "description": "Offline Pan & Zoom vector viewer in docs/diagrams/diagram-oversigt.html covering all 19 Mermaid architecture, UML, C4, and workflow diagrams."
->>>>>>> 0a635fb88511fdcc589e6ce17ed3c9603915683b
         }
       ]
     }
