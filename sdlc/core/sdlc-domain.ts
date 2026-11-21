@@ -35,6 +35,44 @@ export interface RepositoryTargetsConfig {
   frontend: string;
 }
 
+export interface DeclarativeSubIssueConfig {
+  title: string;
+  target: SpecTarget;
+  description: string;
+}
+
+export interface DeclarativeFeatureConfig {
+  slice: string;
+  target: SpecTarget;
+  title: string;
+  description: string;
+  subIssues: DeclarativeSubIssueConfig[];
+}
+
+export interface ProjectStatusOptionInput {
+  id?: string;
+  name: ProjectStatus;
+  color: string;
+  description: string;
+}
+
+export interface SeedScenarioSpec {
+  title: string;
+  target: SpecTarget;
+  rawBlock: string;
+  description?: string;
+}
+
+export interface SeedFeatureSpec {
+  featureTitle: string;
+  slice: string;
+  target: SpecTarget;
+  featureRelPath: string | null;
+  rawFeatureText: string | null;
+  description: string;
+  scenarios: SeedScenarioSpec[];
+}
+
 export interface SdlcConfig {
   projectTitle: string;
   repositories?: RepositoryTargetsConfig;
@@ -64,6 +102,7 @@ export interface SdlcConfig {
   projectBoard: {
     statuses: ProjectStatus[];
   };
+  declarativeFeatures?: DeclarativeFeatureConfig[];
 }
 
 export interface ParsedIssueSpec {
@@ -754,4 +793,360 @@ export function resolveTargetRepositories(
     return [config.repositories.frontend];
   }
   return [config.repositories.backend, config.repositories.frontend];
+}
+
+const STATUS_OPTION_META: Record<ProjectStatus, { color: string; description: string }> = {
+  Backlog: { color: "GRAY", description: "Issue created without complete Gherkin specification" },
+  "Spec Ready": { color: "BLUE", description: "Valid Gherkin specification ready for branch sync" },
+  "Red (Outer BDD)": { color: "RED", description: "Outer BDD contract failing on linked branch" },
+  "Inner TDD": { color: "YELLOW", description: "Implementation in progress or blocked by Sub-Issues" },
+  "Green Gate": { color: "PURPLE", description: "All BDD, 100% coverage, and security gates passed" },
+  Done: { color: "GREEN", description: "Merged and verified on release/integration branch" },
+  Regression: { color: "ORANGE", description: "Previously Done scenario failed in CI" },
+};
+
+const SLICE_ALIASES: Record<string, string> = {
+  core_architecture: "core",
+  generic_sdlc_framework: "sdlc",
+};
+
+/**
+ * Builds ProjectV2 single-select Status option inputs while preserving existing option IDs.
+ */
+export function buildStatusOptionInputs(
+  statuses: ProjectStatus[],
+  existingOptions?: Array<{ id?: string; name?: string }>
+): ProjectStatusOptionInput[] {
+  const existingIdByName = new Map<string, string>();
+  for (const opt of existingOptions || []) {
+    if (opt.name && opt.id) {
+      existingIdByName.set(opt.name, opt.id);
+    }
+  }
+  return statuses.map((status) => {
+    const meta = STATUS_OPTION_META[status];
+    const existingId = existingIdByName.get(status);
+    return {
+      ...(existingId ? { id: existingId } : {}),
+      name: status,
+      color: meta.color,
+      description: meta.description,
+    };
+  });
+}
+
+/**
+ * Maps a `.feature` file path to its canonical Vertical Slice identifier.
+ */
+export function deriveSliceFromFeaturePath(relPath: string): string {
+  const baseName = relPath.replace(/\\/g, "/").split("/").pop()!.replace(/\.feature$/i, "");
+  return SLICE_ALIASES[baseName] || slugifyTitle(baseName);
+}
+
+function collectPrecedingTagStart(lines: string[], headerIdx: number, minIdx: number): number {
+  let start = headerIdx;
+  for (let j = headerIdx - 1; j >= minIdx; j--) {
+    if (lines[j].trim().startsWith("@")) {
+      start = j;
+    } else {
+      break;
+    }
+  }
+  return start;
+}
+
+function collectTagsInRange(lines: string[], startIdx: number, endIdx: number): string[] {
+  const tags: string[] = [];
+  for (let i = startIdx; i < endIdx; i++) {
+    tags.push(...lines[i].trim().split(/\s+/));
+  }
+  return tags;
+}
+
+function stripIssueTagsFromBlock(lines: string[], config: SdlcConfig): string[] {
+  const result: string[] = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("@")) {
+      const indent = line.match(/^(\s*)/)![1];
+      const kept = trimmed
+        .split(/\s+/)
+        .filter(
+          (tok) =>
+            !tok.startsWith(config.specs.issueTagPrefix) &&
+            !tok.startsWith(config.specs.parentTagPrefix)
+        );
+      if (kept.length > 0) {
+        result.push(`${indent}${kept.join(" ")}`);
+      }
+    } else {
+      result.push(line);
+    }
+  }
+  return result;
+}
+
+function extractTargetFromTags(tags: string[], config: SdlcConfig): SpecTarget | null {
+  if (tags.includes(config.specs.backendOnlyTag)) {
+    return config.specs.backendOnlyTag as SpecTarget;
+  }
+  if (tags.includes(config.specs.frontendOnlyTag)) {
+    return config.specs.frontendOnlyTag as SpecTarget;
+  }
+  if (tags.includes(config.specs.fullstackTag)) {
+    return config.specs.fullstackTag as SpecTarget;
+  }
+  return null;
+}
+
+function deriveFeatureTarget(
+  featureTags: string[],
+  scenarios: SeedScenarioSpec[],
+  config: SdlcConfig
+): SpecTarget {
+  const explicit = extractTargetFromTags(featureTags, config);
+  if (explicit) return explicit;
+  if (scenarios.length > 0) {
+    const unique = new Set(scenarios.map((s) => s.target));
+    if (unique.size === 1) {
+      return scenarios[0].target;
+    }
+  }
+  return config.specs.fullstackTag as SpecTarget;
+}
+
+/**
+ * Extracts a deterministic parent SeedFeatureSpec and per-scenario SeedScenarioSpec items from a `.feature` file.
+ */
+export function extractSeedFeatureFromGherkin(
+  featureRelPath: string,
+  featureText: string,
+  config: SdlcConfig
+): SeedFeatureSpec {
+  const lines = featureText.replace(/\r\n/g, "\n").split("\n");
+  const featureIdx = lines.findIndex((line) => /^\s*Feature:\s*/i.test(line));
+  if (featureIdx === -1) {
+    throw new Error(`Missing 'Feature:' header in ${featureRelPath}`);
+  }
+
+  const featureTitle = lines[featureIdx].replace(/^\s*Feature:\s*/i, "").trim();
+  const featureTagStart = collectPrecedingTagStart(lines, featureIdx, 0);
+  const featureTags = collectTagsInRange(lines, featureTagStart, featureIdx);
+  const explicitFeatureTarget = extractTargetFromTags(featureTags, config);
+
+  const scenarioHeaders: Array<{ headerIdx: number; tagStartIdx: number; title: string }> = [];
+  let minSearchIdx = featureIdx + 1;
+  for (let i = featureIdx + 1; i < lines.length; i++) {
+    const match = lines[i].trim().match(/^Scenario(?: Outline)?:\s*(.+)$/i);
+    if (match) {
+      const tagStartIdx = collectPrecedingTagStart(lines, i, minSearchIdx);
+      scenarioHeaders.push({ headerIdx: i, tagStartIdx, title: match[1].trim() });
+      minSearchIdx = i + 1;
+    }
+  }
+
+  const firstBoundary = scenarioHeaders.length > 0 ? scenarioHeaders[0].tagStartIdx : lines.length;
+  const description = lines
+    .slice(featureIdx + 1, firstBoundary)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join(" ");
+
+  const scenarios: SeedScenarioSpec[] = scenarioHeaders.map((hdr, idx) => {
+    const nextBoundary =
+      idx + 1 < scenarioHeaders.length ? scenarioHeaders[idx + 1].tagStartIdx : lines.length;
+    const blockLines = lines.slice(hdr.tagStartIdx, nextBoundary);
+    while (blockLines.length > 0 && blockLines[blockLines.length - 1].trim() === "") {
+      blockLines.pop();
+    }
+    const scenarioTags = collectTagsInRange(lines, hdr.tagStartIdx, hdr.headerIdx);
+    const target =
+      extractTargetFromTags(scenarioTags, config) ||
+      explicitFeatureTarget ||
+      (config.specs.fullstackTag as SpecTarget);
+    const rawBlock = stripIssueTagsFromBlock(blockLines, config).join("\n");
+    return {
+      title: hdr.title,
+      target,
+      rawBlock,
+    };
+  });
+
+  const target = deriveFeatureTarget(featureTags, scenarios, config);
+  const slice = deriveSliceFromFeaturePath(featureRelPath);
+  const rawFeatureText = stripIssueTagsFromBlock(lines, config).join("\n").trimEnd() + "\n";
+
+  return {
+    featureTitle,
+    slice,
+    target,
+    featureRelPath,
+    rawFeatureText,
+    description,
+    scenarios,
+  };
+}
+
+function upsertHeaderTags(
+  lines: string[],
+  headerIdx: number,
+  minIdx: number,
+  stripPrefixes: string[],
+  addTags: string[]
+): void {
+  const tagStart = collectPrecedingTagStart(lines, headerIdx, minIdx);
+  const keptTags: string[] = [];
+  for (let i = tagStart; i < headerIdx; i++) {
+    for (const tok of lines[i].trim().split(/\s+/)) {
+      if (!stripPrefixes.some((p) => tok.startsWith(p)) && !keptTags.includes(tok)) {
+        keptTags.push(tok);
+      }
+    }
+  }
+  keptTags.push(...addTags);
+  const indent = lines[headerIdx].match(/^(\s*)/)![1];
+  lines.splice(tagStart, headerIdx - tagStart, `${indent}${keptTags.join(" ")}`);
+}
+
+/**
+ * Idempotently injects @issue-<parentId> on Feature: and @issue-<childId> @parent-<parentId> on each Scenario.
+ */
+export function injectSeedIssueTags(
+  featureText: string,
+  parentIssueId: number,
+  scenarioIssueIds: Record<string, number>,
+  config: SdlcConfig
+): string {
+  const lines = featureText.replace(/\r\n/g, "\n").split("\n");
+  const featureIdx = lines.findIndex((line) => /^\s*Feature:\s*/i.test(line));
+  if (featureIdx === -1) {
+    return featureText;
+  }
+
+  const stripPrefixes = [config.specs.issueTagPrefix, config.specs.parentTagPrefix];
+  const scenarioMatches: Array<{ idx: number; childId: number }> = [];
+  for (let i = featureIdx + 1; i < lines.length; i++) {
+    const match = lines[i].trim().match(/^Scenario(?: Outline)?:\s*(.+)$/i);
+    if (match) {
+      const childId = scenarioIssueIds[match[1].trim()];
+      if (childId) {
+        scenarioMatches.push({ idx: i, childId });
+      }
+    }
+  }
+
+  for (let i = scenarioMatches.length - 1; i >= 0; i--) {
+    const entry = scenarioMatches[i];
+    upsertHeaderTags(lines, entry.idx, featureIdx + 1, stripPrefixes, [
+      `${config.specs.issueTagPrefix}${entry.childId}`,
+      `${config.specs.parentTagPrefix}${parentIssueId}`,
+    ]);
+  }
+
+  upsertHeaderTags(lines, featureIdx, 0, [config.specs.issueTagPrefix], [
+    `${config.specs.issueTagPrefix}${parentIssueId}`,
+  ]);
+
+  return lines.join("\n").trimEnd() + "\n";
+}
+
+/**
+ * Formats a GitHub Issue Form body for a seeded parent SDLC Feature Issue.
+ */
+export function formatSeedParentIssueBody(spec: SeedFeatureSpec): string {
+  const gherkin = spec.rawFeatureText
+    ? spec.rawFeatureText.trim()
+    : [
+        `Feature: ${spec.featureTitle}`,
+        `  # ${spec.description}`,
+        ...spec.scenarios.map((s) =>
+          [
+            `  Scenario: ${s.title}`,
+            "    Given EduJournal platform infrastructure is configured",
+            `    When ${s.title} is deployed and verified`,
+            `    Then ${s.description || spec.description}`,
+          ].join("\n")
+        ),
+      ].join("\n\n");
+
+  return [
+    "### Vertical Slice",
+    spec.slice,
+    "",
+    "### Target",
+    spec.target,
+    "",
+    "### Gherkin Specification",
+    "",
+    "```gherkin",
+    gherkin,
+    "```",
+    "",
+  ].join("\n");
+}
+
+/**
+ * Formats a GitHub Issue Form body for a seeded hierarchical Sub-Issue.
+ */
+export function formatSeedSubIssueBody(
+  spec: SeedFeatureSpec,
+  scenario: SeedScenarioSpec,
+  parentIssueId: number
+): string {
+  const scenarioGherkin = scenario.rawBlock
+    ? scenario.rawBlock.trimEnd()
+    : [
+        `  Scenario: ${scenario.title}`,
+        "    Given EduJournal platform infrastructure is configured",
+        `    When ${scenario.title} is deployed and verified`,
+        `    Then ${scenario.description || spec.description}`,
+      ].join("\n");
+
+  return [
+    "### Parent Issue",
+    `#${parentIssueId}`,
+    "",
+    "### Vertical Slice",
+    spec.slice,
+    "",
+    "### Target",
+    scenario.target,
+    "",
+    "### Gherkin Specification",
+    "",
+    "```gherkin",
+    `Feature: ${spec.featureTitle}`,
+    scenarioGherkin,
+    "```",
+    "",
+  ].join("\n");
+}
+
+/**
+ * Builds the 7 custom TEXT field values for a seeded GitHub Projects v2 item.
+ */
+export function buildSeedFieldValues(params: {
+  slice: string;
+  target: SpecTarget;
+  hasFeatureFile: boolean;
+  subIssueSummary: string;
+  linkedBranch: string;
+}): Record<string, string> {
+  return {
+    Slice: params.slice,
+    Target: params.target,
+    "Backend BDD": !params.hasFeatureFile
+      ? "N/A (Infra)"
+      : params.target === "@ui-only"
+        ? "N/A"
+        : "PASS",
+    "Frontend BDD": !params.hasFeatureFile
+      ? "N/A (Infra)"
+      : params.target === "@backend-only"
+        ? "N/A"
+        : "PASS",
+    "Coverage Gate": !params.hasFeatureFile ? "N/A (Infra)" : "PASS (100%)",
+    "Sub-Issues": params.subIssueSummary,
+    "Linked Branch": params.linkedBranch,
+  };
 }

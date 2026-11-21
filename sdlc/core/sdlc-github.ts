@@ -11,9 +11,16 @@ import {
   type SdlcConfig,
   type SdlcEvaluationResult,
   type SdlcNodeStatus,
+  type SeedFeatureSpec,
   type SpecTarget,
+  buildSeedFieldValues,
+  buildStatusOptionInputs,
   evaluateSdlcState,
   extractFeatureMetadata,
+  extractSeedFeatureFromGherkin,
+  formatSeedParentIssueBody,
+  formatSeedSubIssueBody,
+  injectSeedIssueTags,
   parseBranchIssueId,
   parseCucumberJsonReport,
   parseIssueBody,
@@ -79,6 +86,39 @@ export interface VerifyWorkspaceOutput {
   operations: SdlcDryRunOperation[];
 }
 
+export interface ProjectV2Meta {
+  id: string;
+  number: number;
+  url: string;
+  statusFieldId: string | null;
+  statusOptionIds: Record<string, string>;
+  textFieldIds: Record<string, string>;
+}
+
+export interface SeedFeaturesOptions {
+  rootDir: string;
+  updateFeatureTags?: boolean;
+  closeIssues?: boolean;
+}
+
+export interface SeededFeatureResult {
+  parentIssueId: number;
+  title: string;
+  slice: string;
+  target: SpecTarget;
+  featureRelPath: string | null;
+  subIssues: Array<{ issueId: number; title: string; target: SpecTarget }>;
+}
+
+export interface SeedFeaturesOutput {
+  dryRun: boolean;
+  features: SeededFeatureResult[];
+  totalParents: number;
+  totalSubIssues: number;
+  totalItems: number;
+  operations: SdlcDryRunOperation[];
+}
+
 export function loadSdlcConfig(rootDir: string): SdlcConfig {
   const configPath = path.join(rootDir, "sdlc.config.json");
   return JSON.parse(fs.readFileSync(configPath, "utf8")) as SdlcConfig;
@@ -98,6 +138,7 @@ async function defaultGraphql<T>(
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      "GraphQL-Features": "sub_issues",
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -109,7 +150,7 @@ async function defaultGraphql<T>(
   return payload.data as T;
 }
 
-function resolveContext(rootDir: string, deps: SdlcAdapterDeps = {}) {
+function resolveContext(rootDir: string, deps: SdlcAdapterDeps) {
   const token =
     deps.token ?? process.env.SDLC_PROJECT_TOKEN ?? process.env.GITHUB_TOKEN ?? "";
   const dryRun = deps.dryRun ?? !token;
@@ -172,10 +213,181 @@ function collectFeatureFiles(dir: string): string[] {
   return results.sort();
 }
 
+interface RawProjectFieldNode {
+  id?: string;
+  name?: string;
+  options?: Array<{ id?: string; name?: string }>;
+}
+
+interface RawProjectNode {
+  id: string;
+  number: number;
+  url: string;
+  title: string;
+  fields?: { nodes?: RawProjectFieldNode[] };
+}
+
+function extractProjectMeta(project: RawProjectNode): ProjectV2Meta {
+  let statusFieldId: string | null = null;
+  const statusOptionIds: Record<string, string> = {};
+  const textFieldIds: Record<string, string> = {};
+
+  for (const field of project.fields?.nodes || []) {
+    if (!field.id || !field.name) continue;
+    if (field.name === "Status") {
+      statusFieldId = field.id;
+      for (const opt of field.options || []) {
+        if (opt.id && opt.name) {
+          statusOptionIds[opt.name] = opt.id;
+        }
+      }
+    } else {
+      textFieldIds[field.name] = field.id;
+    }
+  }
+
+  return {
+    id: project.id,
+    number: project.number,
+    url: project.url,
+    statusFieldId,
+    statusOptionIds,
+    textFieldIds,
+  };
+}
+
+async function upsertProjectV2ItemWithFields(
+  ctx: ReturnType<typeof resolveContext>,
+  projectMeta: ProjectV2Meta,
+  contentId: string,
+  status: ProjectStatus,
+  textFields: Record<string, string>
+): Promise<string> {
+  const addRes = await ctx.graphql<{
+    addProjectV2ItemById: { item: { id: string } };
+  }>(
+    `mutation($projectId: ID!, $contentId: ID!) {
+      addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+        item { id }
+      }
+    }`,
+    { projectId: projectMeta.id, contentId },
+    ctx.token
+  );
+  const itemId = addRes.addProjectV2ItemById.item.id;
+
+  const statusOptionId = projectMeta.statusOptionIds[status];
+  if (projectMeta.statusFieldId && statusOptionId) {
+    await ctx.graphql(
+      `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+        updateProjectV2ItemFieldValue(
+          input: {
+            projectId: $projectId
+            itemId: $itemId
+            fieldId: $fieldId
+            value: { singleSelectOptionId: $optionId }
+          }
+        ) {
+          projectV2Item { id }
+        }
+      }`,
+      {
+        projectId: projectMeta.id,
+        itemId,
+        fieldId: projectMeta.statusFieldId,
+        optionId: statusOptionId,
+      },
+      ctx.token
+    );
+  }
+
+  for (const [fieldName, textValue] of Object.entries(textFields)) {
+    const fieldId = projectMeta.textFieldIds[fieldName];
+    if (!fieldId) continue;
+    await ctx.graphql(
+      `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $text: String!) {
+        updateProjectV2ItemFieldValue(
+          input: {
+            projectId: $projectId
+            itemId: $itemId
+            fieldId: $fieldId
+            value: { text: $text }
+          }
+        ) {
+          projectV2Item { id }
+        }
+      }`,
+      {
+        projectId: projectMeta.id,
+        itemId,
+        fieldId,
+        text: textValue,
+      },
+      ctx.token
+    );
+  }
+
+  return itemId;
+}
+
+async function syncIssueOnProjectV2(
+  config: SdlcConfig,
+  ctx: ReturnType<typeof resolveContext>,
+  issueId: number,
+  status: ProjectStatus,
+  textFields: Record<string, string>
+): Promise<void> {
+  const data = await ctx.graphql<{
+    repository: {
+      issue: { id: string } | null;
+      projectsV2?: { nodes?: RawProjectNode[] };
+    };
+  }>(
+    `query($owner: String!, $repo: String!, $issueNumber: Int!) {
+      repository(owner: $owner, name: $repo) {
+        issue(number: $issueNumber) { id }
+        projectsV2(first: 20) {
+          nodes {
+            id
+            number
+            url
+            title
+            fields(first: 50) {
+              nodes {
+                ... on ProjectV2Field { id name }
+                ... on ProjectV2SingleSelectField { id name options { id name } }
+              }
+            }
+          }
+        }
+      }
+    }`,
+    { owner: ctx.owner, repo: ctx.repo, issueNumber: issueId },
+    ctx.token
+  );
+  const issueNodeId = data.repository.issue?.id;
+  const projectNode = data.repository.projectsV2?.nodes?.find(
+    (p) => p.title === config.projectTitle
+  );
+  if (!issueNodeId || !projectNode) return;
+  await upsertProjectV2ItemWithFields(
+    ctx,
+    extractProjectMeta(projectNode),
+    issueNodeId,
+    status,
+    textFields
+  );
+}
+
 export async function bootstrapProject(
   options: BootstrapOptions,
   deps: SdlcAdapterDeps = {}
-): Promise<{ projectTitle: string; dryRun: boolean; operations: SdlcDryRunOperation[] }> {
+): Promise<{
+  projectTitle: string;
+  dryRun: boolean;
+  operations: SdlcDryRunOperation[];
+  projectMeta?: ProjectV2Meta;
+}> {
   const config = loadSdlcConfig(options.rootDir);
   const ctx = resolveContext(options.rootDir, deps);
   const customFields = [
@@ -218,13 +430,7 @@ export async function bootstrapProject(
       id: string;
       owner: { id: string };
       projectsV2?: {
-        nodes?: Array<{
-          id: string;
-          number: number;
-          url: string;
-          title: string;
-          fields?: { nodes?: Array<{ id?: string; name?: string }> };
-        }>;
+        nodes?: RawProjectNode[];
       };
     };
   }>(
@@ -239,7 +445,10 @@ export async function bootstrapProject(
             url
             title
             fields(first: 50) {
-              nodes { ... on ProjectV2Field { id name } }
+              nodes {
+                ... on ProjectV2Field { id name }
+                ... on ProjectV2SingleSelectField { id name options { id name } }
+              }
             }
           }
         }
@@ -253,20 +462,27 @@ export async function bootstrapProject(
     (p) => p.title === config.projectTitle
   );
 
-  let targetProject: { id: string; number: number; url: string };
+  let targetProjectNode: RawProjectNode;
   if (existingProject) {
-    targetProject = {
-      id: existingProject.id,
-      number: existingProject.number,
-      url: existingProject.url,
-    };
+    targetProjectNode = existingProject;
   } else {
     const created = await ctx.graphql<{
-      createProjectV2: { projectV2: { id: string; number: number; url: string } };
+      createProjectV2: { projectV2: RawProjectNode };
     }>(
       `mutation($ownerId: ID!, $title: String!, $repositoryId: ID!) {
         createProjectV2(input: { ownerId: $ownerId, title: $title, repositoryId: $repositoryId }) {
-          projectV2 { id number url }
+          projectV2 {
+            id
+            number
+            url
+            title
+            fields(first: 50) {
+              nodes {
+                ... on ProjectV2Field { id name }
+                ... on ProjectV2SingleSelectField { id name options { id name } }
+              }
+            }
+          }
         }
       }`,
       {
@@ -276,24 +492,64 @@ export async function bootstrapProject(
       },
       ctx.token
     );
-    targetProject = created.createProjectV2.projectV2;
+    targetProjectNode = created.createProjectV2.projectV2;
   }
 
-  const existingFieldNames = new Set(
-    (existingProject?.fields?.nodes || []).map((f) => f.name || "")
-  );
-  const projectId = targetProject.id;
+  const projectMeta = extractProjectMeta(targetProjectNode);
   for (const field of customFields) {
-    if (existingFieldNames.has(field.name)) continue;
-    await ctx.graphql(
+    if (projectMeta.textFieldIds[field.name]) continue;
+    const createdField = await ctx.graphql<{
+      createProjectV2Field?: { projectV2Field?: { id?: string; name?: string } };
+    }>(
       `mutation($projectId: ID!, $name: String!, $dataType: ProjectV2CustomFieldType!) {
         createProjectV2Field(input: { projectId: $projectId, name: $name, dataType: $dataType }) {
           projectV2Field { ... on ProjectV2Field { id name } }
         }
       }`,
-      { projectId, name: field.name, dataType: field.dataType },
+      { projectId: projectMeta.id, name: field.name, dataType: field.dataType },
       ctx.token
     );
+    const createdInfo = createdField.createProjectV2Field?.projectV2Field;
+    if (createdInfo?.id && createdInfo.name) {
+      projectMeta.textFieldIds[createdInfo.name] = createdInfo.id;
+    }
+  }
+
+  if (projectMeta.statusFieldId) {
+    const missingStatuses = config.projectBoard.statuses.filter(
+      (s) => !projectMeta.statusOptionIds[s]
+    );
+    if (missingStatuses.length > 0) {
+      const existingOptions = Object.entries(projectMeta.statusOptionIds).map(([name, id]) => ({
+        id,
+        name,
+      }));
+      const optionInputs = buildStatusOptionInputs(config.projectBoard.statuses, existingOptions);
+      const updatedField = await ctx.graphql<{
+        updateProjectV2Field?: {
+          projectV2Field?: { options?: Array<{ id?: string; name?: string }> };
+        };
+      }>(
+        `mutation($fieldId: ID!, $singleSelectOptions: [ProjectV2SingleSelectFieldOptionInput!]!) {
+          updateProjectV2Field(input: { fieldId: $fieldId, singleSelectOptions: $singleSelectOptions }) {
+            projectV2Field {
+              ... on ProjectV2SingleSelectField {
+                id
+                name
+                options { id name }
+              }
+            }
+          }
+        }`,
+        { fieldId: projectMeta.statusFieldId, singleSelectOptions: optionInputs },
+        ctx.token
+      );
+      for (const opt of updatedField.updateProjectV2Field?.projectV2Field?.options || []) {
+        if (opt.id && opt.name) {
+          projectMeta.statusOptionIds[opt.name] = opt.id;
+        }
+      }
+    }
   }
 
   try {
@@ -313,8 +569,8 @@ export async function bootstrapProject(
     );
   }
 
-  ctx.log(`Bootstrapped GitHub Project v2 #${targetProject.number}: ${targetProject.url}`);
-  return { projectTitle: config.projectTitle, dryRun: false, operations };
+  ctx.log(`Bootstrapped GitHub Project v2 #${projectMeta.number}: ${projectMeta.url}`);
+  return { projectTitle: config.projectTitle, dryRun: false, operations, projectMeta };
 }
 
 function syncChildRepoBranches(
@@ -430,6 +686,15 @@ export async function syncIssueToFeature(
       "--base",
       branchPlan.baseBranch,
     ]);
+    try {
+      await syncIssueOnProjectV2(config, ctx, options.issueId, nextStatus, {
+        Slice: parsed.sliceSlug,
+        Target: parsed.target,
+        "Linked Branch": branchPlan.branchName,
+      });
+    } catch (err) {
+      ctx.log(`Project v2 sync skipped for Issue #${options.issueId}: ${String(err)}`);
+    }
   }
 
   return { featurePath: featureRelPath, branchPlan, nextStatus, operations };
@@ -597,13 +862,400 @@ export async function verifyWorkspaceAndSync(
       "--body",
       evaluation.summaryMarkdown,
     ]);
+    try {
+      const subIssues = options.subIssues || [];
+      const subCount = subIssues.length;
+      const doneCount = subIssues.filter((s) => s.status === "Done").length;
+      await syncIssueOnProjectV2(config, ctx, issueId, evaluation.status, {
+        Target: options.target || (config.specs.fullstackTag as SpecTarget),
+        "Backend BDD": evaluation.backendPassed ? "PASS" : "FAIL",
+        "Frontend BDD": evaluation.frontendPassed ? "PASS" : "FAIL",
+        "Coverage Gate": evaluation.coveragePassed ? "PASS (100%)" : "FAIL",
+        "Sub-Issues": `${doneCount}/${subCount} Done`,
+        "Linked Branch": options.branch,
+      });
+      for (const brokenId of evaluation.brokenIssueIds) {
+        if (brokenId !== issueId) {
+          await syncIssueOnProjectV2(config, ctx, brokenId, "Regression", {
+            "Linked Branch": options.branch,
+          });
+        }
+      }
+    } catch (err) {
+      ctx.log(`Project v2 sync skipped for Issue #${issueId}: ${String(err)}`);
+    }
   }
 
   ctx.log(evaluation.summaryMarkdown);
   return { issueId, branch: options.branch, evaluation, operations };
 }
 
-function getArg(args: string[], flag: string, fallback = ""): string {
+const SDLC_SEED_LABELS = [
+  { name: "sdlc:feature", color: "0e8a16", description: "Parent vertical-slice SDLC feature specification" },
+  { name: "sdlc:sub-issue", color: "1d76db", description: "Hierarchical scenario Sub-Issue linked to a parent feature" },
+  { name: "sdlc:done", color: "2da44e", description: "Verified and completed SDLC requirement" },
+  { name: "sdlc:seeded", color: "5319e7", description: "Seeded from verified baseline specifications" },
+  { name: "sdlc:spec-ready", color: "0075ca", description: "Valid Gherkin specification ready for branch sync" },
+];
+
+function collectSeedSpecs(rootDir: string, config: SdlcConfig): SeedFeatureSpec[] {
+  const featureFiles = collectFeatureFiles(path.join(rootDir, config.specs.rootDir)).sort((a, b) =>
+    path.relative(rootDir, a).replace(/\\/g, "/").localeCompare(path.relative(rootDir, b).replace(/\\/g, "/"))
+  );
+  const specs: SeedFeatureSpec[] = featureFiles.map((absPath) => {
+    const relPath = path.relative(rootDir, absPath).replace(/\\/g, "/");
+    return extractSeedFeatureFromGherkin(relPath, fs.readFileSync(absPath, "utf8"), config);
+  });
+  for (const decl of config.declarativeFeatures || []) {
+    specs.push({
+      featureTitle: decl.title,
+      slice: decl.slice,
+      target: decl.target,
+      featureRelPath: null,
+      rawFeatureText: null,
+      description: decl.description,
+      scenarios: decl.subIssues.map((sub) => ({
+        title: sub.title,
+        target: sub.target,
+        rawBlock: "",
+        description: sub.description,
+      })),
+    });
+  }
+  return specs;
+}
+
+interface ExistingIssueRef {
+  number: number;
+  id: string;
+  state: string;
+}
+
+async function ensureSeededIssue(
+  ctx: ReturnType<typeof resolveContext>,
+  existingByTitle: Map<string, ExistingIssueRef>,
+  title: string,
+  body: string,
+  labels: string[]
+): Promise<ExistingIssueRef> {
+  const existing = existingByTitle.get(title);
+  if (existing) {
+    return existing;
+  }
+  const createdUrl = ctx.runGh([
+    "issue",
+    "create",
+    "--repo",
+    `${ctx.owner}/${ctx.repo}`,
+    "--title",
+    title,
+    "--body",
+    body,
+    "--label",
+    labels.join(","),
+  ]);
+  const idMatch = createdUrl.match(/\/issues\/(\d+)/);
+  if (!idMatch) {
+    throw new Error(`Could not parse issue number from gh output: '${createdUrl}'`);
+  }
+  const number = Number.parseInt(idMatch[1], 10);
+  const nodeData = await ctx.graphql<{
+    repository: { issue: { id: string } };
+  }>(
+    `query($owner: String!, $repo: String!, $issueNumber: Int!) {
+      repository(owner: $owner, name: $repo) {
+        issue(number: $issueNumber) { id }
+      }
+    }`,
+    { owner: ctx.owner, repo: ctx.repo, issueNumber: number },
+    ctx.token
+  );
+  const created: ExistingIssueRef = {
+    number,
+    id: nodeData.repository.issue.id,
+    state: "OPEN",
+  };
+  existingByTitle.set(title, created);
+  return created;
+}
+
+/**
+ * Seeds existing `.feature` files and declarative features into GitHub Issues, native Sub-Issues,
+ * and GitHub Projects v2 items with `Done` status and full custom field values.
+ */
+export async function seedExistingFeatures(
+  options: SeedFeaturesOptions,
+  deps: SdlcAdapterDeps = {}
+): Promise<SeedFeaturesOutput> {
+  const config = loadSdlcConfig(options.rootDir);
+  const ctx = resolveContext(options.rootDir, deps);
+  const updateFeatureTags = options.updateFeatureTags ?? true;
+  const closeIssues = options.closeIssues ?? true;
+  const specs = collectSeedSpecs(options.rootDir, config);
+
+  const operations: SdlcDryRunOperation[] = [
+    {
+      action: "bootstrap_project_v2",
+      details: { title: config.projectTitle, statuses: config.projectBoard.statuses },
+    },
+    {
+      action: "ensure_labels",
+      details: { labels: SDLC_SEED_LABELS.map((l) => l.name) },
+    },
+  ];
+
+  let projectMeta!: ProjectV2Meta;
+  const existingByTitle = new Map<string, ExistingIssueRef>();
+
+  if (!ctx.dryRun) {
+    const boot = await bootstrapProject({ rootDir: options.rootDir }, deps);
+    projectMeta = boot.projectMeta!;
+    for (const label of SDLC_SEED_LABELS) {
+      ctx.runGh([
+        "label",
+        "create",
+        label.name,
+        "--repo",
+        `${ctx.owner}/${ctx.repo}`,
+        "--color",
+        label.color,
+        "--description",
+        label.description,
+        "--force",
+      ]);
+    }
+    const rawList = ctx.runGh([
+      "issue",
+      "list",
+      "--repo",
+      `${ctx.owner}/${ctx.repo}`,
+      "--state",
+      "all",
+      "--limit",
+      "500",
+      "--json",
+      "number,id,title,state",
+    ]);
+    const existingList = JSON.parse(rawList) as Array<{
+      number: number;
+      id: string;
+      title: string;
+      state: string;
+    }>;
+    for (const item of existingList) {
+      existingByTitle.set(item.title, {
+        number: item.number,
+        id: item.id,
+        state: item.state,
+      });
+    }
+  }
+
+  let previewCounter = 1;
+  const seededFeatures: SeededFeatureResult[] = [];
+  let totalSubIssues = 0;
+
+  for (const spec of specs) {
+    const parentTitle = `[SDLC Feature]: ${spec.featureTitle}`;
+    const parentBody = formatSeedParentIssueBody(spec);
+    const parentRef: ExistingIssueRef = ctx.dryRun
+      ? { number: previewCounter++, id: "PREVIEW", state: "OPEN" }
+      : await ensureSeededIssue(ctx, existingByTitle, parentTitle, parentBody, [
+          "sdlc:feature",
+          "sdlc:done",
+          "sdlc:seeded",
+        ]);
+
+    operations.push({
+      action: "create_parent_issue",
+      details: {
+        issueId: parentRef.number,
+        title: parentTitle,
+        slice: spec.slice,
+        target: spec.target,
+        featureRelPath: spec.featureRelPath,
+      },
+    });
+
+    const scenarioIssueIds: Record<string, number> = {};
+    const childResults: Array<{ issueId: number; title: string; target: SpecTarget }> = [];
+    const hasFeatureFile = Boolean(spec.featureRelPath);
+
+    for (const scenario of spec.scenarios) {
+      const childTitle = `[Sub-Issue]: ${scenario.title}`;
+      const childBody = formatSeedSubIssueBody(spec, scenario, parentRef.number);
+      const childRef: ExistingIssueRef = ctx.dryRun
+        ? { number: previewCounter++, id: "PREVIEW", state: "OPEN" }
+        : await ensureSeededIssue(ctx, existingByTitle, childTitle, childBody, [
+            "sdlc:sub-issue",
+            "sdlc:done",
+            "sdlc:seeded",
+          ]);
+
+      scenarioIssueIds[scenario.title] = childRef.number;
+      childResults.push({ issueId: childRef.number, title: childTitle, target: scenario.target });
+      totalSubIssues++;
+
+      const childFields = buildSeedFieldValues({
+        slice: spec.slice,
+        target: scenario.target,
+        hasFeatureFile,
+        subIssueSummary: `Parent #${parentRef.number}`,
+        linkedBranch: config.branches.release,
+      });
+
+      operations.push(
+        {
+          action: "create_sub_issue",
+          details: {
+            issueId: childRef.number,
+            parentIssueId: parentRef.number,
+            title: childTitle,
+            slice: spec.slice,
+            target: scenario.target,
+          },
+        },
+        {
+          action: "link_native_sub_issue",
+          details: { parentIssueId: parentRef.number, childIssueId: childRef.number },
+        },
+        {
+          action: "upsert_project_v2_item",
+          details: { issueId: childRef.number, status: "Done", fields: childFields },
+        }
+      );
+
+      if (!ctx.dryRun) {
+        await ctx.graphql(
+          `mutation($issueId: ID!, $subIssueId: ID!) {
+            addSubIssue(input: { issueId: $issueId, subIssueId: $subIssueId, replaceParent: true }) {
+              issue { id }
+              subIssue { id }
+            }
+          }`,
+          { issueId: parentRef.id, subIssueId: childRef.id },
+          ctx.token
+        );
+        await upsertProjectV2ItemWithFields(ctx, projectMeta, childRef.id, "Done", childFields);
+      }
+
+      if (closeIssues) {
+        operations.push({
+          action: "close_issue",
+          details: { issueId: childRef.number, reason: "completed" },
+        });
+        if (!ctx.dryRun && childRef.state !== "CLOSED") {
+          ctx.runGh([
+            "issue",
+            "close",
+            String(childRef.number),
+            "--repo",
+            `${ctx.owner}/${ctx.repo}`,
+            "--reason",
+            "completed",
+          ]);
+        }
+      }
+    }
+
+    const parentFields = buildSeedFieldValues({
+      slice: spec.slice,
+      target: spec.target,
+      hasFeatureFile,
+      subIssueSummary: `${spec.scenarios.length}/${spec.scenarios.length} Done`,
+      linkedBranch: config.branches.release,
+    });
+
+    operations.push({
+      action: "upsert_project_v2_item",
+      details: { issueId: parentRef.number, status: "Done", fields: parentFields },
+    });
+
+    if (!ctx.dryRun) {
+      await upsertProjectV2ItemWithFields(ctx, projectMeta, parentRef.id, "Done", parentFields);
+    }
+
+    if (closeIssues) {
+      operations.push({
+        action: "close_issue",
+        details: { issueId: parentRef.number, reason: "completed" },
+      });
+      if (!ctx.dryRun && parentRef.state !== "CLOSED") {
+        ctx.runGh([
+          "issue",
+          "close",
+          String(parentRef.number),
+          "--repo",
+          `${ctx.owner}/${ctx.repo}`,
+          "--reason",
+          "completed",
+        ]);
+      }
+    }
+
+    if (updateFeatureTags && spec.featureRelPath) {
+      const absFeaturePath = path.join(options.rootDir, spec.featureRelPath);
+      const tagged = injectSeedIssueTags(
+        fs.readFileSync(absFeaturePath, "utf8"),
+        parentRef.number,
+        scenarioIssueIds,
+        config
+      );
+      operations.push({
+        action: "tag_feature_file",
+        details: {
+          featureRelPath: spec.featureRelPath,
+          parentIssueId: parentRef.number,
+          taggedScenarios: spec.scenarios.length,
+        },
+      });
+      if (!ctx.dryRun) {
+        fs.writeFileSync(absFeaturePath, tagged, "utf8");
+      }
+    }
+
+    seededFeatures.push({
+      parentIssueId: parentRef.number,
+      title: parentTitle,
+      slice: spec.slice,
+      target: spec.target,
+      featureRelPath: spec.featureRelPath,
+      subIssues: childResults,
+    });
+  }
+
+  recordOperations(options.rootDir, ctx.dryRunLogPath, operations, ctx.dryRun);
+
+  const totalItems = seededFeatures.length + totalSubIssues;
+  const modeTag = ctx.dryRun ? "[DRY-RUN] " : "";
+  const summaryLines = [
+    `${modeTag}SDLC Seed Plan: ${seededFeatures.length} Parent Issues + ${totalSubIssues} Sub-Issues = ${totalItems} total Project v2 items`,
+    "",
+    "| # | Slice | Target | Sub-Issues | Spec File | Title |",
+    "| :--- | :--- | :--- | ---: | :--- | :--- |",
+    ...seededFeatures.map(
+      (f) =>
+        `| #${f.parentIssueId} | ${f.slice} | ${f.target} | ${f.subIssues.length} | ${f.featureRelPath || "(declarative)"} | ${f.title} |`
+    ),
+    "",
+    ...seededFeatures.flatMap((f) => [
+      `### #${f.parentIssueId} ${f.title} (${f.slice} / ${f.target})`,
+      ...f.subIssues.map((s) => `  - #${s.issueId} ${s.title} (${s.target})`),
+    ]),
+  ];
+  ctx.log(summaryLines.join("\n"));
+
+  return {
+    dryRun: ctx.dryRun,
+    features: seededFeatures,
+    totalParents: seededFeatures.length,
+    totalSubIssues,
+    totalItems,
+    operations,
+  };
+}
+
+function getArg(args: string[], flag: string, fallback: string): string {
   const idx = args.indexOf(flag);
   return idx >= 0 && idx + 1 < args.length ? args[idx + 1] : fallback;
 }
@@ -660,8 +1312,16 @@ export async function runCli(
     return command === "verify" && !result.evaluation.canMerge ? 1 : 0;
   }
 
+  if (command === "seed") {
+    await seedExistingFeatures(
+      { rootDir, updateFeatureTags: !rest.includes("--no-tag-files") },
+      effectiveDeps
+    );
+    return 0;
+  }
+
   (effectiveDeps.log || console.error)(
-    `Unknown SDLC command '${command || ""}'. Use: bootstrap | sync-issue | spawn | verify | status`
+    `Unknown SDLC command '${command || ""}'. Use: bootstrap | sync-issue | spawn | verify | status | seed`
   );
   return 2;
 }

@@ -26,6 +26,7 @@ body:
         - finance
         - management
         - sdlc
+        - infrastructure
     validations:
       required: true
   - type: dropdown

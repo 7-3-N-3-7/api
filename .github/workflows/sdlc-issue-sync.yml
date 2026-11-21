@@ -45,7 +45,13 @@ jobs:
         run: npm run sdlc:bootstrap
 
       - name: Sync Issue to .feature Contract & Tree Branch
-        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.mode == 'bootstrap') }}
+        if: >-
+          ${{
+            !(github.event_name == 'workflow_dispatch' && inputs.mode == 'bootstrap')
+            && !contains(github.event.issue.labels.*.name, 'sdlc:seeded')
+            && !contains(github.event.issue.labels.*.name, 'sdlc:done')
+            && github.event.issue.state != 'closed'
+          }}
         env:
           SDLC_PROJECT_TOKEN: "${{ secrets.SDLC_PROJECT_TOKEN || github.token }}"
           GITHUB_REPOSITORY: "${{ github.repository }}"

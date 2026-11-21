@@ -52,7 +52,7 @@ jobs:
           fi
 
   backend-verify:
-    name: 2a. Backend BDD (Cucumber-JVM) + 98% JaCoCo Gate (6 counters)
+    name: 2a. Backend BDD (Cucumber-JVM) + 100% JaCoCo Gate (6 counters)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout control-plane repository (api & specs/features/)
@@ -105,7 +105,7 @@ jobs:
           </toolchains>
           EOF
 
-      - name: Run JUnit 5, Cucumber-JVM & Enforce 98% JaCoCo Gate
+      - name: Run JUnit 5, Cucumber-JVM & Enforce 100% JaCoCo Gate
         working-directory: backend
         run: mvn -B test jacoco:report jacoco:check
 
@@ -119,7 +119,7 @@ jobs:
             backend/target/site/jacoco/jacoco.xml
 
   frontend-verify:
-    name: 2b. Frontend + SDLC Core Vitest (98% Istanbul) & Cucumber.js BDD
+    name: 2b. Frontend + SDLC Core Vitest (100% Istanbul) & Cucumber.js BDD
     runs-on: ubuntu-latest
     steps:
       - name: Checkout control-plane repository (api, sdlc/ & specs/features/)
@@ -161,7 +161,7 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Run Vitest + Enforce 98% Istanbul Gate (All 4 Counters)
+      - name: Run Vitest + Enforce 100% Istanbul Gate (All 4 Counters)
         working-directory: frontend
         run: npm run test:coverage
 

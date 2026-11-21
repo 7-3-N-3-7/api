@@ -33,4 +33,12 @@ else
 fi
 "$KCADM" update users/profile -r "$REALM" -f /tmp/profile.json
 
+echo "[keycloak-init] Ensuring platform-frontend client has rootUrl and baseUrl..."
+FRONTEND_CLIENT_UUID="$("$KCADM" get clients -r "$REALM" -q clientId=platform-frontend --fields id --format csv --noquotes | tr -d '\r\n')"
+if [ -n "$FRONTEND_CLIENT_UUID" ]; then
+  "$KCADM" update "clients/${FRONTEND_CLIENT_UUID}" -r "$REALM" \
+    -s 'rootUrl=http://localhost' \
+    -s 'baseUrl=/da'
+fi
+
 echo "[keycloak-init] Local Keycloak IAM initialization complete."

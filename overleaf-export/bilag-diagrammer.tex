@@ -1,0 +1,113 @@
+% ============================================================================
+% MODULÆRT DIAGRAM-BILAG (Vektor-PDF'er fra diagrams/)
+% ============================================================================
+% Denne fil inkluderes automatisk fra hovedopgave.tex via:
+%   \IfFileExists{bilag-diagrammer.tex}{\input{bilag-diagrammer}}{}
+% Hver enkelt figur er indrammet i "% --- <slug> ---" kommentarer, så du
+% nemt kan udkommentere (%) eller tilpasse enkelte diagrammer i Overleaf.
+% ============================================================================
+
+\newpage
+\subsection{Bilag 17.3: Vertical Slice-, Symmetri-, Finans- og SDLC-arkitekturdiagrammer}
+Dette bilag supplerer Bilag~17.2 med det ottende backend-domænes swimlane (\texttt{finance}), det detaljerede Vertical Slice-klassediagram, 1:1 full-stack-symmetrien, det generiske GitHub SDLC-framework, Double-Loop TDD-processen samt det oprindelige samlede PlantUML-klassediagram i tværformat.
+
+% --- class-diagram-swimlane-finance ---
+\portraitfigure{class-diagram-swimlane-finance.pdf}{Swimlane-klassediagram for FinanceFeature (Kill Bill, Apache Fineract, Vipps OSGi-plugin og FinanceGitService).}{Bilag: Domæne-Swimlane for \texttt{finance} (\texttt{FinanceFeature} med Kill Bill, Apache Fineract, Vipps-plugin og Eclipse JGit bilagsbogføring).}{fig:bilag_swimlane_finance}
+
+% --- core-and-slice-class-diagram ---
+\portraitfigure{core-and-slice-class-diagram.pdf}{UML-klassediagram over 2-fils kernen (BaseDomainCore og BaseWebCore) samt Vertical Slice-nedarvning i AppointmentFeature.}{Bilag: Konsolideret 2-fils kerne (\texttt{BaseDomainCore} + \texttt{BaseWebCore}) og Vertical Slice-kontrakt i \texttt{AppointmentFeature}.}{fig:bilag_core_and_slice}
+
+% --- fullstack-symmetry ---
+\portraitfigure{fullstack-symmetry.pdf}{1:1 Full-Stack Symmetri mellem Spring Boot 3.3 Vertical Slices og Frontend Dual-App SoC.}{Bilag: 1:1 Full-Stack Arkitektonisk Symmetri mellem Spring Boot~3.3 backend og Dual-App React/TypeScript frontend.}{fig:bilag_fullstack_symmetry}
+
+% --- double-loop-tdd ---
+\portraitfigure{double-loop-tdd.pdf}{Outside-In Double-Loop BDD/TDD arbejdsgang mellem Cucumber og JUnit 5/Mockito.}{Bilag: Outside-In Double-Loop BDD/TDD-cyklus fra Gherkin-acceptkriterier til isolerede unit-tests.}{fig:bilag_double_loop_tdd}
+
+% --- generic-sdlc-architecture ---
+\portraitfigure{generic-sdlc-architecture.pdf}{Arkitektur for det Generiske GitHub SDLC-Framework med tredobbelt 2-fils symmetri og 100 \% coverage gates.}{Bilag: Det Generiske GitHub SDLC-Framework (\texttt{sdlc/core/}, GitHub Projects~v2, delte \texttt{specs/features/} og 100\,\% coverage gates).}{fig:bilag_generic_sdlc}
+
+% --- backend_class_diagram ---
+\landscapefigure{backend_class_diagram.pdf}{Oprindeligt samlet PlantUML-klassediagram for backend-arkitekturen (historisk reference).}{Bilag: Oprindeligt samlet PlantUML-klassediagram (\texttt{backend\_class\_diagram.puml} -- historisk Package-by-Layer reference).}{fig:bilag_puml_backend}
+
+\newpage
+\subsection{Bilag 17.4: Projektforløb, GitGraph, Polyglot ER og State Machines}
+Nedenstående diagrammer stammer fra projektets samlede diagramkatalog og dokumenterer Git-historik, branch-strategi, fuldt polyglot ER-skema og tilstandsmaskiner.
+
+% --- katalog-01-gantt-projektforloeb ---
+\landscapefigure{katalog-01-gantt-projektforloeb.pdf}{Mermaid Gantt-diagram rekonstrueret fra Git-commithistorik (september 2026 -- januar 2027).}{Bilag: Detaljeret Gantt-tidslinje rekonstrueret fra projektets Git-commits og hovedopgavemilepæle.}{fig:bilag_katalog_01_gantt}
+
+% --- katalog-02-commit-tidslinje ---
+\landscapefigure{katalog-02-commit-tidslinje.pdf}{Visuel commit-tidslinje på tværs af Sprint 1 til Sprint 5.}{Bilag: Visuel commit-tidslinje på tværs af Sprint~1--5 med centrale arkitektoniske milepæle.}{fig:bilag_katalog_02_commits}
+
+% --- katalog-03-gitgraph-github-branches ---
+\landscapefigure{katalog-03-gitgraph-github-branches.pdf}{GitGraph over udviklings-branches (main, dev og feature-branches).}{Bilag: GitGraph over projektets udviklings-branches (\texttt{main}, \texttt{dev} og \texttt{feature/*}).}{fig:bilag_katalog_03_gitgraph_gh}
+
+% --- katalog-04-gitgraph-jgit-patient-journal ---
+\portraitfigure{katalog-04-gitgraph-jgit-patient-journal.pdf}{GitGraph over logiske Eclipse JGit patientjournal-branches i JournalGitService.}{Bilag: GitGraph over logiske patientjournal-branches i \texttt{JournalFeature.JournalGitService} (\texttt{main}, \texttt{trauma-therapy}, \texttt{private-diary}).}{fig:bilag_katalog_04_gitgraph_jgit}
+
+% --- katalog-05-cicd-pipeline-bdd-tdd ---
+\portraitfigure{katalog-05-cicd-pipeline-bdd-tdd.pdf}{CI/CD pipeline med TruffleHog secret-scanning, 100 \% JaCoCo gate, Vitest og Docker/GHCR udrulning.}{Bilag: Samlet CI/CD- og sikkerhedspipeline fra lokal pre-commit TruffleHog-scanning over 100\,\% coverage gates til GHCR-udrulning.}{fig:bilag_katalog_05_cicd}
+
+% --- katalog-06-er-diagram-polyglot ---
+\portraitfigure{katalog-06-er-diagram-polyglot.pdf}{Komplet ER-diagram for PostgreSQL, MongoDB og Eclipse JGit.}{Bilag: Komplet Polyglot ER-diagram for PostgreSQL (\texttt{business-db}), MongoDB (\texttt{i18n\_dictionaries}) og Eclipse JGit (\texttt{journal-repo}).}{fig:bilag_katalog_06_er}
+
+% --- katalog-07-state-samtykke-handshake ---
+\portraitfigure{katalog-07-state-samtykke-handshake.pdf}{Tilstandsmaskine for ClientTherapistHandshake og granulær JGit-filtrering.}{Bilag: Tilstandsmaskine (\texttt{stateDiagram-v2}) for \texttt{ClientTherapistHandshake} og de fire sekventielle JGit-privatlivsfiltre.}{fig:bilag_katalog_07_state_handshake}
+
+% --- katalog-08-state-aftale-finans ---
+\portraitfigure{katalog-08-state-aftale-finans.pdf}{Tilstandsmaskine for aftale-livscyklus og finansiel bogføring i Kill Bill / Fineract.}{Bilag: Tilstandsmaskine for aftale-livscyklus (\texttt{Appointment}) koblet med Kill Bill-fakturering og Apache Fineract-bogføring.}{fig:bilag_katalog_08_state_finance}
+
+\newpage
+\subsection{Bilag 17.5: Aktivitets-, Sekvens- og Dual-App RBAC-diagrammer pr. Domæne}
+Dette afsnit samler detaljerede aktivitets- og sekvensdiagrammer for kernen, alle forretningsdomæner samt frontendens Dual-App RBAC-flow (\texttt{apps/landing} $\rightarrow$ \texttt{apps/dashboard} $\rightarrow$ \texttt{<RoleGuard />}).
+
+% --- katalog-09-class-fullstack-symmetry ---
+\portraitfigure{katalog-09-class-fullstack-symmetry.pdf}{Klassediagram over 1:1 symmetri mellem Java BaseDomainCore/BaseWebCore og TypeScript baseDomainCore/baseUiCore.}{Bilag: Klassediagram over 1:1 kode-symmetri mellem backend-kerne (\texttt{BaseDomainCore}/\texttt{BaseWebCore}) og frontend-kerne (\texttt{baseDomainCore}/\texttt{baseUiCore}).}{fig:bilag_katalog_09_class_sym}
+
+% --- katalog-10-activity-core ---
+\portraitfigure{katalog-10-activity-core.pdf}{Aktivitetsdiagram for core og RFC 7807 ProblemDetail-håndtering.}{Bilag: Aktivitetsdiagram for \texttt{com.platform.core} og standardiseret RFC~7807 \texttt{ProblemDetail}-fejlhåndtering.}{fig:bilag_katalog_10_act_core}
+
+% --- katalog-11-sequence-core ---
+\landscapefigure{katalog-11-sequence-core.pdf}{Sekvensdiagram for BaseController, BaseService, ErrorCode og GlobalExceptionHandler.}{Bilag: Sekvensdiagram for \texttt{BaseController} $\rightarrow$ \texttt{BaseService} $\rightarrow$ \texttt{ErrorCode.require()} / \texttt{ProblemDetail}.}{fig:bilag_katalog_11_seq_core}
+
+% --- katalog-12-activity-appointment ---
+\portraitfigure{katalog-12-activity-appointment.pdf}{Aktivitetsdiagram for appointment-domænet med Timefold Solver og JGit.}{Bilag: Aktivitetsdiagram for \texttt{AppointmentFeature} (booking, konflikttjek, Timefold Solver og JGit).}{fig:bilag_katalog_12_act_app}
+
+% --- katalog-13-sequence-appointment ---
+\landscapefigure{katalog-13-sequence-appointment.pdf}{Sekvensdiagram for appointment med Timefold slot-optimering, Redis og Kafka.}{Bilag: Sekvensdiagram for \texttt{AppointmentFeature} (Timefold AI Solver, JGit commit, Redis cache-invalidering og Kafka-event).}{fig:bilag_katalog_13_seq_app}
+
+% --- katalog-14-activity-clinic-platform ---
+\portraitfigure{katalog-14-activity-clinic-platform.pdf}{Aktivitetsdiagram for clinic-platform med CVR/IBAN-onboarding og handshakes.}{Bilag: Aktivitetsdiagram for \texttt{ClinicPlatformFeature} (CVR/IBAN-onboarding, ydelseskatalog og samtykke-handshakes).}{fig:bilag_katalog_14_act_clinic}
+
+% --- katalog-15-sequence-clinic-platform ---
+\landscapefigure{katalog-15-sequence-clinic-platform.pdf}{Sekvensdiagram for clinic-platform og BFF Keycloak rolle-synkronisering.}{Bilag: Sekvensdiagram for \texttt{ClinicPlatformFeature} inkl.\ Next.js BFF Keycloak rolle-synkronisering.}{fig:bilag_katalog_15_seq_clinic}
+
+% --- katalog-16-activity-i18n ---
+\landscapefigure{katalog-16-activity-i18n.pdf}{Aktivitetsdiagram for flersproget i18n-modul med MongoDB og HTTP-caching.}{Bilag: Aktivitetsdiagram for \texttt{I18nFeature} (MongoDB sprogordbøger og HTTP/Redis-caching).}{fig:bilag_katalog_16_act_i18n}
+
+% --- katalog-17-sequence-i18n ---
+\portraitfigure{katalog-17-sequence-i18n.pdf}{Sekvensdiagram for i18n-opslag og live ordbogsopdatering i MongoDB.}{Bilag: Sekvensdiagram for \texttt{I18nFeature} (opslag med fallback og opdatering af nøgle-værdi-træ i MongoDB).}{fig:bilag_katalog_17_seq_i18n}
+
+% --- katalog-18-activity-journal ---
+\portraitfigure{katalog-18-activity-journal.pdf}{Aktivitetsdiagram for journal-domænet med Eclipse JGit og privatlivsfiltre.}{Bilag: Aktivitetsdiagram for \texttt{JournalFeature} (klientjournal, fortrolige terapeutnoter og JGit privatlivsfiltrering).}{fig:bilag_katalog_18_act_journal}
+
+% --- katalog-19-sequence-journal ---
+\landscapefigure{katalog-19-sequence-journal.pdf}{Sekvensdiagram for journaloprettelse, samtykkekontrol og JGit-læsning.}{Bilag: Sekvensdiagram for \texttt{JournalFeature} (samtykkevalidering via \texttt{HandshakePort} og rollebaseret JGit-læsning).}{fig:bilag_katalog_19_seq_journal}
+
+% --- katalog-20-activity-psychotraumatology ---
+\portraitfigure{katalog-20-activity-psychotraumatology.pdf}{Aktivitetsdiagram for PCL-5 traumescreening og JWT sub-validering.}{Bilag: Aktivitetsdiagram for \texttt{PsychotraumatologyFeature} (DSM-5 PCL-5 scoring 0--80 og Zero-Trust ejerskabstjek).}{fig:bilag_katalog_20_act_psycho}
+
+% --- katalog-21-sequence-psychotraumatology ---
+\landscapefigure{katalog-21-sequence-psychotraumatology.pdf}{Sekvensdiagram for indsendelse og hentning af PCL-5 vurderinger.}{Bilag: Sekvensdiagram for \texttt{PsychotraumatologyFeature} (indsendelse og isoleret klientopslag af PCL-5 test).}{fig:bilag_katalog_21_seq_psycho}
+
+% --- katalog-22-activity-user ---
+\portraitfigure{katalog-22-activity-user.pdf}{Aktivitetsdiagram for brugerstyring og Spring Security OAuth2 Resource Server.}{Bilag: Aktivitetsdiagram for \texttt{UserFeature} og \texttt{SecurityConfig} OAuth2 JWT FilterChain.}{fig:bilag_katalog_22_act_user}
+
+% --- katalog-23-sequence-user ---
+\landscapefigure{katalog-23-sequence-user.pdf}{Sekvensdiagram for brugerregistrering og profilopslag via Keycloak JWT.}{Bilag: Sekvensdiagram for \texttt{UserFeature} (brugeroprettelse med rollevalidering og JWT-profilopslag).}{fig:bilag_katalog_23_seq_user}
+
+% --- katalog-24-architecture-dual-app-rbac ---
+\portraitfigure{katalog-24-architecture-dual-app-rbac.pdf}{Arkitekturdiagram for Dual-App Frontend (apps/landing vs. apps/dashboard) og RoleGuard RBAC.}{Bilag: Dual-App Frontend-arkitektur (\texttt{apps/landing} Port~5173 vs.\ \texttt{apps/dashboard} Port~5174) og RBAC via \texttt{<RoleGuard />}.}{fig:bilag_katalog_24_dual_app}
+
+% --- katalog-25-sequence-landing-to-roleguard ---
+\landscapefigure{katalog-25-sequence-landing-to-roleguard.pdf}{Sekvensdiagram fra offentlig AuthGateway til rollebeskyttet Vertical Slice i Dashboard.}{Bilag: End-to-end frontend-sekvens fra \texttt{LandingFeatureView} og \texttt{AuthGateway} til \texttt{<RoleGuard />} og modul-privat API-service.}{fig:bilag_katalog_25_seq_rg}

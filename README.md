@@ -88,16 +88,16 @@ Frontenden understøtter både **Next.js 16 App Router (BFF på Port 3000)** og 
 
 ---
 
-## 4. Kørsel af Tests, Coverage Gates (>= 98%) & Generisk GitHub SDLC-Framework
+## 4. Kørsel af Tests, Coverage Gates (100%) & Generisk GitHub SDLC-Framework
 
-### Frontend & SDLC-Kerne (Vitest + Istanbul Coverage Gate >= 98% & Cucumber.js)
+### Frontend & SDLC-Kerne (Vitest + Istanbul Coverage Gate 100% & Cucumber.js)
 
 Kør fra `frontend/`-mappen:
 
 ```bash
 cd frontend
 
-# 1. Kør alle 12 Vitest-testsuiter (96 tests inkl. sdlc/core) med Istanbul coverage-gate (>= 98% på lines, statements, functions & branches)
+# 1. Kør alle 12 Vitest-testsuiter (96 tests inkl. sdlc/core) med Istanbul coverage-gate (100% på lines, statements, functions & branches)
 npm run test:coverage
 
 # 2. Kør fælles Gherkin @fullstack BDD-kontrakter i Cucumber.js (mod ../specs/features/)
@@ -110,14 +110,14 @@ npm run build:all
 npm run build
 ```
 
-### Backend (JUnit 5 + Cucumber BDD + 6-Metrik JaCoCo Coverage Gate >= 98%)
+### Backend (JUnit 5 + Cucumber BDD + 6-Metrik JaCoCo Coverage Gate 100%)
 
 Kør fra `backend/`-mappen:
 
 ```bash
 cd backend
 
-# Kør samtlige enheds-, arkitektur- og 43 Cucumber BDD-tests samt 98% JaCoCo gate (LINE, BRANCH, INSTRUCTION, COMPLEXITY, METHOD, CLASS)
+# Kør samtlige enheds-, arkitektur- og 43 Cucumber BDD-tests samt 100% JaCoCo gate (LINE, BRANCH, INSTRUCTION, COMPLEXITY, METHOD, CLASS)
 mvn test jacoco:report jacoco:check
 ```
 
@@ -140,7 +140,7 @@ npm run sdlc:sync-issue -- --issue <nr> --title "<titel>"
 # 3. Opret hierarkisk Sub-Issue & træ-isomorf child-branch fra parent-branch
 npm run sdlc:spawn -- --parent <parentNr> --child <childNr> --title "<delopgave>"
 
-# 4. Verificér begge BDD-rapporter + 98% JaCoCo (6 tællere) & Istanbul (4 tællere) + Sub-Issues (Green Gate)
+# 4. Verificér begge BDD-rapporter + 100% JaCoCo (6 tællere) & Istanbul (4 tællere) + Sub-Issues (Green Gate)
 npm run sdlc:verify -- --branch feature/<id>-<slug> --dry-run
 
 # 5. Vis lokal SDLC-status

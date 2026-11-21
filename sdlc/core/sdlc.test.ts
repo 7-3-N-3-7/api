@@ -5,9 +5,16 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type SdlcConfig,
+  buildSeedFieldValues,
+  buildStatusOptionInputs,
+  deriveSliceFromFeaturePath,
   evaluateSdlcState,
   extractFeatureMetadata,
+  extractSeedFeatureFromGherkin,
+  formatSeedParentIssueBody,
+  formatSeedSubIssueBody,
   injectIssueTags,
+  injectSeedIssueTags,
   parseBranchIssueId,
   parseCucumberJsonReport,
   parseIssueBody,
@@ -24,6 +31,7 @@ import {
   loadSdlcConfig,
   maybeRunMain,
   runCli,
+  seedExistingFeatures,
   spawnSubIssues,
   syncIssueToFeature,
   verifyWorkspaceAndSync,
@@ -62,20 +70,20 @@ const baseConfig: SdlcConfig = {
       backend: {
         cucumberJson: "backend/target/cucumber-reports/cucumber-report.json",
         jacocoXml: "backend/target/site/jacoco/jacoco.xml",
-        minLineCoverage: 0.98,
-        minBranchCoverage: 0.98,
-        minInstructionCoverage: 0.98,
-        minComplexityCoverage: 0.98,
-        minMethodCoverage: 0.98,
-        minClassCoverage: 0.98,
+        minLineCoverage: 1.0,
+        minBranchCoverage: 1.0,
+        minInstructionCoverage: 1.0,
+        minComplexityCoverage: 1.0,
+        minMethodCoverage: 1.0,
+        minClassCoverage: 1.0,
       },
       frontend: {
         cucumberJson: "frontend/reports/cucumber-report.json",
         vitestSummaryJson: "frontend/coverage/coverage-summary.json",
-        minLineCoverage: 0.98,
-        minStatementCoverage: 0.98,
-        minFunctionCoverage: 0.98,
-        minBranchCoverage: 0.98,
+        minLineCoverage: 1.0,
+        minStatementCoverage: 1.0,
+        minFunctionCoverage: 1.0,
+        minBranchCoverage: 1.0,
       },
     },
   },
@@ -346,7 +354,7 @@ describe("sdlc-domain pure contract & state machine", () => {
     expect(parseIstanbulSummaryJson("{}")).toEqual({ line: 0, statement: 0, function: 0, branch: 0 });
   });
 
-  it("evaluates all 7 SDLC FSM statuses and enforces 98% gates & Sub-Issue locks", () => {
+  it("evaluates all 7 SDLC FSM statuses and enforces 100% gates & Sub-Issue locks", () => {
     const passCuc = {
       totalScenarios: 2,
       passedScenarios: 2,
@@ -354,8 +362,8 @@ describe("sdlc-domain pure contract & state machine", () => {
       byIssue: { 1: { passed: 2, failed: 0 } },
       brokenIssueIds: [],
     };
-    const passJaCoCo = { line: 0.99, branch: 0.98, instruction: 0.99, complexity: 0.98, method: 1, clazz: 1 };
-    const passIstanbul = { line: 0.99, statement: 0.99, function: 0.99, branch: 0.985 };
+    const passJaCoCo = { line: 1, branch: 1, instruction: 1, complexity: 1, method: 1, clazz: 1 };
+    const passIstanbul = { line: 1, statement: 1, function: 1, branch: 1 };
 
     expect(
       evaluateSdlcState(
@@ -626,11 +634,51 @@ describe("sdlc-github adapter, GraphQL live path, --dry-run, and CLI", () => {
     expect(fs.existsSync(path.join(rootDir, synced.featurePath))).toBe(true);
 
     const ghCalls: string[][] = [];
+    const gqlCallsSync: string[] = [];
     await syncIssueToFeature(
       { rootDir, issueId: 52, title: "Live Branch", body: issueBody },
-      { dryRun: false, token: "t", runGh: (args) => { ghCalls.push(args); return "ok"; }, log: () => {} }
+      {
+        dryRun: false,
+        token: "t",
+        runGh: (args) => {
+          ghCalls.push(args);
+          return "ok";
+        },
+        graphql: async <T>(query: string) => {
+          gqlCallsSync.push(query);
+          if (query.includes("projectsV2(first: 20)")) {
+            return {
+              repository: {
+                issue: { id: "I_52" },
+                projectsV2: {
+                  nodes: [
+                    {
+                      id: "P_1",
+                      number: 1,
+                      url: "https://github.com/projects/1",
+                      title: baseConfig.projectTitle,
+                      fields: {
+                        nodes: [
+                          { id: "F_ST", name: "Status", options: [{ id: "OPT_RED", name: "Red (Outer BDD)" }] },
+                          { id: "F_SL", name: "Slice" },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            } as T;
+          }
+          if (query.includes("addProjectV2ItemById")) {
+            return { addProjectV2ItemById: { item: { id: "ITEM_52" } } } as T;
+          }
+          return { updateProjectV2ItemFieldValue: { projectV2Item: { id: "ITEM_52" } } } as T;
+        },
+        log: () => {},
+      }
     );
     expect(ghCalls[0]).toContain("develop");
+    expect(gqlCallsSync.some((q) => q.includes("updateProjectV2ItemFieldValue"))).toBe(true);
 
     await expect(
       syncIssueToFeature(
@@ -708,7 +756,7 @@ describe("sdlc-github adapter, GraphQL live path, --dry-run, and CLI", () => {
     ], { log: () => {} });
     expect(failCode).toBe(1);
 
-    // Populate real passing Backend & Frontend reports + 98% coverages
+    // Populate real passing Backend & Frontend reports + 100% coverages
     const writeJson = (rel: string, obj: unknown) => {
       const p = path.join(rootDir, rel);
       makeDirs(path.dirname(p));
@@ -726,10 +774,10 @@ describe("sdlc-github adapter, GraphQL live path, --dry-run, and CLI", () => {
     fs.writeFileSync(
       jacocoPath,
       `<report name="b">
-        <counter type="LINE" missed="1" covered="99"/>
-        <counter type="BRANCH" missed="2" covered="98"/>
-        <counter type="INSTRUCTION" missed="1" covered="99"/>
-        <counter type="COMPLEXITY" missed="2" covered="98"/>
+        <counter type="LINE" missed="0" covered="100"/>
+        <counter type="BRANCH" missed="0" covered="100"/>
+        <counter type="INSTRUCTION" missed="0" covered="100"/>
+        <counter type="COMPLEXITY" missed="0" covered="100"/>
         <counter type="METHOD" missed="0" covered="50"/>
         <counter type="CLASS" missed="0" covered="10"/>
       </report>`,
@@ -743,10 +791,10 @@ describe("sdlc-github adapter, GraphQL live path, --dry-run, and CLI", () => {
     ]);
     writeJson(cfg.gates.targets.frontend.vitestSummaryJson, {
       total: {
-        lines: { pct: 99 },
-        statements: { pct: 99 },
-        functions: { pct: 98.5 },
-        branches: { pct: 98.1 },
+        lines: { pct: 100 },
+        statements: { pct: 100 },
+        functions: { pct: 100 },
+        branches: { pct: 100 },
       },
     });
 
@@ -771,13 +819,26 @@ describe("sdlc-github adapter, GraphQL live path, --dry-run, and CLI", () => {
       },
     ]);
     const comments: string[][] = [];
+    const verifyLogs: string[] = [];
     const liveVerify = await verifyWorkspaceAndSync(
       { rootDir, branch: "feature/10-demo", isPreviouslyDone: true },
-      { token: "t", dryRun: false, runGh: (args) => { comments.push(args); return "ok"; }, log: () => {} }
+      {
+        token: "t",
+        dryRun: false,
+        runGh: (args) => {
+          comments.push(args);
+          return "ok";
+        },
+        graphql: async () => {
+          throw new Error("Project scope unavailable");
+        },
+        log: (m) => verifyLogs.push(m),
+      }
     );
     expect(liveVerify.evaluation.status).toBe("Regression");
     expect(liveVerify.operations.some((o) => o.action === "mark_regression")).toBe(true);
     expect(comments[0]).toContain("comment");
+    expect(verifyLogs.some((m) => m.includes("Project v2 sync skipped for Issue #10"))).toBe(true);
 
     // CLI remaining subcommands: bootstrap, sync-issue (--body & --body-file), spawn, status, unknown
     expect(await runCli(["bootstrap", "--root", rootDir, "--dry-run"], { log: () => {} })).toBe(0);
@@ -899,6 +960,13 @@ describe("sdlc-github adapter, GraphQL live path, --dry-run, and CLI", () => {
         dryRun: false,
         token: "tok",
         log: (m) => logs.push(m),
+        graphql: async <T>() =>
+          ({
+            repository: {
+              issue: null,
+              projectsV2: { nodes: [] },
+            },
+          }) as T,
         runGh: (args) => {
           liveCalls.push(args);
           if (args[0] === "api" && args.includes("repos/7-3-N-3-7/frontend/git/ref/heads/feature/90-parent")) {
@@ -945,7 +1013,7 @@ describe("sdlc-github adapter, GraphQL live path, --dry-run, and CLI", () => {
       { tags: [{ name: "@issue-1" }], elements: [{ type: "scenario", tags: [], steps: [{ result: { status: "passed" } }] }] },
     ]);
     writeJson(cfg.gates.targets.frontend.vitestSummaryJson, {
-      total: { lines: { pct: 99 }, statements: { pct: 99 }, functions: { pct: 99 }, branches: { pct: 99 } },
+      total: { lines: { pct: 100 }, statements: { pct: 100 }, functions: { pct: 100 }, branches: { pct: 100 } },
     });
 
     expect(
@@ -977,7 +1045,7 @@ describe("sdlc-github adapter, GraphQL live path, --dry-run, and CLI", () => {
                       number: 4,
                       url: "https://github.com/users/7-3-N-3-7/projects/4",
                       title: cfg.projectTitle,
-                      fields: { nodes: [{ id: "F_1", name: "Slice" }] },
+                      fields: { nodes: [{ id: "F_1", name: "Slice" }, { id: "F_NONAME" }] },
                     },
                   ],
                 },
@@ -994,5 +1062,721 @@ describe("sdlc-github adapter, GraphQL live path, --dry-run, and CLI", () => {
     expect(res.dryRun).toBe(false);
     expect(gqlCalls.some((q) => q.includes("createProjectV2("))).toBe(false);
     expect(logs.some((m) => m.includes("Organization policy manages"))).toBe(true);
+
+    // Remaining sdlc-domain edge cases: zero issue id tags, invalid/zero parent issue refs, and scenario without @spawn-subissue tag
+    const zeroMeta = extractFeatureMetadata("@issue-0\nFeature: Zero\n  Scenario: S\n    Given a", baseConfig);
+    expect(zeroMeta.issueIds).toEqual([]);
+    expect(parseIssueBody(10, "NoParent", "### Parent Issue\nNone\n### Target\n@fullstack\nFeature: F\n  Scenario: S\n    Given x", baseConfig).parentIssueId).toBeNull();
+    expect(parseIssueBody(10, "ZeroParent", "### Parent Issue\n#0\n### Target\n@fullstack\nFeature: F\n  Scenario: S\n    Given x", baseConfig).parentIssueId).toBeNull();
+    const untouched = replaceSpawnSubIssueTag(
+      "Feature: Tag\n  @smoke\n  Scenario: S\n    Given a\n",
+      "S",
+      99,
+      10,
+      baseConfig
+    );
+    expect(untouched).toContain("@issue-99 @parent-10");
+  });
+
+  it("extracts seed specs, formats issue bodies, injects idempotent tags, and builds Status & field metadata", () => {
+    const statusInputs = buildStatusOptionInputs(baseConfig.projectBoard.statuses, [
+      { id: "OPT_DONE", name: "Done" },
+      { id: "", name: "Backlog" },
+    ]);
+    expect(statusInputs).toHaveLength(7);
+    expect(statusInputs.find((s) => s.name === "Done")?.id).toBe("OPT_DONE");
+    expect(statusInputs.find((s) => s.name === "Backlog")?.id).toBeUndefined();
+    expect(buildStatusOptionInputs(["Backlog"])[0].color).toBe("GRAY");
+
+    expect(deriveSliceFromFeaturePath("specs/features/core_architecture.feature")).toBe("core");
+    expect(deriveSliceFromFeaturePath("specs\\features\\shared\\generic_sdlc_framework.feature")).toBe("sdlc");
+    expect(deriveSliceFromFeaturePath("specs/features/appointment.feature")).toBe("appointment");
+
+    expect(() =>
+      extractSeedFeatureFromGherkin("bad.feature", "Scenario: Missing header", baseConfig)
+    ).toThrow("Missing 'Feature:' header in bad.feature");
+
+    const backendSpec = extractSeedFeatureFromGherkin(
+      "specs/features/core_architecture.feature",
+      [
+        "@backend-only @issue-999",
+        "Feature: Core Contracts",
+        "  As an architect",
+        "",
+        "  @issue-5 @parent-999",
+        "  Scenario: Contract check",
+        "    Given base contract",
+        "    Then it holds",
+        "",
+      ].join("\n"),
+      baseConfig
+    );
+    expect(backendSpec.slice).toBe("core");
+    expect(backendSpec.target).toBe("@backend-only");
+    expect(backendSpec.description).toBe("As an architect");
+    expect(backendSpec.scenarios[0].target).toBe("@backend-only");
+    expect(backendSpec.scenarios[0].rawBlock).not.toContain("@issue-5");
+    expect(backendSpec.rawFeatureText).not.toContain("@issue-999");
+
+    const uiOnlySpec = extractSeedFeatureFromGherkin(
+      "specs/features/management.feature",
+      [
+        "Feature: Executive KPI",
+        "  @ui-only @ui",
+        "  Scenario: Render KPI",
+        "    Given admin",
+        "    When opens KPI",
+        "    Then visible",
+      ].join("\n"),
+      baseConfig
+    );
+    expect(uiOnlySpec.target).toBe("@ui-only");
+
+    const emptyFeatSpec = extractSeedFeatureFromGherkin(
+      "specs/features/empty.feature",
+      "Feature: Empty Spec\n",
+      baseConfig
+    );
+    expect(emptyFeatSpec.target).toBe("@fullstack");
+    expect(emptyFeatSpec.scenarios).toEqual([]);
+
+    const mixedSpec = extractSeedFeatureFromGherkin(
+      "specs/features/appointment.feature",
+      [
+        "Feature: Appointments",
+        "  Scenario: Default fullstack",
+        "    Given slot",
+        "    Then booked",
+        "",
+        "  @ui-only",
+        "  Scenario Outline: UI outline",
+        "    When views <lang>",
+        "    Examples:",
+        "      | lang |",
+        "      | da   |",
+      ].join("\n"),
+      baseConfig
+    );
+    expect(mixedSpec.target).toBe("@fullstack");
+    expect(mixedSpec.scenarios[0].target).toBe("@fullstack");
+    expect(mixedSpec.scenarios[1].target).toBe("@ui-only");
+    expect(mixedSpec.scenarios[1].rawBlock).toContain("Examples:");
+
+    // injectSeedIssueTags: with and without existing tags, unmatched scenario, missing Feature, and idempotency
+    expect(injectSeedIssueTags("no feature", 1, {}, baseConfig)).toBe("no feature");
+    const rawGherkin = [
+      "@fullstack @issue-1",
+      "Feature: Tagged Spec",
+      "  Scenario: Tagged One",
+      "    Given a",
+      "",
+      "  @smoke @issue-55 @parent-1",
+      "  Scenario: Untouched One",
+      "    Given b",
+    ].join("\n");
+    const taggedOnce = injectSeedIssueTags(rawGherkin, 42, { "Tagged One": 43 }, baseConfig);
+    expect(taggedOnce).toContain("@fullstack @issue-42");
+    expect(taggedOnce).not.toContain("@issue-1");
+    expect(taggedOnce).toContain("  @issue-43 @parent-42\n  Scenario: Tagged One");
+    expect(taggedOnce).toContain("  @smoke @issue-55 @parent-1\n  Scenario: Untouched One");
+    const taggedTwice = injectSeedIssueTags(taggedOnce, 42, { "Tagged One": 43 }, baseConfig);
+    expect(taggedTwice).toBe(taggedOnce);
+
+    // Formatting parent/sub-issue bodies for BDD and declarative features
+    const bddParentBody = formatSeedParentIssueBody(mixedSpec);
+    expect(parseIssueBody(1, mixedSpec.featureTitle, bddParentBody, baseConfig).valid).toBe(true);
+    const bddChildBody = formatSeedSubIssueBody(mixedSpec, mixedSpec.scenarios[0], 1);
+    expect(parseIssueBody(2, mixedSpec.scenarios[0].title, bddChildBody, baseConfig).parentIssueId).toBe(1);
+
+    const declSpec = {
+      featureTitle: "Infra",
+      slice: "infrastructure",
+      target: "@fullstack" as const,
+      featureRelPath: null,
+      rawFeatureText: null,
+      description: "Infra desc",
+      scenarios: [
+        { title: "Docker Stack", target: "@fullstack" as const, rawBlock: "", description: "Compose works" },
+        { title: "Fallback Desc", target: "@ui-only" as const, rawBlock: "", description: "" },
+      ],
+    };
+    const declParentBody = formatSeedParentIssueBody(declSpec);
+    expect(parseIssueBody(10, declSpec.featureTitle, declParentBody, baseConfig).valid).toBe(true);
+    const declChildBody = formatSeedSubIssueBody(declSpec, declSpec.scenarios[1], 10);
+    expect(declChildBody).toContain("Then Infra desc");
+
+    expect(
+      buildSeedFieldValues({
+        slice: "infrastructure",
+        target: "@fullstack",
+        hasFeatureFile: false,
+        subIssueSummary: "2/2 Done",
+        linkedBranch: "main",
+      })
+    ).toMatchObject({ "Backend BDD": "N/A (Infra)", "Frontend BDD": "N/A (Infra)", "Coverage Gate": "N/A (Infra)" });
+    expect(
+      buildSeedFieldValues({
+        slice: "management",
+        target: "@ui-only",
+        hasFeatureFile: true,
+        subIssueSummary: "3/3 Done",
+        linkedBranch: "main",
+      })
+    ).toMatchObject({ "Backend BDD": "N/A", "Frontend BDD": "PASS", "Coverage Gate": "PASS (100%)" });
+    expect(
+      buildSeedFieldValues({
+        slice: "core",
+        target: "@backend-only",
+        hasFeatureFile: true,
+        subIssueSummary: "2/2 Done",
+        linkedBranch: "main",
+      })
+    ).toMatchObject({ "Backend BDD": "PASS", "Frontend BDD": "N/A" });
+  });
+
+  it("bootstraps Status single-select options, syncs Project v2 on verify/sync, and seeds features in dry-run & live modes", async () => {
+    const rootDir = trackTempDir();
+    const cfgWithDecl: SdlcConfig = {
+      ...baseConfig,
+      declarativeFeatures: [
+        {
+          slice: "infrastructure",
+          target: "@fullstack",
+          title: "Infrastructure Stack",
+          description: "Runtime services",
+          subIssues: [
+            { title: "Traefik & Keycloak", target: "@fullstack", description: "Reverse proxy and auth" },
+          ],
+        },
+      ],
+    };
+    fs.writeFileSync(path.join(rootDir, "sdlc.config.json"), JSON.stringify(cfgWithDecl, null, 2), "utf8");
+
+    const specPath = path.join(rootDir, "specs/features/clinic.feature");
+    makeDirs(path.dirname(specPath));
+    const originalClinicFeature = [
+      "Feature: Clinic Governance",
+      "  @fullstack",
+      "  Scenario: Onboard therapist",
+      "    Given therapist registers",
+      "    When submits IBAN",
+      "    Then profile is active",
+      "",
+    ].join("\n");
+    fs.writeFileSync(specPath, originalClinicFeature, "utf8");
+
+    // 1. Bootstrap updates Status single-select field when statuses are missing (and skips when complete)
+    let statusUpdated = false;
+    const bootUpdated = await bootstrapProject(
+      { rootDir },
+      {
+        dryRun: false,
+        token: "tok",
+        log: () => {},
+        runGh: () => "ok",
+        graphql: async <T>(query: string) => {
+          if (query.includes("projectsV2(first: 20)")) {
+            return {
+              repository: {
+                id: "R_1",
+                owner: { id: "O_1" },
+                projectsV2: {
+                  nodes: [
+                    {
+                      id: "P_1",
+                      number: 1,
+                      url: "https://github.com/projects/1",
+                      title: cfgWithDecl.projectTitle,
+                      fields: {
+                        nodes: [
+                          {
+                            id: "F_ST",
+                            name: "Status",
+                            options: [
+                              { id: "OPT_DONE", name: "Done" },
+                              { name: "NoId" },
+                            ],
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            } as T;
+          }
+          if (query.includes("updateProjectV2Field")) {
+            statusUpdated = true;
+            return {
+              updateProjectV2Field: {
+                projectV2Field: {
+                  options: [
+                    { id: "OPT_DONE", name: "Done" },
+                    { id: "OPT_REG", name: "Regression" },
+                    { name: "MissingId" },
+                  ],
+                },
+              },
+            } as T;
+          }
+          return { createProjectV2Field: { projectV2Field: { id: "F_TXT" } } } as T;
+        },
+      }
+    );
+    expect(statusUpdated).toBe(true);
+    expect(bootUpdated.projectMeta?.statusOptionIds["Regression"]).toBe("OPT_REG");
+
+    let statusUpdateSkipped = true;
+    await bootstrapProject(
+      { rootDir },
+      {
+        dryRun: false,
+        token: "tok",
+        log: () => {},
+        runGh: () => "ok",
+        graphql: async <T>(query: string) => {
+          if (query.includes("projectsV2(first: 20)")) {
+            return {
+              repository: {
+                id: "R_1",
+                owner: { id: "O_1" },
+                projectsV2: {
+                  nodes: [
+                    {
+                      id: "P_1",
+                      number: 1,
+                      url: "https://github.com/projects/1",
+                      title: cfgWithDecl.projectTitle,
+                      fields: {
+                        nodes: [
+                          { id: "F_ST", name: "Status" },
+                          { id: "F_SL", name: "Slice" },
+                          { id: "F_TG", name: "Target" },
+                          { id: "F_BE", name: "Backend BDD" },
+                          { id: "F_FE", name: "Frontend BDD" },
+                          { id: "F_CV", name: "Coverage Gate" },
+                          { id: "F_SI", name: "Sub-Issues" },
+                          { id: "F_LB", name: "Linked Branch" },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            } as T;
+          }
+          if (query.includes("updateProjectV2Field")) {
+            statusUpdateSkipped = false;
+            return { updateProjectV2Field: {} } as T;
+          }
+          return {} as T;
+        },
+      }
+    );
+    expect(statusUpdateSkipped).toBe(false);
+
+    // Skip updateProjectV2Field when all 7 statuses already exist
+    let noUpdateNeeded = true;
+    await bootstrapProject(
+      { rootDir },
+      {
+        dryRun: false,
+        token: "tok",
+        log: () => {},
+        runGh: () => "ok",
+        graphql: async <T>(query: string) => {
+          if (query.includes("projectsV2(first: 20)")) {
+            return {
+              repository: {
+                id: "R_1",
+                owner: { id: "O_1" },
+                projectsV2: {
+                  nodes: [
+                    {
+                      id: "P_1",
+                      number: 1,
+                      url: "https://github.com/projects/1",
+                      title: cfgWithDecl.projectTitle,
+                      fields: {
+                        nodes: [
+                          {
+                            id: "F_ST",
+                            name: "Status",
+                            options: cfgWithDecl.projectBoard.statuses.map((s, idx) => ({
+                              id: `O_${idx}`,
+                              name: s,
+                            })),
+                          },
+                          { id: "F_SL", name: "Slice" },
+                          { id: "F_TG", name: "Target" },
+                          { id: "F_BE", name: "Backend BDD" },
+                          { id: "F_FE", name: "Frontend BDD" },
+                          { id: "F_CV", name: "Coverage Gate" },
+                          { id: "F_SI", name: "Sub-Issues" },
+                          { id: "F_LB", name: "Linked Branch" },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            } as T;
+          }
+          if (query.includes("updateProjectV2Field")) {
+            noUpdateNeeded = false;
+          }
+          return {} as T;
+        },
+      }
+    );
+    expect(noUpdateNeeded).toBe(true);
+
+    // 2. Live syncIssueToFeature error catch + live verifyWorkspaceAndSync with passing checks and external brokenIssueId
+    const syncWarnLogs: string[] = [];
+    await syncIssueToFeature(
+      {
+        rootDir,
+        issueId: 60,
+        title: "Warn Sync",
+        body: "### Target\n@fullstack\nFeature: W\n  Scenario: S\n    Given x",
+      },
+      {
+        dryRun: false,
+        token: "tok",
+        runGh: () => "ok",
+        graphql: async () => {
+          throw new Error("gql down");
+        },
+        log: (m) => syncWarnLogs.push(m),
+      }
+    );
+    expect(syncWarnLogs.some((m) => m.includes("Project v2 sync skipped for Issue #60"))).toBe(true);
+
+    const writeJson = (rel: string, obj: unknown) => {
+      const p = path.join(rootDir, rel);
+      makeDirs(path.dirname(p));
+      fs.writeFileSync(p, JSON.stringify(obj), "utf8");
+    };
+    writeJson(cfgWithDecl.gates.targets.backend.cucumberJson, [
+      {
+        tags: [{ name: "@issue-10" }],
+        elements: [{ type: "scenario", tags: [], steps: [{ result: { status: "passed" } }] }],
+      },
+      {
+        tags: [{ name: "@issue-99" }],
+        elements: [{ type: "scenario", tags: [], steps: [{ result: { status: "failed" } }] }],
+      },
+    ]);
+    const jacocoPath = path.join(rootDir, cfgWithDecl.gates.targets.backend.jacocoXml);
+    makeDirs(path.dirname(jacocoPath));
+    fs.writeFileSync(
+      jacocoPath,
+      `<report name="b">
+        <counter type="LINE" missed="0" covered="100"/>
+        <counter type="BRANCH" missed="0" covered="100"/>
+        <counter type="INSTRUCTION" missed="0" covered="100"/>
+        <counter type="COMPLEXITY" missed="0" covered="100"/>
+        <counter type="METHOD" missed="0" covered="50"/>
+        <counter type="CLASS" missed="0" covered="10"/>
+      </report>`,
+      "utf8"
+    );
+    writeJson(cfgWithDecl.gates.targets.frontend.cucumberJson, [
+      {
+        tags: [{ name: "@issue-10" }],
+        elements: [{ type: "scenario", tags: [], steps: [{ result: { status: "passed" } }] }],
+      },
+    ]);
+    writeJson(cfgWithDecl.gates.targets.frontend.vitestSummaryJson, {
+      total: { lines: { pct: 100 }, statements: { pct: 100 }, functions: { pct: 100 }, branches: { pct: 100 } },
+    });
+
+    const syncedIssueNums: number[] = [];
+    await verifyWorkspaceAndSync(
+      {
+        rootDir,
+        branch: "feature/10-demo",
+        subIssues: [{ issueId: 11, title: "Sub", status: "Done" }],
+      },
+      {
+        dryRun: false,
+        token: "tok",
+        runGh: () => "ok",
+        log: () => {},
+        graphql: async <T>(query: string, vars: Record<string, unknown>) => {
+          if (query.includes("projectsV2(first: 20)")) {
+            syncedIssueNums.push(vars.issueNumber as number);
+            return {
+              repository: {
+                issue: { id: `I_${vars.issueNumber}` },
+                projectsV2: {
+                  nodes: [
+                    {
+                      id: "P_1",
+                      number: 1,
+                      url: "u",
+                      title: cfgWithDecl.projectTitle,
+                      fields: {
+                        nodes: [
+                          {
+                            id: "F_ST",
+                            name: "Status",
+                            options: [
+                              { id: "O_T", name: "Inner TDD" },
+                              { id: "O_R", name: "Regression" },
+                            ],
+                          },
+                          { id: "F_LB", name: "Linked Branch" },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            } as T;
+          }
+          if (query.includes("addProjectV2ItemById")) {
+            return { addProjectV2ItemById: { item: { id: "IT_1" } } } as T;
+          }
+          return { updateProjectV2ItemFieldValue: { projectV2Item: { id: "IT_1" } } } as T;
+        },
+      }
+    );
+    expect(syncedIssueNums).toEqual([10, 99]);
+
+    // Also cover passing backend + failing frontend/coverage + brokenId === issueId + missing Status field
+    writeJson(cfgWithDecl.gates.targets.backend.cucumberJson, [
+      {
+        tags: [{ name: "@issue-10" }],
+        elements: [{ type: "scenario", tags: [], steps: [{ result: { status: "passed" } }] }],
+      },
+    ]);
+    writeJson(cfgWithDecl.gates.targets.frontend.cucumberJson, [
+      {
+        tags: [{ name: "@issue-10" }],
+        elements: [{ type: "scenario", tags: [], steps: [{ result: { status: "failed" } }] }],
+      },
+    ]);
+    writeJson(cfgWithDecl.gates.targets.frontend.vitestSummaryJson, {
+      total: { lines: { pct: 50 }, statements: { pct: 50 }, functions: { pct: 50 }, branches: { pct: 50 } },
+    });
+    const brokenSelfNums: number[] = [];
+    await verifyWorkspaceAndSync(
+      { rootDir, branch: "feature/10-demo" },
+      {
+        dryRun: false,
+        token: "tok",
+        runGh: () => "ok",
+        log: () => {},
+        graphql: async <T>(query: string, vars: Record<string, unknown>) => {
+          if (query.includes("projectsV2(first: 20)")) {
+            brokenSelfNums.push(vars.issueNumber as number);
+            return {
+              repository: {
+                issue: { id: "I_10" },
+                projectsV2: {
+                  nodes: [
+                    {
+                      id: "P_1",
+                      number: 1,
+                      url: "u",
+                      title: cfgWithDecl.projectTitle,
+                      fields: { nodes: [{ id: "F_LB", name: "Linked Branch" }] },
+                    },
+                  ],
+                },
+              },
+            } as T;
+          }
+          if (query.includes("addProjectV2ItemById")) {
+            return { addProjectV2ItemById: { item: { id: "IT_10" } } } as T;
+          }
+          return { updateProjectV2ItemFieldValue: { projectV2Item: { id: "IT_10" } } } as T;
+        },
+      }
+    );
+    expect(brokenSelfNums).toEqual([10]);
+
+    // 3. Dry-run seed in clean workspace leaves feature files untouched, handles omitted deps & declarativeFeatures
+    const seedRoot = trackTempDir();
+    fs.writeFileSync(path.join(seedRoot, "sdlc.config.json"), JSON.stringify(baseConfig, null, 2), "utf8");
+    const apptSpecPath = path.join(seedRoot, "specs/features/appointment.feature");
+    const seedSpecPath = path.join(seedRoot, "specs/features/clinic.feature");
+    makeDirs(path.dirname(seedSpecPath));
+    fs.writeFileSync(
+      apptSpecPath,
+      "Feature: Appt\n  Scenario: Book\n    Given slot\n    Then booked\n",
+      "utf8"
+    );
+    fs.writeFileSync(seedSpecPath, originalClinicFeature, "utf8");
+
+    const seedDefaultDry = await seedExistingFeatures({ rootDir: seedRoot });
+    expect(seedDefaultDry.dryRun).toBe(true);
+    expect(seedDefaultDry.totalParents).toBe(2);
+
+    fs.writeFileSync(path.join(seedRoot, "sdlc.config.json"), JSON.stringify(cfgWithDecl, null, 2), "utf8");
+    const seedDry = await seedExistingFeatures({ rootDir: seedRoot }, { dryRun: true, log: () => {} });
+    expect(seedDry.dryRun).toBe(true);
+    expect(seedDry.totalParents).toBe(3);
+    expect(seedDry.totalSubIssues).toBe(3);
+    expect(seedDry.totalItems).toBe(6);
+    expect(fs.readFileSync(seedSpecPath, "utf8")).toBe(originalClinicFeature);
+    expect(
+      await runCli(["seed", "--root", seedRoot, "--dry-run", "--no-tag-files"], { log: () => {} })
+    ).toBe(0);
+
+    // 4. Live seed: creates issues, links native sub-issues, updates Project v2, closes issues, and tags feature files
+    let nextIssueNum = 100;
+    const subIssueLinks: Array<{ parent: string; child: string }> = [];
+    const closedNums: string[] = [];
+    const liveSeedGql = async <T>(query: string, vars: Record<string, unknown>) => {
+      if (query.includes("projectsV2(first: 20)")) {
+        return {
+          repository: {
+            id: "R_1",
+            owner: { id: "O_1" },
+            projectsV2: {
+              nodes: [
+                {
+                  id: "P_1",
+                  number: 1,
+                  url: "https://github.com/projects/1",
+                  title: cfgWithDecl.projectTitle,
+                  fields: {
+                    nodes: [
+                      {
+                        id: "F_ST",
+                        name: "Status",
+                        options: cfgWithDecl.projectBoard.statuses.map((s, i) => ({ id: `OPT_${i}`, name: s })),
+                      },
+                      { id: "F_SL", name: "Slice" },
+                      { id: "F_TG", name: "Target" },
+                      { id: "F_BE", name: "Backend BDD" },
+                      { id: "F_FE", name: "Frontend BDD" },
+                      { id: "F_CV", name: "Coverage Gate" },
+                      { id: "F_SI", name: "Sub-Issues" },
+                      { id: "F_LB", name: "Linked Branch" },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        } as T;
+      }
+      if (query.includes("issue(number: $issueNumber)")) {
+        return { repository: { issue: { id: `NODE_${vars.issueNumber}` } } } as T;
+      }
+      if (query.includes("addSubIssue")) {
+        subIssueLinks.push({ parent: vars.issueId as string, child: vars.subIssueId as string });
+        return { addSubIssue: { issue: { id: vars.issueId }, subIssue: { id: vars.subIssueId } } } as T;
+      }
+      if (query.includes("addProjectV2ItemById")) {
+        return { addProjectV2ItemById: { item: { id: `ITEM_${vars.contentId}` } } } as T;
+      }
+      return { updateProjectV2ItemFieldValue: { projectV2Item: { id: "ITEM" } } } as T;
+    };
+
+    const seedLive1 = await seedExistingFeatures(
+      { rootDir: seedRoot },
+      {
+        dryRun: false,
+        token: "tok",
+        log: () => {},
+        graphql: liveSeedGql,
+        runGh: (args) => {
+          if (args[0] === "issue" && args[1] === "list") return "[]";
+          if (args[0] === "issue" && args[1] === "create") {
+            return `https://github.com/7-3-N-3-7/api/issues/${nextIssueNum++}`;
+          }
+          if (args[0] === "issue" && args[1] === "close") {
+            closedNums.push(args[2]);
+            return "closed";
+          }
+          return "ok";
+        },
+      }
+    );
+    expect(seedLive1.dryRun).toBe(false);
+    expect(seedLive1.totalItems).toBe(6);
+    expect(subIssueLinks).toEqual([
+      { parent: "NODE_100", child: "NODE_101" },
+      { parent: "NODE_102", child: "NODE_103" },
+      { parent: "NODE_104", child: "NODE_105" },
+    ]);
+    expect(closedNums).toEqual(["101", "100", "103", "102", "105", "104"]);
+    const updatedFeature = fs.readFileSync(seedSpecPath, "utf8");
+    expect(updatedFeature).toContain("@issue-102\nFeature: Clinic Governance");
+    expect(updatedFeature).toContain("@fullstack @issue-103 @parent-102\n  Scenario: Onboard therapist");
+
+    // 5. Idempotent live re-run with mix of CLOSED & OPEN existing issues + closeIssues/updateFeatureTags disabled
+    const closedOnSecondRun: string[] = [];
+    await seedExistingFeatures(
+      { rootDir: seedRoot, updateFeatureTags: false },
+      {
+        dryRun: false,
+        token: "tok",
+        log: () => {},
+        graphql: liveSeedGql,
+        runGh: (args) => {
+          if (args[0] === "issue" && args[1] === "list") {
+            return JSON.stringify([
+              { number: 100, id: "NODE_100", title: "[SDLC Feature]: Appt", state: "CLOSED" },
+              { number: 101, id: "NODE_101", title: "[Sub-Issue]: Book", state: "CLOSED" },
+              { number: 102, id: "NODE_102", title: "[SDLC Feature]: Clinic Governance", state: "CLOSED" },
+              { number: 103, id: "NODE_103", title: "[Sub-Issue]: Onboard therapist", state: "OPEN" },
+              { number: 104, id: "NODE_104", title: "[SDLC Feature]: Infrastructure Stack", state: "CLOSED" },
+              { number: 105, id: "NODE_105", title: "[Sub-Issue]: Traefik & Keycloak", state: "CLOSED" },
+            ]);
+          }
+          if (args[0] === "issue" && args[1] === "close") {
+            closedOnSecondRun.push(args[2]);
+          }
+          return "ok";
+        },
+      }
+    );
+    expect(closedOnSecondRun).toEqual(["103"]);
+
+    await seedExistingFeatures(
+      { rootDir: seedRoot, closeIssues: false, updateFeatureTags: false },
+      {
+        dryRun: false,
+        token: "tok",
+        log: () => {},
+        graphql: liveSeedGql,
+        runGh: (args) => {
+          if (args[0] === "issue" && args[1] === "list") {
+            return JSON.stringify([
+              { number: 100, id: "NODE_100", title: "[SDLC Feature]: Appt", state: "OPEN" },
+              { number: 101, id: "NODE_101", title: "[Sub-Issue]: Book", state: "OPEN" },
+              { number: 102, id: "NODE_102", title: "[SDLC Feature]: Clinic Governance", state: "OPEN" },
+              { number: 103, id: "NODE_103", title: "[Sub-Issue]: Onboard therapist", state: "OPEN" },
+              { number: 104, id: "NODE_104", title: "[SDLC Feature]: Infrastructure Stack", state: "OPEN" },
+              { number: 105, id: "NODE_105", title: "[Sub-Issue]: Traefik & Keycloak", state: "OPEN" },
+            ]);
+          }
+          return "ok";
+        },
+      }
+    );
+
+    // 6. Malformed gh issue create output throws clear error
+    await expect(
+      seedExistingFeatures(
+        { rootDir: seedRoot },
+        {
+          dryRun: false,
+          token: "tok",
+          log: () => {},
+          graphql: liveSeedGql,
+          runGh: (args) => {
+            if (args[0] === "issue" && args[1] === "list") return "[]";
+            if (args[0] === "issue" && args[1] === "create") return "invalid-output";
+            return "ok";
+          },
+        }
+      )
+    ).rejects.toThrow("Could not parse issue number from gh output");
   });
 });
