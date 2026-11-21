@@ -1,9 +1,10 @@
+@issue-12
 Feature: Therapy Appointment Scheduling, Conflicts, Rescheduling, and Optimal Slot Finding
   As a client and therapist
   I want reliable appointment booking, conflict detection, rescheduling, cancellation, date filtering, and slot optimization
   So that clinic calendars stay accurate and double bookings are prevented
 
-  @fullstack @api
+  @fullstack @api @issue-13 @parent-12
   Scenario: Client books an available therapy session with a therapist
     Given an onboarded therapist "maja_terapeut" with IBAN "DK5000400440116243", currency "DKK", and service "Individuel Terapi" priced at 2 DKK for 60 minutes in branch "PSYCHOLOGY"
     And a registered client "anders_sand" with an active handshake with therapist "maja_terapeut"
@@ -11,7 +12,7 @@ Feature: Therapy Appointment Scheduling, Conflicts, Rescheduling, and Optimal Sl
     When client "anders_sand" books an appointment with therapist "maja_terapeut" for service "Individuel Terapi" from "2026-11-20T10:00:00" to "2026-11-20T11:00:00"
     Then the appointment booking should succeed with status "CONFIRMED"
 
-  @fullstack @api
+  @fullstack @api @issue-14 @parent-12
   Scenario: Double booking the same therapist in an overlapping time slot is rejected as a conflict
     Given an onboarded therapist "maja_terapeut" with IBAN "DK5000400440116243", currency "DKK", and service "Individuel Terapi" priced at 2 DKK for 60 minutes in branch "PSYCHOLOGY"
     And a registered client "anders_sand" with an active handshake with therapist "maja_terapeut"
@@ -21,7 +22,7 @@ Feature: Therapy Appointment Scheduling, Conflicts, Rescheduling, and Optimal Sl
     When client "anders_sand" attempts to book an appointment with therapist "maja_terapeut" for service "Individuel Terapi" from "2026-11-21T14:30:00" to "2026-11-21T15:30:00"
     Then the booking should be rejected as a scheduling conflict
 
-  @fullstack @api
+  @fullstack @api @issue-15 @parent-12
   Scenario: Booking with an end time not strictly after start time is rejected
     Given an onboarded therapist "maja_terapeut" with IBAN "DK5000400440116243", currency "DKK", and service "Individuel Terapi" priced at 2 DKK for 60 minutes in branch "PSYCHOLOGY"
     And a registered client "anders_sand" with an active handshake with therapist "maja_terapeut"
@@ -29,7 +30,7 @@ Feature: Therapy Appointment Scheduling, Conflicts, Rescheduling, and Optimal Sl
     When client "anders_sand" attempts to book an appointment with therapist "maja_terapeut" for service "Individuel Terapi" from "2026-11-22T15:00:00" to "2026-11-22T14:00:00"
     Then the operation should be rejected with a validation error mentioning "after start time"
 
-  @fullstack @api
+  @fullstack @api @issue-16 @parent-12
   Scenario: Client reschedules and cancels a future appointment while historical dates are rejected
     Given an onboarded therapist "maja_terapeut" with IBAN "DK5000400440116243", currency "DKK", and service "Individuel Terapi" priced at 2 DKK for 60 minutes in branch "PSYCHOLOGY"
     And a registered client "anders_sand" with an active handshake with therapist "maja_terapeut"
@@ -42,7 +43,7 @@ Feature: Therapy Appointment Scheduling, Conflicts, Rescheduling, and Optimal Sl
     When client "anders_sand" cancels the scheduled appointment
     Then the cancellation should complete successfully
 
-  @fullstack @api
+  @fullstack @api @issue-17 @parent-12
   Scenario: Filtering client appointments returns only sessions inside the requested date window
     Given an onboarded therapist "maja_terapeut" with IBAN "DK5000400440116243", currency "DKK", and service "Individuel Terapi" priced at 2 DKK for 60 minutes in branch "PSYCHOLOGY"
     And a registered client "anders_sand" with an active handshake with therapist "maja_terapeut"
@@ -52,7 +53,7 @@ Feature: Therapy Appointment Scheduling, Conflicts, Rescheduling, and Optimal Sl
     When client "anders_sand" filters appointments from "2026-11-01T00:00:00" to "2026-11-30T23:59:59"
     Then the filtered schedule should include "2026-11-25T10:00:00" and exclude "2026-12-10T10:00:00"
 
-  @fullstack @api
+  @fullstack @api @issue-18 @parent-12
   Scenario: Slot optimization recommends a feasible conflict-free slot across therapist availability windows
     Given an onboarded therapist "maja_terapeut" with IBAN "DK5000400440116243", currency "DKK", and service "Individuel Terapi" priced at 2 DKK for 60 minutes in branch "PSYCHOLOGY"
     And therapist "maja_terapeut" configures multi-window availability from "09:00" to "12:00" and "13:00" to "16:00"
@@ -62,7 +63,7 @@ Feature: Therapy Appointment Scheduling, Conflicts, Rescheduling, and Optimal Sl
     When requesting optimal conflict-free slots for therapist "maja_terapeut" on "2026-11-26"
     Then a feasible recommended slot avoiding "2026-11-26T09:00:00" should be returned
 
-  @backend-only
+  @backend-only @issue-19 @parent-12
   Scenario: Unassigned quick-booking prevents duplicate start times
     Given an authenticated therapist session for "maja_terapeut"
     When quick-booking an unassigned appointment for client name "Anders Sand" at "2026-11-27T14:00:00"
@@ -70,7 +71,7 @@ Feature: Therapy Appointment Scheduling, Conflicts, Rescheduling, and Optimal Sl
     When quick-booking an unassigned appointment for client name "Anders Sand" at "2026-11-27T14:00:00"
     Then the booking should be rejected as a scheduling conflict
 
-  @ui-only @ui
+  @ui-only @ui @issue-20 @parent-12
   Scenario: Client uses Timefold AI slot assistant and duration chip to book an appointment
     Given an onboarded therapist "maja_terapeut" with IBAN "DK5000400440116243", currency "DKK", and service "Individuel Terapi" priced at 2 DKK for 60 minutes in branch "PSYCHOLOGY"
     And therapist "maja_terapeut" configures multi-window availability from "09:00" to "12:00" and "13:00" to "16:00"
@@ -81,7 +82,7 @@ Feature: Therapy Appointment Scheduling, Conflicts, Rescheduling, and Optimal Sl
     When in the portal UI client submits the appointment form titled "Tryg Opstart" for therapist "maja_terapeut"
     Then the appointment list in the UI should contain "Tryg Opstart"
 
-  @ui-only @ui
+  @ui-only @ui @issue-21 @parent-12
   Scenario: Client inspects human-readable booking history without seeing technical JGit SHA details
     Given an onboarded therapist "maja_terapeut" with IBAN "DK5000400440116243", currency "DKK", and service "Individuel Terapi" priced at 2 DKK for 60 minutes in branch "PSYCHOLOGY"
     And a registered client "anders_sand" with an active handshake with therapist "maja_terapeut"
@@ -90,7 +91,7 @@ Feature: Therapy Appointment Scheduling, Conflicts, Rescheduling, and Optimal Sl
     And in the portal UI the user expands booking history for that appointment
     Then the human-readable git history panel should be visible and technical SHA details should be absent
 
-  @ui-only @ui
+  @ui-only @ui @issue-22 @parent-12
   Scenario: Therapist configures weekly multi-window schedule in the calendar UI
     Given an onboarded therapist "maja_terapeut" with IBAN "DK5000400440116243", currency "DKK", and service "Individuel Terapi" priced at 2 DKK for 60 minutes in branch "PSYCHOLOGY"
     When in the portal UI therapist "maja_terapeut" opens "/da/dashboard/therapist?tab=calendar"
@@ -98,7 +99,7 @@ Feature: Therapy Appointment Scheduling, Conflicts, Rescheduling, and Optimal Sl
     Then element "weekly-schedule-saved" should be visible
     And the visual snapshot "appointment-weekly-schedule" of the weekly schedule panel should match baseline
 
-  @ui-only @ui
+  @ui-only @ui @issue-23 @parent-12
   Scenario: Therapist expands collapsible technical JGit SHA revision audit on a booked appointment
     Given an onboarded therapist "maja_terapeut" with IBAN "DK5000400440116243", currency "DKK", and service "Individuel Terapi" priced at 2 DKK for 60 minutes in branch "PSYCHOLOGY"
     And a registered client "anders_sand" with an active handshake with therapist "maja_terapeut"

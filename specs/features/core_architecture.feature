@@ -1,9 +1,10 @@
-@backend-only
+@backend-only @issue-35
 Feature: Core Platform Base Architecture and Generic Resource Contracts
   As a platform architect
   I want all core domain modules to adhere to the generic base architecture
   So that persistence, service orchestration, and standardized error/resource contracts behave uniformly
 
+  @issue-36 @parent-35
   Scenario: Domain modules adhere to the generic base entity, repository, service, and controller contracts
     Then the following domain components should extend or implement the core base contracts:
       | componentType | className                      |
@@ -41,6 +42,7 @@ Feature: Core Platform Base Architecture and Generic Resource Contracts
       | controller    | PsychotraumatologyController   |
       | controller    | ClinicPlatformController       |
 
+  @issue-37 @parent-35
   Scenario: Creating a generic domain appointment allows retrieving it individually and in the appointment directory
     Given an authenticated therapist session for "maja_terapeut"
     When a generic appointment is registered for client "Anders Sand" at "2026-11-20T10:00:00"
