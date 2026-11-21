@@ -19,9 +19,9 @@ flowchart TD
         Step4["4. Backend TDD (Inner Loop)
 • Skriv fejlende JUnit 5 unit-tests oven på BaseDomainCore & BaseWebCore
 • Implementér <Name>Feature.java -> BESTÅR (Grøn)"]
-        Step5["5. Backend Verifikation & 98 % JaCoCo Gate
+        Step5["5. Backend Verifikation & 100 % JaCoCo Gate
 • Kør JUnit 5 + Cucumber-JVM (cucumber-report.json)
-• Alle 6 JaCoCo-tællere >= 98 % -> BESTÅR (Grøn)"]
+• Alle 6 JaCoCo-tællere = 100 % -> BESTÅR (Grøn)"]
         Step3 -->|"3. Driver implementation"| Step4
         Step4 -->|"4. Kvalitetssikring"| Step5
     end
@@ -31,9 +31,9 @@ flowchart TD
         Step6["6. Frontend BDD (Outer Loop — Red)
 • Kør Cucumber.js mod præcis samme specs/features/
 • Eksekvér BFF- & Playwright UI-scenarier -> FEJLER (Rød)"]
-        Step7["7. Frontend TDD & 98 % Istanbul Gate
+        Step7["7. Frontend TDD & 100 % Istanbul Gate
 • Implementér <Name>Feature.tsx med 2-fils TypeScript Core
-• Vitest + Istanbul: alle 4 metrikker >= 98 % -> BESTÅR (Grøn)"]
+• Vitest + Istanbul: alle 4 metrikker = 100 % -> BESTÅR (Grøn)"]
         Step8["8. Samlet E2E & Shift-Left Security Gate
 • Verificér fuldt system (Keycloak, Dual-App, Spring Boot, DB, Kafka)
 • TruffleHog secret scan & @spawn-subissue tjek -> BESTÅR (Grøn)"]
@@ -50,7 +50,7 @@ flowchart TD
 
     Step2 -->|"2. Start Backend-loop"| Step3
     Step5 -->|"5. Backend grøn -> Start Frontend-loop"| Step6
-    Step8 -->|"8. Alle 98 %-gates & checks grønne"| Step9
+    Step8 -->|"8. Alle 100 %-gates & checks grønne"| Step9
     Step9 -.->|"9. Living Spec & Regression feedback"| Step1
 
     class Step1,Step2 auth

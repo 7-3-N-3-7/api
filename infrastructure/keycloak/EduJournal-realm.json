@@ -46,6 +46,8 @@
       "clientId": "platform-frontend",
       "name": "EduJournal Frontend BFF",
       "enabled": true,
+      "rootUrl": "http://localhost",
+      "baseUrl": "/da",
       "protocol": "openid-connect",
       "publicClient": false,
       "clientAuthenticatorType": "client-secret",

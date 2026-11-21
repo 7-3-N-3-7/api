@@ -68,7 +68,7 @@ gantt
     Timefold AI Booking Solver & Klinik-livscyklus (3124690, 5c87524) :done, s5_2, 2026-10-14, 2026-10-16
     Generisk Base-Arkitektur (BaseEntity->BaseController) (403ffb1)   :crit, done, s5_3, 2026-10-15, 2026-10-17
     Swimlane- & Arkitekturdiagrammer v2 (827846f, 7d6e4ea)            :done, s5_4, 2026-10-14, 2026-10-17
-    Finans (KillBill/Fineract), IBAN Handshake & 98% JaCoCo (d6e731d) :crit, done, s5_5, 2026-10-18, 2026-10-25
+    Finans (KillBill/Fineract), IBAN Handshake & 100% JaCoCo (d6e731d) :crit, done, s5_5, 2026-10-18, 2026-10-25
 
     section Hovedopgave: Rapport & Aflevering
     Rapportudkast, Vejledermøder & Skriveworkshop (24. nov)           :active, h1, 2026-10-27, 2026-11-30
@@ -85,7 +85,7 @@ flowchart LR
     S2["Sprint 2 (14/09 - 25/09)\n• c505a5b: Taiga TG-14 ChatOps\n• 32928f5: Zitadel -> Keycloak OIDC\n• 069386f: feature/journal-crm\n• 33df4da: Taiga BDD webhook"]
     S3["Sprint 3 (26/09 - 02/10)\n• 91c9794: JGit, Quartz, StateMachine\n• fa8b407: Next.js 16 + next-intl\n• bf32d79: JournalGitService\n• f502ae4: I18n MongoDB modul"]
     S4["Sprint 4 (03/10 - 12/10)\n• 3103cd9: UUID, Provider & Service\n• bdc2b79: PCL-5 Psychotraumatology\n• efc4357: TherapistClinicalNote\n• aa45c1c: TG-29 Localization PR"]
-    S5["Sprint 5 (13/10 - 25/10)\n• 6b6d01b: MultiWindow & JGit UI\n• 3124690: Timefold AI Solver\n• 403ffb1: Generisk Base-Arkitektur\n• d6e731d: Finans, IBAN & 98% JaCoCo"]
+    S5["Sprint 5 (13/10 - 25/10)\n• 6b6d01b: MultiWindow & JGit UI\n• 3124690: Timefold AI Solver\n• 403ffb1: Generisk Base-Arkitektur\n• d6e731d: Finans, IBAN & 100% JaCoCo"]
 
     S1 --> S2 --> S3 --> S4 --> S5
 ```
@@ -96,7 +96,7 @@ flowchart LR
 | **Sprint 2**<br>*(14. sep – 25. sep 2026)* | `46c4615`, `c505a5b` (`TG-14`), `d70ec4f`, `32928f5` (#37), `40af524`, `069386f` (#21), `33df4da` | Opsætning af Traefik reverse proxy, arkitektonisk skift fra Zitadel til **Keycloak 24 OIDC** med dedikeret PostgreSQL `auth-db`, samt automatisk Taiga-til-GitHub BDD synkronisering. |
 | **Sprint 3**<br>*(26. sep – 02. okt 2026)* | `91c9794`, `a17c344` (`TG-26`), `6446311` (`TG-27`), `fa8b407`, `94e7ed1`, `bf32d79`, `f502ae4`, `21432bf` | Skift fra Vite SPA til **Next.js 16 BFF med NextAuth**, implementering af [`JournalGitService`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/features/journal/JournalFeature.java) (Eclipse JGit), `I18nService` (MongoDB) og Docker Compose secrets-håndtering. |
 | **Sprint 4**<br>*(03. okt – 12. okt 2026)* | `3103cd9`, `1d0e7e9`, `bdc2b79`, `efc4357`, `5f22640`, `d118282`, `aa45c1c` (`TG-29`), `28bf632` | Gennemførelse af UUID-identitet på tværs af entiteter, oprettelse af [`PsychotraumatologyFeature`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/features/psychotraumatology/PsychotraumatologyFeature.java) (PCL-5), fortrolige terapeutnoter (`TherapistClinicalNote`) og fuld flersproget lokaliserings-pipeline. |
-| **Sprint 5**<br>*(13. okt – 25. okt 2026)* | `44238d6`, `6b6d01b`, `2da49bb`, `3124690`, `5c87524`, `403ffb1`, `7d6e4ea`, `d6e731d`, `9668e6a` | **Videreudvikling & Arkitektonisk Konsolidering:** `TherapistMultiWindowWorkspace` med JGit diff-tidslinje, **Timefold Solver** booking-optimering, **Konsolideret 2-Fils Core (`BaseDomainCore` + `BaseWebCore`) & Vertical Slice Arkitektur (`features/*`)**, finansmodul (KillBill/Fineract + IBAN) og **98% JaCoCo coverage gate**. |
+| **Sprint 5**<br>*(13. okt – 25. okt 2026)* | `44238d6`, `6b6d01b`, `2da49bb`, `3124690`, `5c87524`, `403ffb1`, `7d6e4ea`, `d6e731d`, `9668e6a` | **Videreudvikling & Arkitektonisk Konsolidering:** `TherapistMultiWindowWorkspace` med JGit diff-tidslinje, **Timefold Solver** booking-optimering, **Konsolideret 2-Fils Core (`BaseDomainCore` + `BaseWebCore`) & Vertical Slice Arkitektur (`features/*`)**, finansmodul (KillBill/Fineract + IBAN) og **100% JaCoCo coverage gate**. |
 
 ---
 
@@ -142,7 +142,7 @@ gitGraph
 
     checkout main
     merge dev id: "6342150: Release Clean Main"
-    commit id: "d6e731d: Finance, IBAN & 98% JaCoCo" tag: "v2.1-rc"
+    commit id: "d6e731d: Finance, IBAN & 100% JaCoCo" tag: "v2.1-rc"
 ```
 
 ### 2.2 Gitgraph over Eclipse JGit Patient-Journal Branches (`JournalGitService`)
@@ -189,15 +189,15 @@ flowchart TD
         PreCommit -- "0 Secrets (Grøn)" --> Push["⬆️ git push origin feature/..."]
         Push --> THAction["🛡️ GitHub Action: TruffleHog Scan\n(frontend/.github/workflows/trufflehog.yml)"]
         Push --> BackendTest["☕ Backend Maven Test & Coverage\n• H2 In-Memory + Testcontainers MongoDB\n• JUnit 5 + Cucumber Java (29 scenarier)"]
-        BackendTest --> JaCoCo{"📊 JaCoCo Coverage Gate\nLine, Branch, Method, Class >= 98%?"}
-        JaCoCo -- "< 98% Dækning" --> BuildFail["❌ Maven Build Fejler\n(jacoco-check gate)"]
+        BackendTest --> JaCoCo{"📊 JaCoCo Coverage Gate\nLine, Branch, Method, Class = 100%?"}
+        JaCoCo -- "< 100% Dækning" --> BuildFail["❌ Maven Build Fejler\n(jacoco-check gate)"]
         BuildFail --> Code
 
         Push --> FrontendTest["⚛️ Frontend Test & E2E\n• ESLint + Vitest Coverage\n• Cucumber.js + Playwright E2E"]
     end
 
     subgraph CDDeploy["3. Container Publish, Deployment & Taiga Sync"]
-        JaCoCo -- ">= 98% Bestået" --> PRMerge["🔀 Pull Request Merge til dev / main\n(Ref: TG-<id> #done)"]
+        JaCoCo -- "= 100% Bestået" --> PRMerge["🔀 Pull Request Merge til dev / main\n(Ref: TG-<id> #done)"]
         FrontendTest --> PRMerge
         THAction --> PRMerge
 
@@ -537,8 +537,8 @@ classDiagram
     AppointmentFeature_TSX --> baseDomainCore_TS : extends BaseApiService
     AppointmentFeature_TSX --> baseUiCore_TSX : uses useBaseCrud & ProblemAlert
 
-    BaseWebCore_Java <..> baseDomainCore_TS : "HTTP REST + RFC 7807 ProblemDetail"
-    AppointmentFeature_Java <..> AppointmentFeature_TSX : "1:1 DTO & Slice Mirroring"
+    BaseWebCore_Java <..> baseDomainCore_TS : HTTP REST + RFC 7807 ProblemDetail
+    AppointmentFeature_Java <..> AppointmentFeature_TSX : 1-til-1 DTO & Slice Mirroring
 ```
 
 ### 6.1.1 Aktivitetsdiagram – `core` & RFC 7807 `ProblemDetail`
