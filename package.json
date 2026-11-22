@@ -11,7 +11,8 @@
     "sdlc:spawn": "node scripts/run-sdlc.mjs spawn",
     "sdlc:verify": "node scripts/run-sdlc.mjs verify",
     "sdlc:status": "node scripts/run-sdlc.mjs status",
-    "sdlc:seed": "node scripts/run-sdlc.mjs seed"
+    "sdlc:seed": "node scripts/run-sdlc.mjs seed",
+    "sdlc:commit-sync": "node scripts/run-sdlc.mjs commit-sync"
   },
   "devDependencies": {
     "mermaid": "^12.3.0"

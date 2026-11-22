@@ -52,7 +52,20 @@
       "Green Gate",
       "Done",
       "Regression"
-    ]
+    ],
+    "commitStatusTags": {
+      "backlog": "Backlog",
+      "spec-ready": "Spec Ready",
+      "spec": "Spec Ready",
+      "red-outer-bdd": "Red (Outer BDD)",
+      "bdd": "Red (Outer BDD)",
+      "red": "Red (Outer BDD)",
+      "inner-tdd": "Inner TDD",
+      "tdd": "Inner TDD",
+      "green-gate": "Green Gate",
+      "green": "Green Gate",
+      "regression": "Regression"
+    }
   },
   "declarativeFeatures": [
     {
