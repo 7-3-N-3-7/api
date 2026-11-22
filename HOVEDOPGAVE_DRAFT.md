@@ -540,7 +540,11 @@ flowchart TB
 >   - **Databasedesign** (EER-diagram) og **Brugergrænsefladedesign**.
 
 ### 7.1 Designklassediagram og Design Patterns
+<<<<<<< HEAD
 På datamatikeruddannelsen lærte jeg den klassiske **MVC**-opdeling (*Model, View, Controller*), lagdelingen **Entity, DTO, DAO, Service, Controller og Route** samt de fire OOP-søjler (**Inheritance, Abstraction, Encapsulation og Polymorphism**). For at minimere gentagen CRUD-boilerplate på tværs af platformens domænemoduler valgte jeg bevidst at sætte **Encapsulation** (indkapsling) i centrum gennem en superklasse-arkitektur med abstrakte baseklasser for lagene. I **EduJournal** gennemgik dette studieudgangspunkt en to-trins evolution fra traditionel horisontal lagdeling til en konsolideret **2-fils Core** + **Vertical Feature Slices**, hvor `BaseService<Entity, DTO>` og `BaseController<Entity, DTO>` (+ REST-routes) stadig er `public static abstract` superklasser, mens `Entity` (`Identifiable`), `DTO` (`HasId` så Java 17 `record` kan bruges) og `DAO` (`BaseRepository<Entity>`) blev løftet til rene interfaces (spejlet 1:1 i frontenden via `BaseApiService<DTO, ID>` og `useBaseCrud()`).
+=======
+På datamatikeruddannelsen lærte jeg den klassiske **MVC**-opdeling (*Model, View, Controller*), lagdelingen **Entity, DTO, DAO, Service, Controller og Route** samt de fire OOP-søjler (**Inheritance, Abstraction, Encapsulation og Polymorphism**). For at minimere gentagen CRUD-boilerplate på tværs af platformens domænemoduler valgte jeg bevidst at sætte **Encapsulation** (indkapsling) i centrum gennem en superklasse-arkitektur med abstrakte baseklasser for lagene. I **EduJournal** gennemgik dette studieudgangspunkt en to-trins evolution fra traditionel horisontal lagdeling til en konsolideret **2-fils Core** + **Vertical Feature Slices**, hvor `BaseService<E, D>` og `BaseController<E, D>` (+ REST-routes) stadig er `public static abstract` superklasser, mens `Entity` (`Identifiable`), `DTO` (`HasId` så Java 17 `record` kan bruges) og `DAO` (`BaseRepository<E>`) blev løftet til rene interfaces (spejlet 1:1 i frontenden via `BaseApiService<DTO, ID>` og `useBaseCrud()`).
+>>>>>>> 8e82a7d90582217c88c7b9e8f17a64ee10698757
 
 | OOP-søjle | Anvendelse i EduJournal (Backend & Frontend) |
 | :--- | :--- |
