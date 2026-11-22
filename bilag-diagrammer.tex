@@ -33,9 +33,6 @@ Dette bilag supplerer Bilag~17.2 med det ottende backend-domænes swimlane (\tex
 \subsection{Bilag 17.4: Projektforløb, GitGraph, Polyglot ER og State Machines}
 Nedenstående diagrammer stammer fra projektets samlede diagramkatalog og dokumenterer Git-historik, branch-strategi, fuldt polyglot ER-skema og tilstandsmaskiner.
 
-% --- katalog-01-gantt-projektforloeb ---
-\landscapefigure{katalog-01-gantt-projektforloeb.pdf}{Mermaid Gantt-diagram rekonstrueret fra Git-commithistorik (september 2026 -- januar 2027).}{Bilag: Detaljeret Gantt-tidslinje rekonstrueret fra projektets Git-commits og hovedopgavemilepæle.}{fig:bilag_katalog_01_gantt}
-
 % --- katalog-02-commit-tidslinje ---
 \landscapefigure{katalog-02-commit-tidslinje.pdf}{Visuel commit-tidslinje på tværs af Sprint 1 til Sprint 5.}{Bilag: Visuel commit-tidslinje på tværs af Sprint~1--5 med centrale arkitektoniske milepæle.}{fig:bilag_katalog_02_commits}
 
@@ -46,7 +43,7 @@ Nedenstående diagrammer stammer fra projektets samlede diagramkatalog og dokume
 \portraitfigure{katalog-04-gitgraph-jgit-patient-journal.pdf}{GitGraph over logiske Eclipse JGit patientjournal-branches i JournalGitService.}{Bilag: GitGraph over logiske patientjournal-branches i \texttt{JournalFeature.JournalGitService} (\texttt{main}, \texttt{trauma-therapy}, \texttt{private-diary}).}{fig:bilag_katalog_04_gitgraph_jgit}
 
 % --- katalog-05-cicd-pipeline-bdd-tdd ---
-\portraitfigure{katalog-05-cicd-pipeline-bdd-tdd.pdf}{CI/CD pipeline med TruffleHog secret-scanning, 100 \% JaCoCo gate, Vitest og Docker/GHCR udrulning.}{Bilag: Samlet CI/CD- og sikkerhedspipeline fra lokal pre-commit TruffleHog-scanning over 100\,\% coverage gates til GHCR-udrulning.}{fig:bilag_katalog_05_cicd}
+\portraitfigure{katalog-05-cicd-pipeline-bdd-tdd.pdf}{CI/CD og SDLC pipeline med GitHub Actions commit-tag-synk, 100 \% JaCoCo gate, Vitest/Istanbul og Docker/GHCR udrulning.}{Bilag: Samlet CI/CD- og SDLC-pipeline fra lokal BDD/TDD-kodning over commit-tag-synk og 100\,\% coverage gates til GHCR-udrulning.}{fig:bilag_katalog_05_cicd}
 
 % --- katalog-06-er-diagram-polyglot ---
 \portraitfigure{katalog-06-er-diagram-polyglot.pdf}{Komplet ER-diagram for PostgreSQL, MongoDB og Eclipse JGit.}{Bilag: Komplet Polyglot ER-diagram for PostgreSQL (\texttt{business-db}), MongoDB (\texttt{i18n\_dictionaries}) og Eclipse JGit (\texttt{journal-repo}).}{fig:bilag_katalog_06_er}

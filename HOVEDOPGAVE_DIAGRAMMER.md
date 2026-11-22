@@ -6,13 +6,12 @@ Dette dokument indeholder alle diagrammer til hovedopgaven udarbejdet i **Mermai
 
 ## Indholdsfortegnelse
 
-1. [Gantt-diagram og Sprint-rekonstruktion baseret på Git Commits](#1-gantt-diagram-og-sprint-rekonstruktion-baseret-på-git-commits)
-   - [1.1 Mermaid Gantt-diagram (7. sep – 24. okt 2026 + Hovedopgaveforløb)](#11-mermaid-gantt-diagram-7-sep--24-okt-2026--hovedopgaveforløb)
-   - [1.2 Visuel Commit-Tidslinje (Flowchart) & Commit-Log Tabel til Procesdelen](#12-visuel-commit-tidslinje-flowchart--commit-log-tabel-til-procesdelen)
+1. [Sprint-rekonstruktion og Commit-Tidslinje baseret på Git Commits](#1-sprint-rekonstruktion-og-commit-tidslinje-baseret-på-git-commits)
+   - [1.1 Visuel Commit-Tidslinje (Flowchart) & Commit-Log Tabel til Procesdelen](#11-visuel-commit-tidslinje-flowchart--commit-log-tabel-til-procesdelen)
 2. [Gitgraph – Branch-strategi og JGit Patient-versionsstyring](#2-gitgraph--branch-strategi-og-jgit-patient-versionsstyring)
    - [2.1 Gitgraph over projektets udviklings-branches (GitHub)](#21-gitgraph-over-projektets-udviklings-branches-github)
    - [2.2 Gitgraph over Eclipse JGit Patient-Journal Branches (`JournalGitService`)](#22-gitgraph-over-eclipse-jgit-patient-journal-branches-journalgitservice)
-3. [Flowchart / Pipeline – CI/CD, TruffleHog, Taiga Sync & Outside-In BDD/TDD](#3-flowchart--pipeline--cicd-trufflehog-taiga-sync--outside-in-bddtdd)
+3. [Flowchart / Pipeline – CI/CD, GitHub SDLC & Outside-In BDD/TDD](#3-flowchart--pipeline--cicd-github-sdlc--outside-in-bddtdd)
 4. [ER-Diagram (`erDiagram`) – PostgreSQL, MongoDB & JGit](#4-er-diagram-erdiagram--postgresql-mongodb--jgit)
 5. [State Machine Diagrammer (`stateDiagram-v2`)](#5-state-machine-diagrammer-statediagram-v2)
    - [5.1 State Machine: Samtykke-Handshake & Granulær Journaladgang](#51-state-machine-samtykke-handshake--granulær-journaladgang)
@@ -29,59 +28,15 @@ Dette dokument indeholder alle diagrammer til hovedopgaven udarbejdet i **Mermai
 
 ---
 
-# 1. Gantt-diagram og Sprint-rekonstruktion baseret på Git Commits
+# 1. Sprint-rekonstruktion og Commit-Tidslinje baseret på Git Commits
 
 Da udviklingsforløbet primært er drevet og dokumenteret gennem hyppige Git-commits og Pull Requests på tværs af `api` (root), `backend` og `frontend`, er projektets faktiske sprint- og tidsforløb her rekonstrueret direkte fra `git log` (fra første commit `c9c320d` / `f33d296` d. **7. september 2026** frem til aflevering d. **5. januar 2027**).
 
-### 1.1 Mermaid Gantt-diagram (7. sep – 24. okt 2026 + Hovedopgaveforløb)
-
-```mermaid
-gantt
-    title Projektforløb rekonstrueret fra Git Commits (Praktik & Hovedopgave 2026/2027)
-    dateFormat  YYYY-MM-DD
-    axisFormat  %d/%m
-
-    section Sprint 1: Fundament & CI
-    Spring Boot init, JPA & Gherkin features (c9c320d, ca5872f)       :done, s1_1, 2026-09-07, 2026-09-09
-    React/Vite init, Dockerfiles & GHCR pipeline (f33d296, 75eb886)   :done, s1_2, 2026-09-07, 2026-09-10
-    Playwright RBAC E2E & TruffleHog secret scan (89bcf24, 3471d3f)   :done, s1_3, 2026-09-09, 2026-09-14
-
-    section Sprint 2: Infrastruktur & IAM
-    CMS/CRM kerne & Taiga ChatOps TG-14 sync (46c4615, c505a5b)       :done, s2_1, 2026-09-14, 2026-09-18
-    Traefik Reverse Proxy & Central E2E workflow (d70ec4f, 4cadc35)   :done, s2_2, 2026-09-18, 2026-09-21
-    Migrering fra Zitadel til Keycloak OIDC & OAuth2 Proxy (32928f5)  :done, s2_3, 2026-09-22, 2026-09-25
-    Feature/journal-crm & Taiga BDD Webhook (069386f, 33df4da)        :done, s2_4, 2026-09-23, 2026-09-27
-
-    section Sprint 3: Next.js BFF, JGit & i18n
-    JGit, StateMachine, Quartz & REST-Assured setup (91c9794)         :done, s3_1, 2026-09-26, 2026-09-29
-    Migrering til Next.js 16, NextAuth Keycloak & BFF (fa8b407)       :done, s3_2, 2026-09-29, 2026-10-01
-    JournalGitService & I18n MongoDB modul (bf32d79, f502ae4)         :done, s3_3, 2026-09-30, 2026-10-03
-    Docker Compose Secrets & entrypoint-secrets.sh (21432bf)          :done, s3_4, 2026-09-30, 2026-10-02
-
-    section Sprint 4: Domænemoduler (PCL-5 & Klinik)
-    UUID-migrering, ProviderProfile & Service entiteter (3103cd9)     :done, s4_1, 2026-10-03, 2026-10-05
-    Psychotraumatology (PCL-5) & TherapistClinicalNote (bdc2b79)      :done, s4_2, 2026-10-04, 2026-10-06
-    Feature/TG-29 i18n Localization & Dashboard UI (aa45c1c)          :done, s4_3, 2026-10-04, 2026-10-07
-
-    section Sprint 5: Base-Arkitektur, Timefold & Finans
-    Next.js BFF Token Refresh & Multi-Window JGit UI (779b1ba)        :done, s5_1, 2026-10-13, 2026-10-15
-    Timefold AI Booking Solver & Klinik-livscyklus (3124690, 5c87524) :done, s5_2, 2026-10-14, 2026-10-16
-    Generisk Base-Arkitektur (BaseEntity->BaseController) (403ffb1)   :crit, done, s5_3, 2026-10-15, 2026-10-17
-    Swimlane- & Arkitekturdiagrammer v2 (827846f, 7d6e4ea)            :done, s5_4, 2026-10-14, 2026-10-17
-    Finans (KillBill/Fineract), IBAN Handshake & 100% JaCoCo (d6e731d) :crit, done, s5_5, 2026-10-18, 2026-10-25
-
-    section Hovedopgave: Rapport & Aflevering
-    Rapportudkast, Vejledermøder & Skriveworkshop (24. nov)           :active, h1, 2026-10-27, 2026-11-30
-    Procesdel, Korrektur & Færdiggørelse af Hovedopgave               :h2, 2026-12-01, 2027-01-04
-    Aflevering i WISEflow (5. januar)                                 :milestone, m1, 2027-01-05, 1d
-    Mundtlig Eksamen (21.-22. januar)                                 :milestone, m2, 2027-01-21, 2d
-```
-
-### 1.2 Visuel Commit-Tidslinje (Flowchart) & Commit-Log Tabel til Procesdelen
+### 1.1 Visuel Commit-Tidslinje (Flowchart) & Commit-Log Tabel til Procesdelen
 
 ```mermaid
 flowchart LR
-    S1["Sprint 1 (07/09 - 14/09)\n• c9c320d: Spring Boot & JPA init\n• f33d296: Frontend init\n• 75eb886: GHCR & E2E pipeline\n• 3471d3f: TruffleHog scan"]
+    S1["Sprint 1 (07/09 - 14/09)\n• c9c320d: Spring Boot & JPA init\n• f33d296: Frontend init\n• 75eb886: GHCR & E2E pipeline\n• 89bcf24: Playwright RBAC E2E"]
     S2["Sprint 2 (14/09 - 25/09)\n• c505a5b: Taiga TG-14 ChatOps\n• 32928f5: Zitadel -> Keycloak OIDC\n• 069386f: feature/journal-crm\n• 33df4da: Taiga BDD webhook"]
     S3["Sprint 3 (26/09 - 02/10)\n• 91c9794: JGit, Quartz, StateMachine\n• fa8b407: Next.js 16 + next-intl\n• bf32d79: JournalGitService\n• f502ae4: I18n MongoDB modul"]
     S4["Sprint 4 (03/10 - 12/10)\n• 3103cd9: UUID, Provider & Service\n• bdc2b79: PCL-5 Psychotraumatology\n• efc4357: TherapistClinicalNote\n• aa45c1c: TG-29 Localization PR"]
@@ -92,7 +47,7 @@ flowchart LR
 
 | Sprint & Periode | Centrale Git Commits (`backend` / `frontend` / `api`) | Leveret Funktionalitet & Arkitektur |
 | :--- | :--- | :--- |
-| **Sprint 1**<br>*(07. sep – 14. sep 2026)* | `c9c320d`, `ca5872f`, `f33d296`, `75eb886`, `89bcf24`, `3471d3f` | Opstart af Spring Boot backend, første Gherkin `.feature`-filer til journal/psykotraumatologi, Dockerisering, GHCR container-pipeline, Playwright E2E-skelet og TruffleHog pre-commit sikkerhedsscanning. |
+| **Sprint 1**<br>*(07. sep – 14. sep 2026)* | `c9c320d`, `ca5872f`, `f33d296`, `75eb886`, `89bcf24` | Opstart af Spring Boot backend, første Gherkin `.feature`-filer til journal/psykotraumatologi, Dockerisering, GHCR container-pipeline og Playwright E2E-skelet. |
 | **Sprint 2**<br>*(14. sep – 25. sep 2026)* | `46c4615`, `c505a5b` (`TG-14`), `d70ec4f`, `32928f5` (#37), `40af524`, `069386f` (#21), `33df4da` | Opsætning af Traefik reverse proxy, arkitektonisk skift fra Zitadel til **Keycloak 24 OIDC** med dedikeret PostgreSQL `auth-db`, samt automatisk Taiga-til-GitHub BDD synkronisering. |
 | **Sprint 3**<br>*(26. sep – 02. okt 2026)* | `91c9794`, `a17c344` (`TG-26`), `6446311` (`TG-27`), `fa8b407`, `94e7ed1`, `bf32d79`, `f502ae4`, `21432bf` | Skift fra Vite SPA til **Next.js 16 BFF med NextAuth**, implementering af [`JournalGitService`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/features/journal/JournalFeature.java) (Eclipse JGit), `I18nService` (MongoDB) og Docker Compose secrets-håndtering. |
 | **Sprint 4**<br>*(03. okt – 12. okt 2026)* | `3103cd9`, `1d0e7e9`, `bdc2b79`, `efc4357`, `5f22640`, `d118282`, `aa45c1c` (`TG-29`), `28bf632` | Gennemførelse af UUID-identitet på tværs af entiteter, oprettelse af [`PsychotraumatologyFeature`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/features/psychotraumatology/PsychotraumatologyFeature.java) (PCL-5), fortrolige terapeutnoter (`TherapistClinicalNote`) og fuld flersproget lokaliserings-pipeline. |
@@ -171,39 +126,38 @@ gitGraph
 
 ---
 
-# 3. Flowchart / Pipeline – CI/CD, TruffleHog, Taiga Sync & Outside-In BDD/TDD
+# 3. Flowchart / Pipeline – CI/CD, GitHub SDLC & Outside-In BDD/TDD
 
-Dette flowchart viser den samlede udviklings-, sikkerheds- og CI/CD-pipeline på tværs af [`.pre-commit-config.yaml`](file:///z:/home/work/projects/api/backend/.pre-commit-config.yaml), [`trufflehog.yml`](file:///z:/home/work/projects/api/frontend/.github/workflows/trufflehog.yml), [`taiga_bdd_sync.yml`](file:///z:/home/work/projects/api/.github/workflows/taiga_bdd_sync.yml), [`pom.xml`](file:///z:/home/work/projects/api/backend/pom.xml) og [`docker-publish.yml`](file:///z:/home/work/projects/api/backend/.github/workflows/docker-publish.yml):
+Dette flowchart viser den samlede udviklings-, SDLC- og CI/CD-pipeline på tværs af [`.github/workflows/sdlc-commit-sync.yml`](file:///z:/home/work/projects/api/.github/workflows/sdlc-commit-sync.yml), [`.github/workflows/sdlc-verify-and-sync.yml`](file:///z:/home/work/projects/api/.github/workflows/sdlc-verify-and-sync.yml), [`pom.xml`](file:///z:/home/work/projects/api/backend/pom.xml) og [`docker-publish.yml`](file:///z:/home/work/projects/api/backend/.github/workflows/docker-publish.yml):
 
 ```mermaid
 flowchart TD
-    subgraph LocalDev["1. Lokal Udvikling & Pre-Commit Gate"]
-        US["📋 Krav / User Story\n(Gherkin .feature & Taiga TG-ID)"] --> Branch["🌿 Feature Branch\nfeature/tg-<id>-<beskrivelse>"]
+    subgraph LocalDev["1. Lokal Udvikling & Test-Loop"]
+        US["📋 Krav / GitHub Issue\n(Gherkin .feature & GitHub Projects v2)"] --> Branch["🌿 Træ-isomorf Branch\nfeature/<id>-<beskrivelse>"]
         Branch --> Code["💻 Outside-In BDD/TDD Kodning\n(Next.js 16 BFF + Spring Boot 3.3)"]
-        Code --> PreCommit{"🔒 Pre-Commit Hook\nTruffleHog Secret Scan"}
-        PreCommit -- "Secrets fundet (Fejl)" --> BlockCommit["❌ Commit Afvist\n(Fjern API-nøgler/passwords)"]
-        BlockCommit --> Code
+        Code --> LocalTest{"✅ Lokal Unit/TDD-test\n(JUnit 5 / Vitest)"}
+        LocalTest -- "Fejl" --> Code
     end
 
-    subgraph GitHubCI["2. GitHub Actions CI & Test Verifikation"]
-        PreCommit -- "0 Secrets (Grøn)" --> Push["⬆️ git push origin feature/..."]
-        Push --> THAction["🛡️ GitHub Action: TruffleHog Scan\n(frontend/.github/workflows/trufflehog.yml)"]
-        Push --> BackendTest["☕ Backend Maven Test & Coverage\n• H2 In-Memory + Testcontainers MongoDB\n• JUnit 5 + Cucumber Java (29 scenarier)"]
+    subgraph GitHubCI["2. GitHub Actions CI, SDLC & 100% Verification"]
+        LocalTest -- "Grøn" --> Push["⬆️ git push origin feature/..."]
+        Push --> CommitSync["🔄 SDLC Commit Tag Sync\n(sdlc-commit-sync.yml -> GitHub Projects v2)"]
+        Push --> BackendTest["☕ Backend Maven Test & Coverage\n• H2 In-Memory + Testcontainers MongoDB\n• JUnit 5 + Cucumber Java"]
         BackendTest --> JaCoCo{"📊 JaCoCo Coverage Gate\nLine, Branch, Method, Class = 100%?"}
         JaCoCo -- "< 100% Dækning" --> BuildFail["❌ Maven Build Fejler\n(jacoco-check gate)"]
         BuildFail --> Code
 
-        Push --> FrontendTest["⚛️ Frontend Test & E2E\n• ESLint + Vitest Coverage\n• Cucumber.js + Playwright E2E"]
+        Push --> FrontendTest["⚛️ Frontend & SDLC Test & E2E\n• ESLint + Vitest 100% Istanbul\n• Cucumber.js + Playwright E2E"]
     end
 
-    subgraph CDDeploy["3. Container Publish, Deployment & Taiga Sync"]
-        JaCoCo -- "= 100% Bestået" --> PRMerge["🔀 Pull Request Merge til dev / main\n(Ref: TG-<id> #done)"]
+    subgraph CDDeploy["3. Container Publish, Deployment & CI Green Gate"]
+        JaCoCo -- "= 100% Bestået" --> PRMerge["🔀 Pull Request & sdlc:verify Green Gate\n(Merge til dev / main -> Done)"]
         FrontendTest --> PRMerge
-        THAction --> PRMerge
+        CommitSync --> PRMerge
 
-        PRMerge --> TaigaSync["🔄 Taiga BDD Sync Workflow\n(.github/workflows/taiga_bdd_sync.yml)"]
+        PRMerge --> SdlcVerify["🟢 SDLC Verify & Living Spec Sync\n(.github/workflows/sdlc-verify-and-sync.yml)"]
         PRMerge --> GHCR["🐳 Docker Multi-Stage Build & Push\n• ghcr.io/7-3-n-3-7/backend:latest\n• ghcr.io/7-3-n-3-7/frontend:latest"]
-        GHCR --> ProdRollout["🚀 Cloud VM (Docker Compose + Traefik)\nWatchtower / Automatisk Container Rollout"]
+        GHCR --> ProdRollout["🚀 Cloud VM (Docker Compose + Traefik)\nDocker Secrets & Container Rollout"]
     end
 ```
 
