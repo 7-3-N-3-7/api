@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
  * Builds the standalone interactive Pan & Zoom vector diagram viewer
- * (docs/diagrams/diagram-oversigt.html) containing all 45 thesis diagrams:
+ * (docs/diagrams/diagram-oversigt.html) containing all 44 thesis diagrams:
  *   - 4 Mermaid diagrams in docs/diagrams/
  *   - 15 Mermaid diagrams + 1 PlantUML diagram in infrastructure/diagrams/
- *   - 25 Mermaid catalog diagrams in HOVEDOPGAVE_DIAGRAMMER.md
+ *   - 24 Mermaid catalog diagrams in HOVEDOPGAVE_DIAGRAMMER.md
  */
 
 import fs from "node:fs";
@@ -107,8 +107,6 @@ const INFRA_META = {
 };
 
 const KATALOG_NOTES = {
-  "katalog-01-gantt-projektforloeb":
-    "Detaljeret Gantt-tidslinje rekonstrueret fra projektets Git-commits (september 2026 – januar 2027) og hovedopgavemilepæle.",
   "katalog-02-commit-tidslinje":
     "Visuel commit-tidslinje på tværs af Sprint 1–5 med centrale arkitektoniske milepæle.",
   "katalog-03-gitgraph-github-branches":
@@ -116,7 +114,7 @@ const KATALOG_NOTES = {
   "katalog-04-gitgraph-jgit-patient-journal":
     "GitGraph over logiske patientjournal-branches i JournalFeature.JournalGitService (main, trauma-therapy, private-diary).",
   "katalog-05-cicd-pipeline-bdd-tdd":
-    "Historisk katalogdiagram fra Sprint 1–5 over CI/CD- og sikkerhedspipeline (inkl. daværende TruffleHog- og Taiga-trin) frem til 100 % JaCoCo-gate og GHCR-udrulning.",
+    "Samlet CI/CD- og SDLC-pipeline fra lokal BDD/TDD-kodning over GitHub Actions commit-tag-synk og 100 % JaCoCo/Istanbul gates til GHCR-udrulning.",
   "katalog-06-er-diagram-polyglot":
     "Komplet Polyglot ER-diagram for PostgreSQL (business-db), MongoDB (i18n_dictionaries) og Eclipse JGit (journal-repo).",
   "katalog-07-state-samtykke-handshake":
@@ -237,7 +235,7 @@ function collectViewerJobs() {
   });
 
   const katalogGroupLabel =
-    "HOVEDOPGAVE_DIAGRAMMER.md — Bilag 17.4–17.5: Projektforløb, GitGraph, ER, State & Sekvensdiagrammer (25)";
+    "HOVEDOPGAVE_DIAGRAMMER.md — Bilag 17.4–17.5: Projektforløb, GitGraph, ER, State & Sekvensdiagrammer (24)";
   const katalogJobs = parseKatalogMermaidJobs();
   for (const kj of katalogJobs) {
     const note = KATALOG_NOTES[kj.slug];

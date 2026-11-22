@@ -31,7 +31,6 @@ export const DEFAULT_THEME_INIT =
   `%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': '${INIT_FONT_FAMILY}', 'fontSize': '14px'}}}%%`;
 
 export const KATALOG_SLUGS = [
-  "katalog-01-gantt-projektforloeb",
   "katalog-02-commit-tidslinje",
   "katalog-03-gitgraph-github-branches",
   "katalog-04-gitgraph-jgit-patient-journal",

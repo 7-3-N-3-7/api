@@ -151,7 +151,7 @@ Denne rapport udgør den afsluttende hovedopgave på datamatikeruddannelsen ved 
 - **Praktik-/Samarbejdsvirksomhed:** Institut for Folkesundhed / IFHI (`Integrate Platform` / `EduJournal`)
 
 #### Afgrænsning mellem praktikforløb og hovedopgaveforløb (Jf. Slide 4 & 12)
-Projektet tager udgangspunkt i det systemfundament, der blev påbegyndt under praktikforløbet, og er i hovedopgaveperioden videreudviklet i et omfang svarende til ca. 3–4 uger på 50% tid parallelt med rapportskrivningen:
+På datamatikeruddannelsen har jeg lært den klassiske arkitektur **MVC** (*Model, View, Controller*), lagdelingen **Entity, DTO, DAO, Service, Controller og Route** samt objektorienteringens fire grundsøjler (**Inheritance, Abstraction, Encapsulation og Polymorphism**). Som mit eget arkitektoniske afsæt fra studiet valgte jeg at sætte **Encapsulation** (indkapsling) i centrum ved at samle fælles opførsel i en superklasse med abstrakte baseklasser for alle seks lag for at minimere boilerplate-kode. Projektet bygger videre på det systemfundament, der blev påbegyndt under praktikforløbet, og er i hovedopgaveperioden videreudviklet i et omfang svarende til ca. 3–4 uger på 50% tid parallelt med rapportskrivningen:
 
 | Fase / Periode | Udviklede moduler, arkitektur og procesaktiviteter |
 | :--- | :--- |
@@ -540,7 +540,18 @@ flowchart TB
 >   - **Databasedesign** (EER-diagram) og **Brugergrænsefladedesign**.
 
 ### 7.1 Designklassediagram og Design Patterns
-For at undgå gentagen CRUD-logik og pakke-fragmentering på tværs af platformens domænemoduler (`Appointment`, `JournalEntry`, `Organisation`, `Service`, `UserEntity`, `PsychotraumatologyTest` m.fl.) blev to designalternativer analyseret:
+På datamatikeruddannelsen lærte jeg den klassiske **MVC**-opdeling (*Model, View, Controller*), lagdelingen **Entity, DTO, DAO, Service, Controller og Route** samt de fire OOP-søjler (**Inheritance, Abstraction, Encapsulation og Polymorphism**). For at minimere gentagen CRUD-boilerplate på tværs af platformens domænemoduler valgte jeg bevidst at sætte **Encapsulation** (indkapsling) i centrum gennem en superklasse-arkitektur med abstrakte baseklasser for lagene. I **EduJournal** gennemgik dette studieudgangspunkt en to-trins evolution fra traditionel horisontal lagdeling til en konsolideret **2-fils Core** + **Vertical Feature Slices**, hvor `BaseService<E, D>` og `BaseController<E, D>` (+ REST-routes) stadig er `public static abstract` superklasser, mens `Entity` (`Identifiable`), `DTO` (`HasId` så Java 17 `record` kan bruges) og `DAO` (`BaseRepository<E>`) blev løftet til rene interfaces (spejlet 1:1 i frontenden via `BaseApiService<DTO, ID>` og `useBaseCrud()`).
+
+| OOP-søjle | Anvendelse i EduJournal (Backend & Frontend) |
+| :--- | :--- |
+| **Encapsulation (Hovedfokus)** | `BaseDomainCore.java` (283 linjer) og `BaseWebCore.java` (183 linjer) indkapsler transaktioner, URI-bygning og RFC 7807-fejl; slice-klasser (`Repository`, `Service`, `Controller`) er `package-private` (og `ApiService` i frontend er modul-privat). |
+| **Abstraction** | Abstrakte superklasser (`BaseService`, `BaseController`, `BaseApiService`) og kontrakter (`HasId`, `Identifiable`, `BaseRepository`, `Port`) skjuler infrastruktur og transportdetaljer. |
+| **Inheritance** | Flad 1-niveau nedarvning fjerner CRUD-boilerplate (fx arver `BaseController` alle 6 REST-routes og `BaseService` alle 8 CRUD/opslagsmetoder, så `UserController` fylder blot 6 kodelinjer og `ManagementKpiRepository` 1 linje). |
+| **Polymorphism** | `BaseController` og `useBaseCrud()` arbejder ensartet mod alle subtyper, mens *Template Method*-hooks (`toDto`, `toEntity`, `validateBeforeCreate/Update`) og `@Override` specialiserer adfærden ved runtime. |
+
+*Kritisk trade-off (**Composition over Inheritance**):* Nedarvning begrænses bevidst til ét fladt niveau udelukkende til mekanisk CRUD-plumbing (*Template Method*), mens alt samarbejde mellem lag og på tværs af domæner bruger **komposition og konstruktør-injektion** af smalle `Port`-interfaces — dermed undgås *Fragile Base Class*-problemet.
+
+Til den konkrete struktur blev to designalternativer analyseret:
 1. **Alternativ A (Traditionel horisontal lagdeling med duplikerede Controller/Service-filer pr. entitet):** Simpelt ved 1–2 entiteter, men spreder én forretningsfunktion ud over mange pakker (*Lav Kohesionskraft*) og bryder med *DRY (Don't Repeat Yourself)* og *Open/Closed Principle (OCP)*.
 2. **Alternativ B (Konsolideret 2-Fils Base-Core låst til universel `UUID` + Package-by-Feature Vertical Slices – Valgt):** Al generisk infrastruktur samles i to statiske container-filer i `core`-pakken ([`BaseDomainCore.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/core/BaseDomainCore.java) og [`BaseWebCore.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/core/BaseWebCore.java)) med universel `UUID`-identitet, mens hver forretningsfeature samles i én selvstændig Vertical Slice (`<FeatureName>Feature.java`), hvor Repository, Service og Controller er **package-private** (*Information Hiding*), og kun Entity (`implements Identifiable`) og Java `record` DTO (`implements HasId`) er `public`.
 
@@ -1224,53 +1235,11 @@ flowchart LR
 >   - **Estimater vs. faktisk tidsforbrug** (f.eks. planlagte vs. realiserede Story Points pr. sprint)
 > - Indsæt gerne screenshots/diagrammer af jeres backlog-board (f.eks. Taiga) og sprintforløb.
 
-### 13.1 Projekt- og Sprintplan rekonstrueret fra Git Commits (Gantt & Gitgraph)
+### 13.1 Projekt- og Sprintplan rekonstrueret fra Git Commits (Gitgraph & Sprint-log)
 
 > [!TIP]
 > **Procesmæssig transparens (Git Commits som empirisk dokumentation):**  
 > Da opgavesporingen i Taiga ikke blev opdateret konsekvent ved hver enkelt delopgave, er det faktiske tidsforløb rekonstrueret empirisk ud fra projektets Git-historik (`git log` på tværs af `api`, `backend` og `frontend` fra første commit d. **7. september 2026**). Dette giver et nøjagtigt, tidsstemplet revisionsspor over alle udviklingsfaser.
-
-```mermaid
-gantt
-    title Projektforløb rekonstrueret fra Git Commits (Praktik & Hovedopgave 2026/2027)
-    dateFormat  YYYY-MM-DD
-    axisFormat  %d/%m
-
-    section Sprint 1: Fundament & CI
-    Spring Boot init, JPA & Gherkin features (c9c320d, ca5872f)       :done, s1_1, 2026-09-07, 2026-09-09
-    React/Vite init, Dockerfiles & GHCR pipeline (f33d296, 75eb886)   :done, s1_2, 2026-09-07, 2026-09-10
-    Playwright RBAC E2E & TruffleHog secret scan (89bcf24, 3471d3f)   :done, s1_3, 2026-09-09, 2026-09-14
-
-    section Sprint 2: Infrastruktur & IAM
-    CMS/CRM kerne & Taiga ChatOps TG-14 sync (46c4615, c505a5b)       :done, s2_1, 2026-09-14, 2026-09-18
-    Traefik Reverse Proxy & Central E2E workflow (d70ec4f, 4cadc35)   :done, s2_2, 2026-09-18, 2026-09-21
-    Migrering fra Zitadel til Keycloak OIDC & OAuth2 Proxy (32928f5)  :done, s2_3, 2026-09-22, 2026-09-25
-    Feature/journal-crm & Taiga BDD Webhook (069386f, 33df4da)        :done, s2_4, 2026-09-23, 2026-09-27
-
-    section Sprint 3: Next.js BFF, JGit & i18n
-    JGit, StateMachine, Quartz & REST-Assured setup (91c9794)         :done, s3_1, 2026-09-26, 2026-09-29
-    Migrering til Next.js 16, NextAuth Keycloak & BFF (fa8b407)       :done, s3_2, 2026-09-29, 2026-10-01
-    JournalGitService & I18n MongoDB modul (bf32d79, f502ae4)         :done, s3_3, 2026-09-30, 2026-10-03
-    Docker Compose Secrets & entrypoint-secrets.sh (21432bf)          :done, s3_4, 2026-09-30, 2026-10-02
-
-    section Sprint 4: Domænemoduler (PCL-5 & Klinik)
-    UUID-migrering, ProviderProfile & Service entiteter (3103cd9)     :done, s4_1, 2026-10-03, 2026-10-05
-    Psychotraumatology (PCL-5) & TherapistClinicalNote (bdc2b79)      :done, s4_2, 2026-10-04, 2026-10-06
-    Feature/TG-29 i18n Localization & Dashboard UI (aa45c1c)          :done, s4_3, 2026-10-04, 2026-10-07
-
-    section Sprint 5: Base-Arkitektur, Timefold & Finans
-    Next.js BFF Token Refresh & Multi-Window JGit UI (779b1ba)        :done, s5_1, 2026-10-13, 2026-10-15
-    Timefold AI Booking Solver & Klinik-livscyklus (3124690, 5c87524) :done, s5_2, 2026-10-14, 2026-10-16
-    Generisk Base-Arkitektur (BaseEntity->BaseController) (403ffb1)   :crit, done, s5_3, 2026-10-15, 2026-10-17
-    Swimlane- & Arkitekturdiagrammer v2 (827846f, 7d6e4ea)            :done, s5_4, 2026-10-14, 2026-10-17
-    Finans (KillBill/Fineract), IBAN Handshake & 98% JaCoCo (d6e731d) :crit, done, s5_5, 2026-10-18, 2026-10-25
-
-    section Hovedopgave: Rapport & Aflevering
-    Rapportudkast, Vejledermøder & Skriveworkshop (24. nov)           :active, h1, 2026-10-27, 2026-11-30
-    Procesdel, Korrektur & Færdiggørelse af Hovedopgave               :h2, 2026-12-01, 2027-01-04
-    Aflevering i WISEflow (5. januar)                                 :milestone, m1, 2027-01-05, 1d
-    Mundtlig Eksamen (21.-22. januar)                                 :milestone, m2, 2027-01-21, 2d
-```
 
 #### Branch- og Merge-historik (`gitGraph`)
 
@@ -1318,7 +1287,7 @@ gitGraph
 
 | Sprint & Periode | Centrale Git Commits (`backend` / `frontend` / `api`) | Leverancer & Prioritet (MoSCoW) | Estimeret vs. Faktisk | Afvigelse & Forklaring |
 | :--- | :--- | :--- | :---: | :--- |
-| **Sprint 1**<br>*(07/09 – 14/09)* | `c9c320d`, `ca5872f`, `f33d296`, `75eb886`, `89bcf24`, `3471d3f` | **Must Have:** Spring Boot + JPA init, Gherkin `.feature`-filer, Dockerfiles, GHCR CI/CD og TruffleHog secret scan. | 13 SP / 13 SP | `0 SP`: Planmæssig etablering af repository- og CI-fundament. |
+| **Sprint 1**<br>*(07/09 – 14/09)* | `c9c320d`, `ca5872f`, `f33d296`, `75eb886`, `89bcf24` | **Must Have:** Spring Boot + JPA init, Gherkin `.feature`-filer, Dockerfiles, GHCR CI/CD og Playwright E2E-skelet. | 13 SP / 13 SP | `0 SP`: Planmæssig etablering af repository- og CI-fundament. |
 | **Sprint 2**<br>*(14/09 – 25/09)* | `46c4615`, `c505a5b` (`TG-14`), `d70ec4f`, `32928f5`, `40af524`, `069386f`, `33df4da` | **Must Have:** Traefik reverse proxy, migrering fra Zitadel til **Keycloak OIDC** (`feature/keycloak`) samt Taiga BDD webhook. | 13 SP / 16 SP | `+3 SP`: Skiftet fra Zitadel til Keycloak krævede ny PostgreSQL `auth-db` og OAuth2 JWKS-konfiguration. |
 | **Sprint 3**<br>*(26/09 – 02/10)* | `91c9794`, `a17c344` (`TG-26`), `6446311` (`TG-27`), `fa8b407`, `94e7ed1`, `bf32d79`, `f502ae4`, `21432bf` | **Must Have:** Skift fra Vite til **Next.js 16 BFF + NextAuth**, [`JournalGitService`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/service/JournalGitService.java) (Eclipse JGit), `I18nService` (MongoDB) & Docker secrets. | 15 SP / 17 SP | `+2 SP`: Indførelse af Next.js BFF-proxy og Docker secrets på tværs af containere. |
 | **Sprint 4**<br>*(03/10 – 12/10)* | `3103cd9`, `1d0e7e9`, `bdc2b79`, `efc4357`, `5f22640`, `d118282`, `aa45c1c` (`TG-29`), `28bf632` | **Must Have:** UUID-identitet, `ProviderProfile`, `Service`, `Psychotraumatology` (PCL-5), `TherapistClinicalNote` & `feature/TG-29-i18-localization`. | 13 SP / 13 SP | `0 SP`: Høj kadence pga. genbrug af etableret BFF- og MongoDB/JPA-struktur. |
@@ -1326,7 +1295,7 @@ gitGraph
 | **Hovedopgave**<br>*(27/10 – 05/01)* | Rapportskrivning, Skriveworkshop (24/11), Vejledermøder & Aflevering (05/01) | **Must Have:** Dokumentation af Produktdel (Kap. 1–10) og Procesdel (Kap. 11–14). | `[Udfyld]` | `[Udfyld ved afslutning]` |
 
 ### 13.3 Automatiseret sporbarhed mellem Krav (GitHub Projects v2), Træ-isomorfe Branches, Kontrakter og Test
-Hvor Sprint 1–2 benyttede Taiga og en ekstern webhook-synkronisering (`taiga_bdd_sync.yml`), konsoliderer projektets **Generiske GitHub SDLC-Framework** ([`sdlc.config.json`](file:///z:/home/work/projects/api/sdlc.config.json), [`sdlc-domain.ts`](file:///z:/home/work/projects/api/sdlc/core/sdlc-domain.ts) og [`sdlc-github.ts`](file:///z:/home/work/projects/api/sdlc/core/sdlc-github.ts)) hele livscyklussen i ét repository via [`.github/workflows/sdlc-issue-sync.yml`](file:///z:/home/work/projects/api/.github/workflows/sdlc-issue-sync.yml) og [`.github/workflows/sdlc-verify-and-sync.yml`](file:///z:/home/work/projects/api/.github/workflows/sdlc-verify-and-sync.yml). GitHub Projects v2, hierarkiske Sub-Issues (`@spawn-subissue`), træ-isomorfe branches (`dev` $\rightarrow$ `feature/<id>-<slug>` $\rightarrow$ child-branches), fælles Gherkin-kontrakter i `specs/features/` samt `sdlc:verify` (6 JaCoCo- og 4 Istanbul-gates $\ge 98\%$) danner et lukket to-vejs *Living Spec & Regression feedback-loop*.
+Hvor Sprint 1–2 benyttede Taiga og en ekstern webhook-synkronisering (`taiga_bdd_sync.yml`), valgte jeg i hovedopgaven at bruge **GitHub Projects** sammen med **GitHub Issues** for at skabe et direkte, integreret samarbejde mellem kodebasen og hele **Software Development Life Cycle (SDLC)** uden tilstandsdrift mod eksterne værktøjer. Projektets **Generiske GitHub SDLC-Framework** ([`sdlc.config.json`](file:///z:/home/work/projects/api/sdlc.config.json), [`sdlc-domain.ts`](file:///z:/home/work/projects/api/sdlc/core/sdlc-domain.ts) og [`sdlc-github.ts`](file:///z:/home/work/projects/api/sdlc/core/sdlc-github.ts)) konsoliderer hele livscyklussen gennem tre sammenhængende workflows: [`.github/workflows/sdlc-issue-sync.yml`](file:///z:/home/work/projects/api/.github/workflows/sdlc-issue-sync.yml) (som oversætter GitHub Issues & hierarkiske Sub-Issues til træ-isomorfe branches `dev` $\rightarrow$ `feature/<id>-<slug>` $\rightarrow$ child-branches og delte Gherkin-kontrakter i `specs/features/`), [`.github/workflows/sdlc-commit-sync.yml`](file:///z:/home/work/projects/api/.github/workflows/sdlc-commit-sync.yml) (som på tværs af `api`, `backend` og `frontend` synkroniserer commit-tags som `#backlog`, `#spec-ready`/`#spec`, `#red-outer-bdd`/`#bdd`/`#red`, `#inner-tdd`/`#tdd`, `#green-gate`/`#green` og `#regression` direkte med GitHub Issues og board-status), samt [`.github/workflows/sdlc-verify-and-sync.yml`](file:///z:/home/work/projects/api/.github/workflows/sdlc-verify-and-sync.yml), der via `sdlc:verify` (6 JaCoCo- og 4 Istanbul-gates på 100%) eksklusivt styrer `Done`-overgangen ved grøn CI / merge til `main` og lukker det to-vejs *Living Spec & Regression feedback-loop*.
 
 ### 13.4 Delkonklusion
 `[Opsummer hvad tidsforløbet og estimaterne viser om projektets fremdrift, som evalueres i Kapitel 14.]`
