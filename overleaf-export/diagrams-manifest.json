@@ -77,7 +77,11 @@
     "aspectRatio": 0.549,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 82783
+=======
+    "bytes": 82791
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "class-diagram-swimlane-clinic-platform",
@@ -93,7 +97,11 @@
     "aspectRatio": 1.188,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 75563
+=======
+    "bytes": 75597
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "class-diagram-swimlane-core",
@@ -109,7 +117,11 @@
     "aspectRatio": 0.747,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 114806
+=======
+    "bytes": 114772
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "class-diagram-swimlane-finance",
@@ -125,7 +137,11 @@
     "aspectRatio": 1.352,
     "orientation": "landscape",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 100073
+=======
+    "bytes": 100053
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "class-diagram-swimlane-i18n",
@@ -141,7 +157,11 @@
     "aspectRatio": 0.695,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 81912
+=======
+    "bytes": 81898
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "class-diagram-swimlane-journal",
@@ -157,7 +177,11 @@
     "aspectRatio": 1.211,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 75875
+=======
+    "bytes": 75862
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "class-diagram-swimlane-psychotraumatology",
@@ -173,7 +197,11 @@
     "aspectRatio": 1.12,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 71032
+=======
+    "bytes": 71036
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "class-diagram-swimlane-user",
@@ -189,7 +217,11 @@
     "aspectRatio": 0.93,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 79933
+=======
+    "bytes": 79923
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "deployment-diagram",
@@ -221,7 +253,11 @@
     "aspectRatio": 0.782,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 72684
+=======
+    "bytes": 72659
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "eer-diagram",
@@ -237,7 +273,11 @@
     "aspectRatio": 0.887,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 132531
+=======
+    "bytes": 132630
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "backend_class_diagram",
@@ -269,7 +309,11 @@
     "aspectRatio": 0.767,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 115535
+=======
+    "bytes": 115556
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "double-loop-tdd",
@@ -318,6 +362,25 @@
     "orientation": "portrait",
     "rasterImageCount": 0,
     "bytes": 43048
+<<<<<<< HEAD
+=======
+  },
+  {
+    "slug": "katalog-01-gantt-projektforloeb",
+    "file": "katalog-01-gantt-projektforloeb.pdf",
+    "source": "HOVEDOPGAVE_DIAGRAMMER.md",
+    "group": "HOVEDOPGAVE_DIAGRAMMER.md",
+    "title": "1.1 Mermaid Gantt-diagram (7. sep – 24. okt 2026 + Hovedopgaveforløb)",
+    "kind": "mermaid",
+    "rawWidth": 2408,
+    "rawHeight": 652,
+    "pdfWidthPt": 1203,
+    "pdfHeightPt": 339.75,
+    "aspectRatio": 3.541,
+    "orientation": "landscape",
+    "rasterImageCount": 0,
+    "bytes": 79363
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "katalog-02-commit-tidslinje",
@@ -397,7 +460,11 @@
     "aspectRatio": 0.67,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 133264
+=======
+    "bytes": 133281
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "katalog-07-state-samtykke-handshake",
@@ -413,7 +480,11 @@
     "aspectRatio": 0.526,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 45742
+=======
+    "bytes": 45734
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "katalog-08-state-aftale-finans",
@@ -445,7 +516,11 @@
     "aspectRatio": 0.548,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 71214
+=======
+    "bytes": 71196
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "katalog-10-activity-core",
@@ -461,7 +536,11 @@
     "aspectRatio": 0.365,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 71927
+=======
+    "bytes": 71932
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "katalog-11-sequence-core",
@@ -525,7 +604,11 @@
     "aspectRatio": 0.847,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 63338
+=======
+    "bytes": 63303
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "katalog-15-sequence-clinic-platform",
@@ -557,7 +640,11 @@
     "aspectRatio": 2.63,
     "orientation": "landscape",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 72806
+=======
+    "bytes": 72763
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "katalog-17-sequence-i18n",
@@ -589,7 +676,11 @@
     "aspectRatio": 0.896,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 58339
+=======
+    "bytes": 58358
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "katalog-19-sequence-journal",
@@ -621,7 +712,11 @@
     "aspectRatio": 0.547,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 64551
+=======
+    "bytes": 64603
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "katalog-21-sequence-psychotraumatology",
@@ -653,7 +748,11 @@
     "aspectRatio": 0.428,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
     "bytes": 68237
+=======
+    "bytes": 68217
+>>>>>>> e048c1a5aa3fa5c18abd27d137f3cc0d4b015502
   },
   {
     "slug": "katalog-23-sequence-user",
