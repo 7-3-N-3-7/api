@@ -6,14 +6,14 @@
     "group": "infrastructure/diagrams",
     "title": "activity-diagram",
     "kind": "mermaid",
-    "rawWidth": 745,
-    "rawHeight": 3614,
-    "pdfWidthPt": 258.75,
+    "rawWidth": 1054,
+    "rawHeight": 2899,
+    "pdfWidthPt": 447.75,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.215,
+    "aspectRatio": 0.372,
     "orientation": "portrait",
     "rasterImageCount": 0,
-    "bytes": 63925
+    "bytes": 53121
   },
   {
     "slug": "bdd-tdd-workflow",
@@ -22,14 +22,18 @@
     "group": "infrastructure/diagrams",
     "title": "bdd-tdd-workflow",
     "kind": "mermaid",
-    "rawWidth": 516,
-    "rawHeight": 3301,
-    "pdfWidthPt": 201,
+    "rawWidth": 577,
+    "rawHeight": 2129,
+    "pdfWidthPt": 341.25,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.167,
+    "aspectRatio": 0.284,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 49404
+=======
     "bytes": 62015
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "class-diagram-backend",
@@ -38,14 +42,14 @@
     "group": "infrastructure/diagrams",
     "title": "class-diagram-backend",
     "kind": "mermaid",
-    "rawWidth": 2295,
-    "rawHeight": 2113,
+    "rawWidth": 2625,
+    "rawHeight": 1862,
     "pdfWidthPt": 1203,
-    "pdfHeightPt": 1109.25,
-    "aspectRatio": 1.085,
-    "orientation": "portrait",
+    "pdfHeightPt": 858.75,
+    "aspectRatio": 1.401,
+    "orientation": "landscape",
     "rasterImageCount": 0,
-    "bytes": 67680
+    "bytes": 60730
   },
   {
     "slug": "class-diagram-frontend",
@@ -54,14 +58,14 @@
     "group": "infrastructure/diagrams",
     "title": "class-diagram-frontend",
     "kind": "mermaid",
-    "rawWidth": 1089,
-    "rawHeight": 1966,
-    "pdfWidthPt": 676.5,
+    "rawWidth": 1085,
+    "rawHeight": 1783,
+    "pdfWidthPt": 741.75,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.562,
+    "aspectRatio": 0.617,
     "orientation": "portrait",
     "rasterImageCount": 0,
-    "bytes": 57612
+    "bytes": 47965
   },
   {
     "slug": "class-diagram-swimlane-appointment",
@@ -70,14 +74,18 @@
     "group": "infrastructure/diagrams",
     "title": "class-diagram-swimlane-appointment",
     "kind": "mermaid",
-    "rawWidth": 1473,
-    "rawHeight": 2924,
-    "pdfWidthPt": 614.25,
+    "rawWidth": 1561,
+    "rawHeight": 2876,
+    "pdfWidthPt": 660.75,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.511,
+    "aspectRatio": 0.549,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 82791
+=======
     "bytes": 96494
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "class-diagram-swimlane-clinic-platform",
@@ -86,14 +94,18 @@
     "group": "infrastructure/diagrams",
     "title": "class-diagram-swimlane-clinic-platform",
     "kind": "mermaid",
-    "rawWidth": 2021,
-    "rawHeight": 1833,
+    "rawWidth": 2168,
+    "rawHeight": 1818,
     "pdfWidthPt": 1203,
-    "pdfHeightPt": 1093.5,
-    "aspectRatio": 1.1,
+    "pdfHeightPt": 1012.5,
+    "aspectRatio": 1.188,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 75597
+=======
     "bytes": 88313
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "class-diagram-swimlane-core",
@@ -102,14 +114,18 @@
     "group": "infrastructure/diagrams",
     "title": "class-diagram-swimlane-core",
     "kind": "mermaid",
-    "rawWidth": 1772,
-    "rawHeight": 2601,
-    "pdfWidthPt": 825.75,
+    "rawWidth": 1897,
+    "rawHeight": 2554,
+    "pdfWidthPt": 898.5,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.686,
+    "aspectRatio": 0.747,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 114772
+=======
     "bytes": 132280
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "class-diagram-swimlane-finance",
@@ -118,14 +134,18 @@
     "group": "infrastructure/diagrams",
     "title": "class-diagram-swimlane-finance",
     "kind": "mermaid",
-    "rawWidth": 2565,
-    "rawHeight": 2007,
+    "rawWidth": 2708,
+    "rawHeight": 1992,
     "pdfWidthPt": 1203,
-    "pdfHeightPt": 945.75,
-    "aspectRatio": 1.272,
-    "orientation": "portrait",
+    "pdfHeightPt": 889.5,
+    "aspectRatio": 1.352,
+    "orientation": "landscape",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 100053
+=======
     "bytes": 113337
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "class-diagram-swimlane-i18n",
@@ -134,14 +154,18 @@
     "group": "infrastructure/diagrams",
     "title": "class-diagram-swimlane-i18n",
     "kind": "mermaid",
-    "rawWidth": 1281,
-    "rawHeight": 2012,
-    "pdfWidthPt": 774,
+    "rawWidth": 1376,
+    "rawHeight": 1999,
+    "pdfWidthPt": 835.5,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.643,
+    "aspectRatio": 0.695,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 81898
+=======
     "bytes": 94502
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "class-diagram-swimlane-journal",
@@ -150,14 +174,18 @@
     "group": "infrastructure/diagrams",
     "title": "class-diagram-swimlane-journal",
     "kind": "mermaid",
-    "rawWidth": 2087,
-    "rawHeight": 1862,
+    "rawWidth": 2229,
+    "rawHeight": 1833,
     "pdfWidthPt": 1203,
-    "pdfHeightPt": 1076.25,
-    "aspectRatio": 1.118,
+    "pdfHeightPt": 993,
+    "aspectRatio": 1.211,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 75862
+=======
     "bytes": 88497
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "class-diagram-swimlane-psychotraumatology",
@@ -166,14 +194,18 @@
     "group": "infrastructure/diagrams",
     "title": "class-diagram-swimlane-psychotraumatology",
     "kind": "mermaid",
-    "rawWidth": 1929,
-    "rawHeight": 1907,
+    "rawWidth": 2106,
+    "rawHeight": 1876,
     "pdfWidthPt": 1203,
-    "pdfHeightPt": 1190.25,
-    "aspectRatio": 1.011,
+    "pdfHeightPt": 1074,
+    "aspectRatio": 1.12,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 71036
+=======
     "bytes": 83423
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "class-diagram-swimlane-user",
@@ -182,14 +214,18 @@
     "group": "infrastructure/diagrams",
     "title": "class-diagram-swimlane-user",
     "kind": "mermaid",
-    "rawWidth": 1462,
-    "rawHeight": 1721,
-    "pdfWidthPt": 1026,
+    "rawWidth": 1574,
+    "rawHeight": 1697,
+    "pdfWidthPt": 1118.25,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.853,
+    "aspectRatio": 0.93,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 79923
+=======
     "bytes": 93237
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "deployment-diagram",
@@ -198,14 +234,14 @@
     "group": "infrastructure/diagrams",
     "title": "deployment-diagram",
     "kind": "mermaid",
-    "rawWidth": 1536,
-    "rawHeight": 2925,
-    "pdfWidthPt": 639.75,
+    "rawWidth": 1679,
+    "rawHeight": 2514,
+    "pdfWidthPt": 810,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.532,
+    "aspectRatio": 0.673,
     "orientation": "portrait",
     "rasterImageCount": 0,
-    "bytes": 61162
+    "bytes": 58587
   },
   {
     "slug": "domain-model",
@@ -214,14 +250,18 @@
     "group": "infrastructure/diagrams",
     "title": "domain-model",
     "kind": "mermaid",
-    "rawWidth": 1671,
-    "rawHeight": 2271,
-    "pdfWidthPt": 891,
+    "rawWidth": 1775,
+    "rawHeight": 2281,
+    "pdfWidthPt": 940.5,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.741,
+    "aspectRatio": 0.782,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 72659
+=======
     "bytes": 85610
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "eer-diagram",
@@ -230,14 +270,18 @@
     "group": "infrastructure/diagrams",
     "title": "eer-diagram",
     "kind": "mermaid",
-    "rawWidth": 2693,
-    "rawHeight": 3207,
-    "pdfWidthPt": 1013.25,
+    "rawWidth": 2798,
+    "rawHeight": 3159,
+    "pdfWidthPt": 1067.25,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.842,
+    "aspectRatio": 0.887,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 132630
+=======
     "bytes": 143468
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "backend_class_diagram",
@@ -262,14 +306,18 @@
     "group": "docs/diagrams",
     "title": "core-and-slice-class-diagram",
     "kind": "mermaid",
-    "rawWidth": 1805,
-    "rawHeight": 2566,
-    "pdfWidthPt": 852,
+    "rawWidth": 1924,
+    "rawHeight": 2521,
+    "pdfWidthPt": 922.5,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.708,
+    "aspectRatio": 0.767,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 115556
+=======
     "bytes": 132473
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "double-loop-tdd",
@@ -278,14 +326,14 @@
     "group": "docs/diagrams",
     "title": "double-loop-tdd",
     "kind": "mermaid",
-    "rawWidth": 457,
-    "rawHeight": 1169,
-    "pdfWidthPt": 369.75,
-    "pdfHeightPt": 903.75,
-    "aspectRatio": 0.409,
+    "rawWidth": 877,
+    "rawHeight": 1016,
+    "pdfWidthPt": 693.75,
+    "pdfHeightPt": 798,
+    "aspectRatio": 0.869,
     "orientation": "portrait",
     "rasterImageCount": 0,
-    "bytes": 46324
+    "bytes": 37610
   },
   {
     "slug": "fullstack-symmetry",
@@ -294,14 +342,14 @@
     "group": "docs/diagrams",
     "title": "fullstack-symmetry",
     "kind": "mermaid",
-    "rawWidth": 1446,
-    "rawHeight": 2374,
-    "pdfWidthPt": 740.25,
+    "rawWidth": 1908,
+    "rawHeight": 2200,
+    "pdfWidthPt": 1046.25,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.615,
+    "aspectRatio": 0.87,
     "orientation": "portrait",
     "rasterImageCount": 0,
-    "bytes": 53583
+    "bytes": 43921
   },
   {
     "slug": "generic-sdlc-architecture",
@@ -310,6 +358,16 @@
     "group": "docs/diagrams",
     "title": "generic-sdlc-architecture",
     "kind": "mermaid",
+<<<<<<< HEAD
+    "rawWidth": 945,
+    "rawHeight": 1886,
+    "pdfWidthPt": 615,
+    "pdfHeightPt": 1203,
+    "aspectRatio": 0.511,
+    "orientation": "portrait",
+    "rasterImageCount": 0,
+    "bytes": 43048
+=======
     "rawWidth": 851,
     "rawHeight": 2325,
     "pdfWidthPt": 453,
@@ -318,6 +376,7 @@
     "orientation": "portrait",
     "rasterImageCount": 0,
     "bytes": 52751
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "katalog-01-gantt-projektforloeb",
@@ -333,7 +392,7 @@
     "aspectRatio": 3.541,
     "orientation": "landscape",
     "rasterImageCount": 0,
-    "bytes": 105445
+    "bytes": 79363
   },
   {
     "slug": "katalog-02-commit-tidslinje",
@@ -342,14 +401,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "1.2 Visuel Commit-Tidslinje (Flowchart) & Commit-Log Tabel til Procesdelen",
     "kind": "mermaid",
-    "rawWidth": 941,
-    "rawHeight": 292,
-    "pdfWidthPt": 732.75,
-    "pdfHeightPt": 246,
-    "aspectRatio": 2.979,
+    "rawWidth": 1510,
+    "rawHeight": 142,
+    "pdfWidthPt": 1159.5,
+    "pdfHeightPt": 133.5,
+    "aspectRatio": 8.685,
     "orientation": "landscape",
     "rasterImageCount": 0,
-    "bytes": 47455
+    "bytes": 38663
   },
   {
     "slug": "katalog-03-gitgraph-github-branches",
@@ -358,14 +417,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "2.1 Gitgraph over projektets udviklings-branches (GitHub)",
     "kind": "mermaid",
-    "rawWidth": 1130,
-    "rawHeight": 534,
-    "pdfWidthPt": 874.5,
-    "pdfHeightPt": 427.5,
-    "aspectRatio": 2.046,
+    "rawWidth": 1139,
+    "rawHeight": 543,
+    "pdfWidthPt": 890.25,
+    "pdfHeightPt": 443.25,
+    "aspectRatio": 2.008,
     "orientation": "landscape",
     "rasterImageCount": 0,
-    "bytes": 80784
+    "bytes": 72225
   },
   {
     "slug": "katalog-04-gitgraph-jgit-patient-journal",
@@ -374,14 +433,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "2.2 Gitgraph over Eclipse JGit Patient-Journal Branches (`JournalGitService`)",
     "kind": "mermaid",
-    "rawWidth": 537,
-    "rawHeight": 410,
-    "pdfWidthPt": 429.75,
-    "pdfHeightPt": 334.5,
-    "aspectRatio": 1.285,
+    "rawWidth": 547,
+    "rawHeight": 421,
+    "pdfWidthPt": 446.25,
+    "pdfHeightPt": 351.75,
+    "aspectRatio": 1.269,
     "orientation": "portrait",
     "rasterImageCount": 0,
-    "bytes": 50488
+    "bytes": 43816
   },
   {
     "slug": "katalog-05-cicd-pipeline-bdd-tdd",
@@ -390,14 +449,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "3. Flowchart / Pipeline – CI/CD, TruffleHog, Taiga Sync & Outside-In BDD/TDD",
     "kind": "mermaid",
-    "rawWidth": 776,
-    "rawHeight": 2604,
-    "pdfWidthPt": 371.25,
+    "rawWidth": 965,
+    "rawHeight": 2183,
+    "pdfWidthPt": 543.75,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.309,
+    "aspectRatio": 0.452,
     "orientation": "portrait",
     "rasterImageCount": 0,
-    "bytes": 769631
+    "bytes": 760021
   },
   {
     "slug": "katalog-06-er-diagram-polyglot",
@@ -406,14 +465,18 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "4. ER-Diagram (`erDiagram`) – PostgreSQL, MongoDB & JGit",
     "kind": "mermaid",
-    "rawWidth": 2346,
-    "rawHeight": 3743,
-    "pdfWidthPt": 759,
+    "rawWidth": 2455,
+    "rawHeight": 3686,
+    "pdfWidthPt": 806.25,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.631,
+    "aspectRatio": 0.67,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 133281
+=======
     "bytes": 144948
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "katalog-07-state-samtykke-handshake",
@@ -422,14 +485,18 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "5.1 State Machine: Samtykke-Handshake & Granulær Journaladgang",
     "kind": "mermaid",
-    "rawWidth": 1055,
-    "rawHeight": 1943,
-    "pdfWidthPt": 663.75,
+    "rawWidth": 1009,
+    "rawHeight": 1952,
+    "pdfWidthPt": 633,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.552,
+    "aspectRatio": 0.526,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 45734
+=======
     "bytes": 55396
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "katalog-08-state-aftale-finans",
@@ -438,14 +505,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "5.2 State Machine: Aftale-livscyklus (Appointment) & Finansiel Bogføring (KillBill/Fineract)",
     "kind": "mermaid",
-    "rawWidth": 1468,
-    "rawHeight": 1697,
-    "pdfWidthPt": 1044.75,
+    "rawWidth": 1471,
+    "rawHeight": 1749,
+    "pdfWidthPt": 1016.25,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.868,
+    "aspectRatio": 0.845,
     "orientation": "portrait",
     "rasterImageCount": 0,
-    "bytes": 54596
+    "bytes": 46519
   },
   {
     "slug": "katalog-09-class-fullstack-symmetry",
@@ -454,14 +521,18 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.1.0 Klassediagram – 1:1 Full-Stack Symmetri (`docs/diagrams/fullstack-symmetry.puml`)",
     "kind": "mermaid",
-    "rawWidth": 898,
-    "rawHeight": 1805,
-    "pdfWidthPt": 611.25,
+    "rawWidth": 969,
+    "rawHeight": 1800,
+    "pdfWidthPt": 659.25,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.508,
+    "aspectRatio": 0.548,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 71196
+=======
     "bytes": 83853
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "katalog-10-activity-core",
@@ -470,14 +541,18 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.1.1 Aktivitetsdiagram – `core` & RFC 7807 `ProblemDetail`",
     "kind": "mermaid",
-    "rawWidth": 593,
-    "rawHeight": 3114,
-    "pdfWidthPt": 241.5,
+    "rawWidth": 949,
+    "rawHeight": 2670,
+    "pdfWidthPt": 438.75,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.201,
+    "aspectRatio": 0.365,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 71932
+=======
     "bytes": 83827
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "katalog-11-sequence-core",
@@ -486,14 +561,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.1.2 Sekvensdiagram – `core` (`BaseController` $\\rightarrow$ `BaseService` $\\rightarrow$ `ErrorCode` / `ProblemDetail`)",
     "kind": "mermaid",
-    "rawWidth": 2285,
-    "rawHeight": 1025,
-    "pdfWidthPt": 1203.75,
-    "pdfHeightPt": 550.5,
-    "aspectRatio": 2.187,
+    "rawWidth": 2432,
+    "rawHeight": 1023,
+    "pdfWidthPt": 1203,
+    "pdfHeightPt": 517.5,
+    "aspectRatio": 2.325,
     "orientation": "landscape",
     "rasterImageCount": 0,
-    "bytes": 88972
+    "bytes": 68695
   },
   {
     "slug": "katalog-12-activity-appointment",
@@ -502,14 +577,18 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.2.1 Aktivitetsdiagram – `appointment`",
     "kind": "mermaid",
-    "rawWidth": 992,
-    "rawHeight": 2746,
-    "pdfWidthPt": 445.5,
+    "rawWidth": 1338,
+    "rawHeight": 2559,
+    "pdfWidthPt": 638.25,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.37,
+    "aspectRatio": 0.531,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 67913
+=======
     "bytes": 78044
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "katalog-13-sequence-appointment",
@@ -518,14 +597,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.2.2 Sekvensdiagram – `appointment`",
     "kind": "mermaid",
-    "rawWidth": 3591,
-    "rawHeight": 1408,
+    "rawWidth": 3816,
+    "rawHeight": 1425,
     "pdfWidthPt": 1203,
-    "pdfHeightPt": 480,
-    "aspectRatio": 2.506,
+    "pdfHeightPt": 457.5,
+    "aspectRatio": 2.63,
     "orientation": "landscape",
     "rasterImageCount": 0,
-    "bytes": 79434
+    "bytes": 57819
   },
   {
     "slug": "katalog-14-activity-clinic-platform",
@@ -534,14 +613,18 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.3.1 Aktivitetsdiagram – `clinic-platform`",
     "kind": "mermaid",
-    "rawWidth": 1044,
-    "rawHeight": 2344,
-    "pdfWidthPt": 546.75,
+    "rawWidth": 1817,
+    "rawHeight": 2152,
+    "pdfWidthPt": 1019.25,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.454,
+    "aspectRatio": 0.847,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 63303
+=======
     "bytes": 71622
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "katalog-15-sequence-clinic-platform",
@@ -550,14 +633,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.3.2 Sekvensdiagram – `clinic-platform`",
     "kind": "mermaid",
-    "rawWidth": 3724,
-    "rawHeight": 1843,
+    "rawWidth": 3662,
+    "rawHeight": 1877,
     "pdfWidthPt": 1203,
-    "pdfHeightPt": 602.25,
-    "aspectRatio": 1.998,
+    "pdfHeightPt": 623.25,
+    "aspectRatio": 1.93,
     "orientation": "landscape",
     "rasterImageCount": 0,
-    "bytes": 87101
+    "bytes": 65001
   },
   {
     "slug": "katalog-16-activity-i18n",
@@ -566,14 +649,18 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.4.1 Aktivitetsdiagram – `i18n`",
     "kind": "mermaid",
-    "rawWidth": 1634,
-    "rawHeight": 1015,
+    "rawWidth": 2334,
+    "rawHeight": 863,
     "pdfWidthPt": 1203,
-    "pdfHeightPt": 757.5,
-    "aspectRatio": 1.588,
+    "pdfHeightPt": 457.5,
+    "aspectRatio": 2.63,
     "orientation": "landscape",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 72763
+=======
     "bytes": 82096
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "katalog-17-sequence-i18n",
@@ -582,14 +669,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.4.2 Sekvensdiagram – `i18n`",
     "kind": "mermaid",
-    "rawWidth": 2099,
-    "rawHeight": 1694,
-    "pdfWidthPt": 1203,
-    "pdfHeightPt": 975,
-    "aspectRatio": 1.234,
+    "rawWidth": 2243,
+    "rawHeight": 1728,
+    "pdfWidthPt": 1203.75,
+    "pdfHeightPt": 931.5,
+    "aspectRatio": 1.292,
     "orientation": "portrait",
     "rasterImageCount": 0,
-    "bytes": 77030
+    "bytes": 56784
   },
   {
     "slug": "katalog-18-activity-journal",
@@ -598,14 +685,18 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.5.1 Aktivitetsdiagram – `journal`",
     "kind": "mermaid",
-    "rawWidth": 1066,
-    "rawHeight": 2131,
-    "pdfWidthPt": 612.75,
-    "pdfHeightPt": 1203,
-    "aspectRatio": 0.509,
+    "rawWidth": 1739,
+    "rawHeight": 1947,
+    "pdfWidthPt": 1086,
+    "pdfHeightPt": 1212,
+    "aspectRatio": 0.896,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 58358
+=======
     "bytes": 68025
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "katalog-19-sequence-journal",
@@ -614,14 +705,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.5.2 Sekvensdiagram – `journal`",
     "kind": "mermaid",
-    "rawWidth": 3944,
-    "rawHeight": 1639,
+    "rawWidth": 3315,
+    "rawHeight": 1690,
     "pdfWidthPt": 1203,
-    "pdfHeightPt": 507.75,
-    "aspectRatio": 2.369,
+    "pdfHeightPt": 621,
+    "aspectRatio": 1.937,
     "orientation": "landscape",
     "rasterImageCount": 0,
-    "bytes": 87132
+    "bytes": 65567
   },
   {
     "slug": "katalog-20-activity-psychotraumatology",
@@ -630,14 +721,18 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.6.1 Aktivitetsdiagram – `psychotraumatology`",
     "kind": "mermaid",
-    "rawWidth": 1026,
-    "rawHeight": 2385,
-    "pdfWidthPt": 528.75,
+    "rawWidth": 1264,
+    "rawHeight": 2345,
+    "pdfWidthPt": 657.75,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.44,
+    "aspectRatio": 0.547,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 64603
+=======
     "bytes": 73527
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "katalog-21-sequence-psychotraumatology",
@@ -646,14 +741,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.6.2 Sekvensdiagram – `psychotraumatology`",
     "kind": "mermaid",
-    "rawWidth": 3313,
+    "rawWidth": 3541,
     "rawHeight": 1521,
     "pdfWidthPt": 1203,
-    "pdfHeightPt": 560.25,
-    "aspectRatio": 2.147,
+    "pdfHeightPt": 525,
+    "aspectRatio": 2.291,
     "orientation": "landscape",
     "rasterImageCount": 0,
-    "bytes": 94783
+    "bytes": 75477
   },
   {
     "slug": "katalog-22-activity-user",
@@ -662,14 +757,18 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.7.1 Aktivitetsdiagram – `user`",
     "kind": "mermaid",
-    "rawWidth": 932,
-    "rawHeight": 3058,
-    "pdfWidthPt": 378,
+    "rawWidth": 1205,
+    "rawHeight": 2866,
+    "pdfWidthPt": 515.25,
     "pdfHeightPt": 1203,
-    "aspectRatio": 0.314,
+    "aspectRatio": 0.428,
     "orientation": "portrait",
     "rasterImageCount": 0,
+<<<<<<< HEAD
+    "bytes": 68217
+=======
     "bytes": 78537
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   },
   {
     "slug": "katalog-23-sequence-user",
@@ -678,14 +777,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "6.7.2 Sekvensdiagram – `user`",
     "kind": "mermaid",
-    "rawWidth": 3000,
-    "rawHeight": 1565,
+    "rawWidth": 3215,
+    "rawHeight": 1561,
     "pdfWidthPt": 1203,
-    "pdfHeightPt": 635.25,
-    "aspectRatio": 1.894,
+    "pdfHeightPt": 591.75,
+    "aspectRatio": 2.033,
     "orientation": "landscape",
     "rasterImageCount": 0,
-    "bytes": 77878
+    "bytes": 58099
   },
   {
     "slug": "katalog-24-architecture-dual-app-rbac",
@@ -694,14 +793,14 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "7.1 Arkitekturdiagram: Dual-App SoC (`apps/landing` vs. `apps/dashboard`) & RBAC (`RoleGuard`)",
     "kind": "mermaid",
-    "rawWidth": 1139,
-    "rawHeight": 2287,
-    "pdfWidthPt": 609,
-    "pdfHeightPt": 1203.75,
-    "aspectRatio": 0.506,
+    "rawWidth": 1690,
+    "rawHeight": 1946,
+    "pdfWidthPt": 1056.75,
+    "pdfHeightPt": 1212,
+    "aspectRatio": 0.872,
     "orientation": "portrait",
     "rasterImageCount": 0,
-    "bytes": 56056
+    "bytes": 46108
   },
   {
     "slug": "katalog-25-sequence-landing-to-roleguard",
@@ -710,13 +809,13 @@
     "group": "HOVEDOPGAVE_DIAGRAMMER.md",
     "title": "7.2 Sekvensdiagram: Fra Offentlig Gateway (`apps/landing`) til Rollebeskyttet Vertical Slice (`<RoleGuard />`)",
     "kind": "mermaid",
-    "rawWidth": 3918,
+    "rawWidth": 4155,
     "rawHeight": 949,
     "pdfWidthPt": 1203,
-    "pdfHeightPt": 301.5,
-    "aspectRatio": 3.99,
+    "pdfHeightPt": 284.25,
+    "aspectRatio": 4.232,
     "orientation": "landscape",
     "rasterImageCount": 0,
-    "bytes": 102533
+    "bytes": 83597
   }
 ]

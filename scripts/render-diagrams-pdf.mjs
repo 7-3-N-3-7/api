@@ -24,9 +24,18 @@ const PAD_PX = 16;
 const LANDSCAPE_ASPECT_THRESHOLD = 1.35;
 const REFRESH_PUML = process.argv.includes("--refresh-puml");
 
+<<<<<<< HEAD
+const INIT_FONT_FAMILY = "Arial, Liberation Sans, Helvetica Neue, sans-serif";
+export const DIAGRAM_FONT_FAMILY = 'Arial, "Liberation Sans", "Helvetica Neue", sans-serif';
+
+export const DEFAULT_THEME_INIT =
+  `%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': '${INIT_FONT_FAMILY}', 'fontSize': '14px'}}}%%`;
+
+=======
 export const DEFAULT_THEME_INIT =
   "%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#EFF6FF', 'primaryTextColor': '#0F172A', 'primaryBorderColor': '#2563EB', 'lineColor': '#334155', 'secondaryColor': '#F8FAFC', 'tertiaryColor': '#FEFCE8', 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '14px'}}}%%";
 
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
 export const KATALOG_SLUGS = [
   "katalog-01-gantt-projektforloeb",
   "katalog-02-commit-tidslinje",
@@ -69,13 +78,27 @@ export function sanitizeFlowchartPlaceholders(code) {
   });
 }
 
+<<<<<<< HEAD
+export function normalizeMermaidLineBreaks(code) {
+  const withoutInit = code.replace(/^\s*%%\{[\s\S]*?\}%%\s*/u, "").trimStart();
+  if (!/^(?:sequenceDiagram|stateDiagram(?:-v2)?)\b/i.test(withoutInit)) {
+    return code;
+  }
+  return code.replace(/\\n(?!")/g, "<br/>");
+}
+
+=======
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
 export function injectDefaultThemeIfMissing(source) {
   const trimmed = source.replace(/^\uFEFF/, "").trimStart();
   const themed =
     trimmed.startsWith("%%{init:") || trimmed.startsWith("%%{ init:")
-      ? trimmed
+      ? trimmed.replace(
+          /(['"]fontFamily['"]\s*:\s*)(['"])[^'"]*\2/i,
+          `$1$2${INIT_FONT_FAMILY}$2`
+        )
       : `${DEFAULT_THEME_INIT}\n${trimmed}`;
-  return sanitizeFlowchartPlaceholders(themed);
+  return normalizeMermaidLineBreaks(sanitizeFlowchartPlaceholders(themed));
 }
 
 export function parseKatalogMermaidJobs() {
@@ -269,6 +292,17 @@ async function renderMermaidSvgInPage(context, mermaidJsContent, job) {
               background: #ffffff;
               overflow: visible;
             }
+            * {
+              box-sizing: border-box;
+            }
+            html, body, #stage, svg, foreignObject, foreignObject div, foreignObject span, foreignObject p {
+              font-family: ${DIAGRAM_FONT_FAMILY};
+              font-size: 14px;
+              line-height: 1.45;
+            }
+            foreignObject {
+              overflow: visible;
+            }
             #stage {
               display: inline-block;
               background: #ffffff;
@@ -289,14 +323,16 @@ async function renderMermaidSvgInPage(context, mermaidJsContent, job) {
 
     await page.addScriptTag({ content: mermaidJsContent });
 
-    const dims = await page.evaluate(async (diagramCode) => {
+    const dims = await page.evaluate(async ({ diagramCode, fontFamily }) => {
       const mermaid = window.mermaid;
       mermaid.initialize({
         startOnLoad: false,
         securityLevel: "loose",
         maxTextSize: 200000,
         maxEdges: 2000,
-        flowchart: { htmlLabels: true },
+        fontFamily,
+        flowchart: { htmlLabels: true, wrappingWidth: 360, padding: 16 },
+        class: { htmlLabels: true },
       });
 
       const { svg } = await mermaid.render("diagram-render", diagramCode);
@@ -386,7 +422,7 @@ async function renderMermaidSvgInPage(context, mermaidJsContent, job) {
       const rawWidth = Math.max(1, Math.ceil(rect.width));
       const rawHeight = Math.max(1, Math.ceil(rect.height));
       return { rawWidth, rawHeight };
-    }, job.code);
+    }, { diagramCode: job.code, fontFamily: DIAGRAM_FONT_FAMILY });
 
     const totalW = dims.rawWidth + PAD_PX * 2;
     const totalH = dims.rawHeight + PAD_PX * 2;

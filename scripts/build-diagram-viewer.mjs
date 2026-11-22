@@ -10,6 +10,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+<<<<<<< HEAD
+  DIAGRAM_FONT_FAMILY,
+=======
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
   DOCS_DIAGRAMS_DIR,
   INFRA_DIAGRAMS_DIR,
   MERMAID_MIN_JS,
@@ -21,7 +25,11 @@ import {
 
 const OUT_HTML_PATH = path.join(DOCS_DIAGRAMS_DIR, "diagram-oversigt.html");
 const FONT_CSS_PREFIX =
+<<<<<<< HEAD
+  `svg, foreignObject, foreignObject div, foreignObject span, foreignObject p { font-family: ${DIAGRAM_FONT_FAMILY}; font-size: 14px; line-height: 1.45; } foreignObject { overflow: visible; } * { box-sizing: border-box; } `;
+=======
   'svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.45; } * { box-sizing: border-box; } ';
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
 
 const DOCS_META = {
   "core-and-slice-class-diagram": {
@@ -869,6 +877,22 @@ function buildHtmlDocument(diagrams) {
       cursor: grabbing;
     }
 
+<<<<<<< HEAD
+    #canvas-viewport svg foreignObject {
+      overflow: visible;
+    }
+
+    #canvas-viewport svg,
+    #canvas-viewport svg foreignObject,
+    #canvas-viewport svg foreignObject div,
+    #canvas-viewport svg foreignObject span,
+    #canvas-viewport svg foreignObject p {
+      font-family: ${DIAGRAM_FONT_FAMILY};
+      line-height: 1.45;
+    }
+
+=======
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
     .hint-pill {
       position: absolute;
       right: 16px;
@@ -945,6 +969,10 @@ function buildHtmlDocument(diagrams) {
           <div class="toolbar">
             <div class="btn-group">
               <button type="button" class="btn" id="btn-fit-all" title="Tilpas hele diagrammet til skærmen (0)">Tilpas skærm</button>
+<<<<<<< HEAD
+              <button type="button" class="btn" id="btn-fit-width" title="Tilpas bredden fra toppen (god til høje diagrammer) (W)">Tilpas bredde</button>
+=======
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
               <button type="button" class="btn" id="btn-fit-height" title="Tilpas højden (god til brede diagrammer) (H)">Tilpas højde</button>
               <button type="button" class="btn" id="btn-zoom-100" title="Vis i 100% størrelse (1)">100%</button>
             </div>
@@ -993,6 +1021,10 @@ function buildHtmlDocument(diagrams) {
     const activeNoteEl = document.getElementById('active-note');
 
     const btnFitAll = document.getElementById('btn-fit-all');
+<<<<<<< HEAD
+    const btnFitWidth = document.getElementById('btn-fit-width');
+=======
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
     const btnFitHeight = document.getElementById('btn-fit-height');
     const btnZoom100 = document.getElementById('btn-zoom-100');
     const btnZoomOut = document.getElementById('btn-zoom-out');
@@ -1102,6 +1134,73 @@ function buildHtmlDocument(diagrams) {
       updateCamera();
     }
 
+<<<<<<< HEAD
+    function fitWidth() {
+      const item = DIAGRAMS[activeIndex];
+      const vpW = Math.max(1, viewport.clientWidth);
+      const availW = Math.max(40, vpW - 60);
+      zoom = Math.max(0.02, Math.min(availW / item.origW, 1.25));
+      camX = (item.origX + item.origW / 2) - (vpW / zoom) / 2;
+      camY = item.origY - 30 / zoom;
+      updateCamera();
+    }
+
+    function fitReadable() {
+      const item = DIAGRAMS[activeIndex];
+      const vpW = Math.max(1, viewport.clientWidth);
+      const vpH = Math.max(1, viewport.clientHeight);
+      const allZoom = Math.min(Math.max(40, vpW - 80) / item.origW, Math.max(40, vpH - 80) / item.origH, 1.5);
+      if (allZoom >= 0.55) {
+        fitAll();
+        return;
+      }
+      if (item.origH >= item.origW * 1.2) {
+        const availW = Math.max(40, vpW - 60);
+        zoom = Math.max(0.65, Math.min(availW / item.origW, 1.15));
+        camX = (item.origX + item.origW / 2) - (vpW / zoom) / 2;
+        camY = item.origY - 30 / zoom;
+        updateCamera();
+      } else {
+        const availH = Math.max(40, vpH - 60);
+        zoom = Math.max(0.65, Math.min(availH / item.origH, 1.15));
+        camX = item.origX - 30 / zoom;
+        camY = (item.origY + item.origH / 2) - (vpH / zoom) / 2;
+        updateCamera();
+      }
+    }
+
+    function autoFitForeignObjects(svgEl) {
+      if (!svgEl) return;
+      const fos = svgEl.querySelectorAll('foreignObject');
+      fos.forEach((fo) => {
+        const inner = fo.firstElementChild;
+        if (!inner || !(inner.textContent || '').trim()) return;
+        const foW = parseFloat(fo.getAttribute('width') || '0');
+        const foH = parseFloat(fo.getAttribute('height') || '0');
+        if (foW <= 0 || foH <= 0) return;
+        const sw = inner.scrollWidth;
+        const sh = inner.scrollHeight;
+        if (sw <= foW + 1 && sh <= foH + 1) return;
+        const isFreeLabel = Boolean(fo.closest('.edgeLabel, .cluster-label'));
+        if (isFreeLabel) {
+          const newW = Math.max(foW, Math.ceil(sw + 6));
+          const newH = Math.max(foH, Math.ceil(sh + 2));
+          const curX = parseFloat(fo.getAttribute('x') || '0');
+          const curY = parseFloat(fo.getAttribute('y') || '0');
+          fo.setAttribute('width', String(newW));
+          fo.setAttribute('height', String(newH));
+          if (fo.hasAttribute('x')) fo.setAttribute('x', String(curX - (newW - foW) / 2));
+          if (fo.hasAttribute('y')) fo.setAttribute('y', String(curY - (newH - foH) / 2));
+        } else {
+          const scale = Math.max(0.75, Math.min(foW / Math.max(1, sw), foH / Math.max(1, sh), 1));
+          inner.style.transformOrigin = 'center center';
+          inner.style.transform = 'scale(' + scale.toFixed(4) + ')';
+        }
+      });
+    }
+
+=======
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
     function zoomAroundPoint(targetZoom, mx, my) {
       const clamped = Math.min(25, Math.max(0.02, targetZoom));
       const svgX = camX + mx / zoom;
@@ -1155,6 +1254,10 @@ function buildHtmlDocument(diagrams) {
         activeSvg.style.height = '100%';
         activeSvg.style.display = 'block';
         activeSvg.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+<<<<<<< HEAD
+        autoFitForeignObjects(activeSvg);
+=======
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
       }
 
       const buttons = sidebarList.querySelectorAll('.diagram-btn');
@@ -1170,7 +1273,11 @@ function buildHtmlDocument(diagrams) {
         history.replaceState(null, '', '#' + encodeURIComponent(item.slug));
       } catch (_) {}
 
+<<<<<<< HEAD
+      fitReadable();
+=======
       fitAll();
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
     }
 
     function stepDiagram(delta) {
@@ -1281,6 +1388,10 @@ function buildHtmlDocument(diagrams) {
     btnNext.addEventListener('click', () => stepDiagram(1));
     btnToggleSidebar.addEventListener('click', toggleSidebar);
     btnFitAll.addEventListener('click', fitAll);
+<<<<<<< HEAD
+    btnFitWidth.addEventListener('click', fitWidth);
+=======
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
     btnFitHeight.addEventListener('click', fitHeight);
     btnZoom100.addEventListener('click', zoom100);
     btnZoomIn.addEventListener('click', () => zoomAroundPoint(zoom * 1.25, viewport.clientWidth / 2, viewport.clientHeight / 2));
@@ -1351,6 +1462,12 @@ function buildHtmlDocument(diagrams) {
       } else if (e.key === '0') {
         e.preventDefault();
         fitAll();
+<<<<<<< HEAD
+      } else if (e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        fitWidth();
+=======
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
       } else if (e.key === 'h' || e.key === 'H') {
         e.preventDefault();
         fitHeight();
@@ -1398,19 +1515,50 @@ async function main() {
   try {
     await page.setViewportSize({ width: 2400, height: 1800 });
     await page.setContent(
+<<<<<<< HEAD
+      `<!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            * { box-sizing: border-box; }
+            html, body, #stage, svg, foreignObject, foreignObject div, foreignObject span, foreignObject p {
+              font-family: ${DIAGRAM_FONT_FAMILY};
+              font-size: 14px;
+              line-height: 1.45;
+            }
+            foreignObject { overflow: visible; }
+          </style>
+        </head>
+        <body><div id="stage"></div></body>
+      </html>`,
+      { waitUntil: "domcontentloaded" }
+    );
+    await page.addScriptTag({ content: mermaidJsContent });
+    await page.evaluate((fontFamily) => {
+=======
       '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div id="stage"></div></body></html>',
       { waitUntil: "domcontentloaded" }
     );
     await page.addScriptTag({ content: mermaidJsContent });
     await page.evaluate(() => {
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
       window.mermaid.initialize({
         startOnLoad: false,
         securityLevel: "loose",
         maxTextSize: 200000,
         maxEdges: 2000,
+<<<<<<< HEAD
+        fontFamily,
+        flowchart: { htmlLabels: true, wrappingWidth: 360, padding: 16 },
+        class: { htmlLabels: true },
+      });
+    }, DIAGRAM_FONT_FAMILY);
+=======
         flowchart: { htmlLabels: true },
       });
     });
+>>>>>>> d44e77c35dadb0fb5f786368805985c847f32431
 
     for (let i = 0; i < jobs.length; i++) {
       const job = jobs[i];
