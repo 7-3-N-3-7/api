@@ -13,7 +13,7 @@ Validerer OIDC-session mod Keycloak IAM & vedhæfter Bearer JWT"]
         direction LR
         Dispatcher["Spring DispatcherServlet & SecurityConfig
 Verificerer JWT-signatur & router til /api/v1/..."]
-        BaseCtrl["Slice-Controller (extends BaseController<E, D>)
+        BaseCtrl["Slice-Controller (extends BaseController<Entity, DTO>)
 Validerer @Valid DTO & delegerer til BaseService"]
         Dispatcher -->|"3. Router request"| BaseCtrl
     end
@@ -39,7 +39,7 @@ Returnerer RFC 7807 ProblemDetail (HTTP 400/403/404/409)"]
 
     subgraph DataLayer ["4. Data-adgang & Eksterne Port-kald"]
         direction LR
-        RepoCall["BaseRepository<E> (JpaSpecificationExecutor)
+        RepoCall["BaseRepository<Entity> (JpaSpecificationExecutor)
 eller I18nDictionaryRepository (MongoDB)"]
         SideEffects{"Kræver ekstern
 systemsynkronisering?"}

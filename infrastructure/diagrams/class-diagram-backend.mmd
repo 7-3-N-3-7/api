@@ -16,13 +16,13 @@ publishEvent(topic, action, payloadId)"]
     subgraph CoreTier ["2. Konsolideret 2-Fils Core (com.platform.core)"]
         direction LR
         WebCore["BaseWebCore
-• BaseController<E, D> (GET/POST/PUT/DELETE/paged)
+• BaseController<Entity, DTO> (GET/POST/PUT/DELETE/paged)
 • GlobalExceptionHandler -> RFC 7807 ProblemDetail"]
         DomainCore["BaseDomainCore
 • HasId & Identifiable (UUID)
-• BaseRepository<E> (JpaRepository + JpaSpecificationExecutor)
+• BaseRepository<Entity> (JpaRepository + JpaSpecificationExecutor)
 • ErrorCode & DomainException
-• BaseService<E, D> (@Transactional CRUD + hooks)"]
+• BaseService<Entity, DTO> (@Transactional CRUD + hooks)"]
         WebCore -->|"1. Delegerer & mapper fejl"| DomainCore
     end
 

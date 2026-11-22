@@ -32,18 +32,18 @@ start
 :Next.js BFF validerer OIDC Session / JWT mod **Keycloak IAM**
 og videresender HTTP Request til ""/api/v1/..."" med Bearer JWT;
 
-|Controller Swimlane (BaseController<E, D, ID>)|
+|Controller Swimlane (BaseController<Entity, DTO, ID>)|
 :Spring DispatcherServlet router kaldet til domæne-controller
 (""ClinicPlatformController"", ""AppointmentController"",
 ""JournalController"", ""PsychotraumatologyController"", ""UserController"");
 :Controller delegerer **udelukkende** til sin generiske
-Spring IoC-injicerede ""BaseService<E, D, UUID>"";
+Spring IoC-injicerede ""BaseService<Entity, DTO, UUID>"";
 
-|Service Swimlane (BaseService<E, D, ID> @Transactional)|
+|Service Swimlane (BaseService<Entity, DTO, ID> @Transactional)|
 :Åbner ""@Transactional"" kontekst & resolver generiske typer
-""Class<E>"" og ""Class<D>"" via ""GenericTypeResolver"";
-:Mapper automatisk ""D (BaseDTO<UUID>) <-> E (BaseEntity<UUID>)""
-og afvikler registrerede ""CrudInterceptor<E, UUID>""-hooks
+""Class<Entity>"" og ""Class<DTO>"" via ""GenericTypeResolver"";
+:Mapper automatisk ""DTO (BaseDTO<UUID>) <-> Entity (BaseEntity<UUID>)""
+og afvikler registrerede ""CrudInterceptor<Entity, UUID>""-hooks
 (""beforeCreate"" / ""beforeUpdate"" / ""beforeDelete"");
 
 if (Operationstype?) then (Klinisk Profil / CVR / Ydelse / Handshake)
@@ -64,14 +64,14 @@ elseif (Journal eller PCL-5 Traumetest?) then (Journal / Klinisk Notat / PCL-5)
     i ""JournalService"" / ""PsychotraumatologyService"";
 endif
 
-|Repository Swimlane (BaseRepository<E, ID>)|
-:Udfører typesikret kald eller dynamisk ""JpaSpecificationExecutor<E>""
+|Repository Swimlane (BaseRepository<Entity, ID>)|
+:Udfører typesikret kald eller dynamisk ""JpaSpecificationExecutor<Entity>""
 filtrering (""_like"", ""_gt"", ""_lt"", ""_gte"", ""_lte"", sortering & paginering)
-via Spring Data JPA ""BaseRepository<E, UUID>"";
+via Spring Data JPA ""BaseRepository<Entity, UUID>"";
 
 |Hibernate ORM / PostgreSQL / JGit / Redis / Kafka|
 #D5F5E3:Hibernate ""Session"" / ""EntityManager"" persisterer eller indlæser
-""E extends BaseEntity<UUID>"" i **PostgreSQL** (`business-db`);
+""Entity extends BaseEntity<UUID>"" i **PostgreSQL** (`business-db`);
 if (Kræver revisionsspor eller cache/event?) then (Ja)
     :Committer Markdown-snapshot til **JGit** (SHA-1 hash),
     opdaterer/invaliderer **Redis L2 Cache**
@@ -79,12 +79,12 @@ if (Kræver revisionsspor eller cache/event?) then (Ja)
 else (Nej)
 endif
 
-|Service Swimlane (BaseService<E, D, ID> @Transactional)|
+|Service Swimlane (BaseService<Entity, DTO, ID> @Transactional)|
 :Afvikler ""afterCreate"" / ""afterUpdate"" / ""afterDelete""
-på ""CrudInterceptor<E, UUID>"" og transformerer ""toDto(E)"";
+på ""CrudInterceptor<Entity, UUID>"" og transformerer ""toDto(Entity)"";
 
-|Controller Swimlane (BaseController<E, D, ID>)|
-:Pakker resultat i ""ResponseEntity<D>"" (HTTP 200 / 201 / 204);
+|Controller Swimlane (BaseController<Entity, DTO, ID>)|
+:Pakker resultat i ""ResponseEntity<DTO>"" (HTTP 200 / 201 / 204);
 
 |Klient / Terapeut (Next.js Route & BFF)|
 :Modtager JSON-respons og opdaterer reaktivt UI;

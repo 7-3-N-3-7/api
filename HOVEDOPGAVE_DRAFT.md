@@ -540,7 +540,11 @@ flowchart TB
 >   - **Databasedesign** (EER-diagram) og **Brugergrænsefladedesign**.
 
 ### 7.1 Designklassediagram og Design Patterns
+<<<<<<< HEAD
+På datamatikeruddannelsen lærte jeg den klassiske **MVC**-opdeling (*Model, View, Controller*), lagdelingen **Entity, DTO, DAO, Service, Controller og Route** samt de fire OOP-søjler (**Inheritance, Abstraction, Encapsulation og Polymorphism**). For at minimere gentagen CRUD-boilerplate på tværs af platformens domænemoduler valgte jeg bevidst at sætte **Encapsulation** (indkapsling) i centrum gennem en superklasse-arkitektur med abstrakte baseklasser for lagene. I **EduJournal** gennemgik dette studieudgangspunkt en to-trins evolution fra traditionel horisontal lagdeling til en konsolideret **2-fils Core** + **Vertical Feature Slices**, hvor `BaseService<Entity, DTO>` og `BaseController<Entity, DTO>` (+ REST-routes) stadig er `public static abstract` superklasser, mens `Entity` (`Identifiable`), `DTO` (`HasId` så Java 17 `record` kan bruges) og `DAO` (`BaseRepository<Entity>`) blev løftet til rene interfaces (spejlet 1:1 i frontenden via `BaseApiService<DTO, ID>` og `useBaseCrud()`).
+=======
 På datamatikeruddannelsen lærte jeg den klassiske **MVC**-opdeling (*Model, View, Controller*), lagdelingen **Entity, DTO, DAO, Service, Controller og Route** samt de fire OOP-søjler (**Inheritance, Abstraction, Encapsulation og Polymorphism**). For at minimere gentagen CRUD-boilerplate på tværs af platformens domænemoduler valgte jeg bevidst at sætte **Encapsulation** (indkapsling) i centrum gennem en superklasse-arkitektur med abstrakte baseklasser for lagene. I **EduJournal** gennemgik dette studieudgangspunkt en to-trins evolution fra traditionel horisontal lagdeling til en konsolideret **2-fils Core** + **Vertical Feature Slices**, hvor `BaseService<E, D>` og `BaseController<E, D>` (+ REST-routes) stadig er `public static abstract` superklasser, mens `Entity` (`Identifiable`), `DTO` (`HasId` så Java 17 `record` kan bruges) og `DAO` (`BaseRepository<E>`) blev løftet til rene interfaces (spejlet 1:1 i frontenden via `BaseApiService<DTO, ID>` og `useBaseCrud()`).
+>>>>>>> 8e82a7d90582217c88c7b9e8f17a64ee10698757
 
 | OOP-søjle | Anvendelse i EduJournal (Backend & Frontend) |
 | :--- | :--- |
@@ -567,9 +571,9 @@ classDiagram
         +setId(UUID id) void
         +id() UUID
     }
-    class BaseRepository~E~ {
+    class BaseRepository~Entity~ {
         <<interface>>
-        +findAll(Specification~E~, Pageable) Page~E~
+        +findAll(Specification~Entity~, Pageable) Page~Entity~
     }
     class ErrorCode {
         <<enumeration>>
@@ -584,29 +588,29 @@ classDiagram
         +supply(String details) Supplier~DomainException~
         +require(boolean condition, String details) void
     }
-    class BaseService~E, D~ {
+    class BaseService~Entity, DTO~ {
         <<abstract>>
-        #BaseRepository~E~ repository
-        #toDto(E entity) D*
-        #toEntity(D dto) E*
-        #mergeEntity(E existing, D dto) E
-        #validateBeforeCreate(D dto) void
-        #validateBeforeUpdate(UUID id, D dto) void
-        +findAll() List~D~
-        +findAllPaged(Pageable pageable) Page~D~
-        +findById(UUID id) D
-        +create(D dto) D
-        +update(UUID id, D dto) D
+        #BaseRepository~Entity~ repository
+        #toDto(Entity entity) DTO*
+        #toEntity(DTO dto) Entity*
+        #mergeEntity(Entity existing, DTO dto) Entity
+        #validateBeforeCreate(DTO dto) void
+        #validateBeforeUpdate(UUID id, DTO dto) void
+        +findAll() List~DTO~
+        +findAllPaged(Pageable pageable) Page~DTO~
+        +findById(UUID id) DTO
+        +create(DTO dto) DTO
+        +update(UUID id, DTO dto) DTO
         +deleteById(UUID id) void
     }
-    class BaseController~E, D~ {
+    class BaseController~Entity, DTO~ {
         <<abstract>>
-        #BaseService~E, D~ service
-        +getAll() ResponseEntity~List~D~~
-        +getAllPaged(Pageable pageable) ResponseEntity~Page~D~~
-        +getById(UUID id) ResponseEntity~D~
-        +create(D dto) ResponseEntity~D~
-        +update(UUID id, D dto) ResponseEntity~D~
+        #BaseService~Entity, DTO~ service
+        +getAll() ResponseEntity~List~DTO~~
+        +getAllPaged(Pageable pageable) ResponseEntity~Page~DTO~~
+        +getById(UUID id) ResponseEntity~DTO~
+        +create(DTO dto) ResponseEntity~DTO~
+        +update(UUID id, DTO dto) ResponseEntity~DTO~
         +delete(UUID id) ResponseEntity~Void~
     }
     class GlobalExceptionHandler {
@@ -618,19 +622,19 @@ classDiagram
         <<package-private>>
         #validateBeforeCreate(AppointmentDto dto) void
         #validateBeforeUpdate(UUID id, AppointmentDto dto) void
-        #toDto(Appointment e) AppointmentDto
-        #toEntity(AppointmentDto d) Appointment
+        #toDto(Appointment entity) AppointmentDto
+        #toEntity(AppointmentDto dto) Appointment
     }
     class AppointmentFeature_AppointmentController {
         <<package-private>>
     }
 
     HasId <|-- Identifiable
-    BaseController~E, D~ --> BaseService~E, D~ : delegates to
-    BaseService~E, D~ --> BaseRepository~E~ : queries via
-    BaseService~E, D~ ..> ErrorCode : functional guard require()
-    BaseController~E, D~ <|-- AppointmentFeature_AppointmentController : extends
-    BaseService~E, D~ <|-- AppointmentFeature_AppointmentService : extends
+    BaseController~Entity, DTO~ --> BaseService~Entity, DTO~ : delegates to
+    BaseService~Entity, DTO~ --> BaseRepository~Entity~ : queries via
+    BaseService~Entity, DTO~ ..> ErrorCode : functional guard require()
+    BaseController~Entity, DTO~ <|-- AppointmentFeature_AppointmentController : extends
+    BaseService~Entity, DTO~ <|-- AppointmentFeature_AppointmentService : extends
 ```
 
 *(Se desuden det komplette PlantUML-klassediagram i [`docs/diagrams/core-and-slice-class-diagram.puml`](file:///z:/home/work/projects/api/docs/diagrams/core-and-slice-class-diagram.puml) samt [`docs/diagrams/double-loop-tdd.mmd`](file:///z:/home/work/projects/api/docs/diagrams/double-loop-tdd.mmd)).*
@@ -865,7 +869,7 @@ Alle 14 domænespecifikke aktivitets- og sekvensdiagrammer er samlet i [HOVEDOPG
 > - *Se også eksempel-PDF fra Moodle (Slide 20):* [Implementation Example](https://erhvervsakademikbenhavn.sharepoint.com/:b:/s/cph-Lyngby/IQDOSQJqzyrqT68VdUbBqx2dAexS5E_IEwOseCfMsbS5ymU?e=KsKqWp).
 
 ### 8.1 Konsolideret 2-Fils Core (`BaseDomainCore` & `BaseWebCore`) og Vertical Slices
-I [`BaseDomainCore.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/core/BaseDomainCore.java) er alle domænekontrakter (`HasId`, `Identifiable`), `BaseRepository<E>`, den funktionelle `ErrorCode`-enum (`BiFunction<ErrorCode, String, DomainException>`) og `BaseService<E, D>` (Template Method Pattern) låst til universel `UUID`-identitet uden en eneste afhængighed til `org.springframework.web` eller `jakarta.servlet`:
+I [`BaseDomainCore.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/core/BaseDomainCore.java) er alle domænekontrakter (`HasId`, `Identifiable`), `BaseRepository<Entity>`, den funktionelle `ErrorCode`-enum (`BiFunction<ErrorCode, String, DomainException>`) og `BaseService<Entity, DTO>` (Template Method Pattern) låst til universel `UUID`-identitet uden en eneste afhængighed til `org.springframework.web` eller `jakarta.servlet`:
 
 ```java
 // Fra: backend/src/main/java/com/platform/core/BaseDomainCore.java
@@ -887,26 +891,26 @@ public enum ErrorCode {
 }
 
 @Transactional(readOnly = true)
-public static abstract class BaseService<E extends Identifiable, D extends HasId> {
-    protected final BaseRepository<E> repository;
+public static abstract class BaseService<Entity extends Identifiable, DTO extends HasId> {
+    protected final BaseRepository<Entity> repository;
 
-    protected abstract D toDto(E entity);
-    protected abstract E toEntity(D dto);
+    protected abstract DTO toDto(Entity entity);
+    protected abstract Entity toEntity(DTO dto);
 
     @Transactional
-    public D create(D dto) {
+    public DTO create(DTO dto) {
         validateBeforeCreate(dto);
-        E entity = toEntity(dto);
+        Entity entity = toEntity(dto);
         entity.setId(null);
         return toDto(repository.save(entity));
     }
 
-    protected void validateBeforeCreate(D dto) {}
-    protected void validateBeforeUpdate(UUID id, D dto) {}
+    protected void validateBeforeCreate(DTO dto) {}
+    protected void validateBeforeUpdate(UUID id, DTO dto) {}
 }
 ```
 
-Tilsvarende samler [`BaseWebCore.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/core/BaseWebCore.java) `BaseController<E, D>` og `GlobalExceptionHandler`, som automatisk oversætter `DomainException` og valideringsfejl til Spring Boot 3 RFC 7807 `ProblemDetail`-svar, mens hver Vertical Slice (fx [`AppointmentFeature.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/features/appointment/AppointmentFeature.java)) indkapsler Repository, Service og Controller som `package-private` statiske klasser:
+Tilsvarende samler [`BaseWebCore.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/core/BaseWebCore.java) `BaseController<Entity, DTO>` og `GlobalExceptionHandler`, som automatisk oversætter `DomainException` og valideringsfejl til Spring Boot 3 RFC 7807 `ProblemDetail`-svar, mens hver Vertical Slice (fx [`AppointmentFeature.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/features/appointment/AppointmentFeature.java)) indkapsler Repository, Service og Controller som `package-private` statiske klasser:
 
 ```java
 // Fra: backend/src/main/java/com/platform/features/appointment/AppointmentFeature.java

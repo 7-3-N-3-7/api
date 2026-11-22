@@ -82,7 +82,7 @@ package "2. Service Swimlane" as LaneSvc #F4ECF7 {
 }
 
 package "3. Repository Swimlane" as LaneRepo #E8F8F5 {
-    interface "BaseRepository<E, UUID>" as BaseRepo <<@NoRepositoryBean>> {
+    interface "BaseRepository<Entity, UUID>" as BaseRepo <<@NoRepositoryBean>> {
     }
 
     interface ClientProfileRepository <<@Repository>> {

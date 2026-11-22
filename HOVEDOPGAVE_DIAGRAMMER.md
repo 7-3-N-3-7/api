@@ -425,8 +425,8 @@ Herunder følger et **Aktivitetsdiagram (Swimlane Flowchart)** og et **Sekvensdi
 
 De tre arkitekturdiagrammer [`docs/diagrams/core-and-slice-class-diagram.puml`](file:///z:/home/work/projects/api/docs/diagrams/core-and-slice-class-diagram.puml), [`docs/diagrams/fullstack-symmetry.puml`](file:///z:/home/work/projects/api/docs/diagrams/fullstack-symmetry.puml) og [`docs/diagrams/double-loop-tdd.mmd`](file:///z:/home/work/projects/api/docs/diagrams/double-loop-tdd.mmd) viser den komplette **1:1 Full-Stack Arkitektursymmetri** mellem Java 21 / Spring Boot 3-backend'en og TypeScript 5 / React 19-frontend'en:
 - **Backend Core (`com.platform.core`) $\leftrightarrow$ Frontend Core (`src/core`):**
-  - [`BaseDomainCore.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/core/BaseDomainCore.java) $\leftrightarrow$ [`baseDomainCore.ts`](file:///z:/home/work/projects/api/frontend/src/core/baseDomainCore.ts) (Ren domænekerne uden UI/React-afhængigheder: `HasId<ID>`, `PageResponse<T>`, `ErrorCode`, `ProblemDetail`, `FrontendDomainException`, `DomainGuard` og den abstrakte `BaseApiService<D, ID>`).
-  - [`BaseWebCore.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/core/BaseWebCore.java) $\leftrightarrow$ [`baseUiCore.tsx`](file:///z:/home/work/projects/api/frontend/src/core/baseUiCore.tsx) (Præsentations-supertype: den generiske `useBaseCrud<D, ID>` hook, RFC 7807 `<ProblemAlert />` med deterministiske `data-testid`-attributter samt `<PortalWorkspaceShell />`).
+  - [`BaseDomainCore.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/core/BaseDomainCore.java) $\leftrightarrow$ [`baseDomainCore.ts`](file:///z:/home/work/projects/api/frontend/src/core/baseDomainCore.ts) (Ren domænekerne uden UI/React-afhængigheder: `HasId<ID>`, `PageResponse<T>`, `ErrorCode`, `ProblemDetail`, `FrontendDomainException`, `DomainGuard` og den abstrakte `BaseApiService<DTO, ID>`).
+  - [`BaseWebCore.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/core/BaseWebCore.java) $\leftrightarrow$ [`baseUiCore.tsx`](file:///z:/home/work/projects/api/frontend/src/core/baseUiCore.tsx) (Præsentations-supertype: den generiske `useBaseCrud<DTO, ID>` hook, RFC 7807 `<ProblemAlert />` med deterministiske `data-testid`-attributter samt `<PortalWorkspaceShell />`).
 - **7 1:1 Vertical Feature Slices (`com.platform.features.<name>` $\leftrightarrow$ `src/features/<name>/<Name>Feature.tsx`):**
   - [`AppointmentFeature.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/features/appointment/AppointmentFeature.java) $\leftrightarrow$ [`AppointmentFeature.tsx`](file:///z:/home/work/projects/api/frontend/src/features/appointment/AppointmentFeature.tsx)
   - [`ClinicPlatformFeature.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/features/clinic/ClinicPlatformFeature.java) $\leftrightarrow$ [`ClinicPlatformFeature.tsx`](file:///z:/home/work/projects/api/frontend/src/features/clinic/ClinicPlatformFeature.tsx)
@@ -447,10 +447,10 @@ classDiagram
             +interface HasId~ID~
             +enum ErrorCode
             +class DomainException
-            +abstract BaseService~E, D, ID~
+            +abstract BaseService~Entity, DTO~
         }
         class BaseWebCore_Java["BaseWebCore.java (Spring Web)"] {
-            +abstract BaseController~E, D, ID~
+            +abstract BaseController~Entity, DTO~
             +class GlobalExceptionHandler
         }
         class AppointmentFeature_Java["AppointmentFeature.java (Single-File Slice)"] {
@@ -468,7 +468,7 @@ classDiagram
             +interface ProblemDetail
             +class FrontendDomainException
             +class DomainGuard
-            +abstract BaseApiService~D, ID~
+            +abstract BaseApiService~DTO, ID~
         }
         class baseUiCore_TSX["baseUiCore.tsx (React Supertype)"] {
             +useBaseCrud(service)
@@ -499,20 +499,20 @@ classDiagram
 
 ```mermaid
 flowchart TD
-    subgraph Lane1["1. Web Core Swimlane: BaseWebCore.BaseController<E, D>"]
+    subgraph Lane1["1. Web Core Swimlane: BaseWebCore.BaseController<Entity, DTO>"]
         A1(["HTTP Request modtages\n(GET / POST / PUT / DELETE)"]) --> A2["Spring IoC router til package-private slice-controller\nfx AppointmentController (/api/v1/appointments)"]
         A2 --> A3{"Standard CRUD eller\ndomæne-specifikt endpoint?"}
         A3 -- "Standard CRUD" --> A4["Kalder BaseController.getAll() / getAllPaged()\n/ getById(id) / create(dto) / update(id, dto) / delete(id)"]
     end
 
-    subgraph Lane2["2. Domain Core Swimlane: BaseDomainCore.BaseService<E, D> (@Transactional)"]
+    subgraph Lane2["2. Domain Core Swimlane: BaseDomainCore.BaseService<Entity, DTO> (@Transactional)"]
         A4 --> B1["Åbner @Transactional kontekst\nKalder validateBeforeCreate(dto) / validateBeforeUpdate(id, dto)"]
         B1 --> B2{"Overholdes domæneregler?\nErrorCode.require(condition, details)"}
         B2 -- "Nej (Fejl)" --> BErr["Kast DomainException via ErrorCode::toException\n(NOT_FOUND 404, CONFLICT 409, BAD_REQUEST 400, FORBIDDEN 403)"]
-        B2 -- "Ja (Gyldig)" --> B3["toEntity(D dto) / mergeEntity(existing, dto)\nSætter entity.setId(null) ved create"]
+        B2 -- "Ja (Gyldig)" --> B3["toEntity(DTO dto) / mergeEntity(existing, dto)\nSætter entity.setId(null) ved create"]
     end
 
-    subgraph Lane3["3. Data Access Swimlane: BaseDomainCore.BaseRepository<E>"]
+    subgraph Lane3["3. Data Access Swimlane: BaseDomainCore.BaseRepository<Entity>"]
         B3 --> C1["BaseRepository.save(entity) / findById(id) / deleteById(id)"]
     end
 
@@ -521,8 +521,8 @@ flowchart TD
     end
 
     subgraph Lane5["5. DTO Response & RFC 7807 GlobalExceptionHandler"]
-        D1 --> E1["toDto(E entity) -> Java Record D implements HasId (UUID)"]
-        E1 --> E2(["BaseController returnerer ResponseEntity<D>\n(HTTP 200 OK / 201 Created + Location / 204 No Content)"])
+        D1 --> E1["toDto(Entity entity) -> Java Record DTO implements HasId (UUID)"]
+        E1 --> E2(["BaseController returnerer ResponseEntity<DTO>\n(HTTP 200 OK / 201 Created + Location / 204 No Content)"])
         BErr --> E3(["GlobalExceptionHandler (@RestControllerAdvice)\nReturnerer RFC 7807 ProblemDetail JSON med errorCode & timestamp"])
     end
 ```
@@ -533,16 +533,16 @@ flowchart TD
 sequenceDiagram
     autonumber
     actor Caller as Klient / BFF Proxy
-    participant Ctrl as BaseWebCore.BaseController<E, D>
-    participant Svc as BaseDomainCore.BaseService<E, D>
+    participant Ctrl as BaseWebCore.BaseController<Entity, DTO>
+    participant Svc as BaseDomainCore.BaseService<Entity, DTO>
     participant Guard as BaseDomainCore.ErrorCode
-    participant Repo as BaseDomainCore.BaseRepository<E>
+    participant Repo as BaseDomainCore.BaseRepository<Entity>
     participant Advice as BaseWebCore.GlobalExceptionHandler
 
-    Caller->>Ctrl: POST /api/v1/appointments (JSON Record D dto)
-    Ctrl->>Svc: create(@Valid D dto)
+    Caller->>Ctrl: POST /api/v1/appointments (JSON Record DTO dto)
+    Ctrl->>Svc: create(@Valid DTO dto)
     activate Svc
-    Svc->>Svc: validateBeforeCreate(D dto)
+    Svc->>Svc: validateBeforeCreate(DTO dto)
     Svc->>Repo: existsByStartTime(dto.startTime())
     Repo-->>Svc: boolean exists
     Svc->>Guard: ErrorCode.CONFLICT.require(!exists, "Tidspunktet er allerede booket")
@@ -551,12 +551,12 @@ sequenceDiagram
         Advice-->>Caller: HTTP 409 Conflict (RFC 7807 ProblemDetail JSON)
     else Domæneregel overholdt (exists == false)
         Svc->>Svc: toEntity(dto) + entity.setId(null)
-        Svc->>Repo: save(E entity)
-        Repo-->>Svc: E saved (med genereret UUID)
-        Svc->>Svc: toDto(E saved) -> Record D
-        Svc-->>Ctrl: D created
+        Svc->>Repo: save(Entity entity)
+        Repo-->>Svc: Entity saved (med genereret UUID)
+        Svc->>Svc: toDto(Entity saved) -> Record DTO
+        Svc-->>Ctrl: DTO created
         deactivate Svc
-        Ctrl-->>Caller: HTTP 201 Created (Location: /api/v1/appointments/{id} + JSON D)
+        Ctrl-->>Caller: HTTP 201 Created (Location: /api/v1/appointments/{id} + JSON DTO)
     end
 ```
 
@@ -1133,8 +1133,8 @@ flowchart TB
     end
 
     subgraph BackendZone["Spring Boot 3 Backend (:8080 / :8081)"]
-        JavaWeb["BaseWebCore.java\nBaseController<E, D, ID>\nGlobalExceptionHandler (RFC 7807)"]
-        JavaDomain["BaseDomainCore.java\nBaseService<E, D, ID>\nDomainGuard & ErrorCode"]
+        JavaWeb["BaseWebCore.java\nBaseController<Entity, DTO>\nGlobalExceptionHandler (RFC 7807)"]
+        JavaDomain["BaseDomainCore.java\nBaseService<Entity, DTO>\nDomainGuard & ErrorCode"]
         JavaWeb --> JavaDomain
     end
 

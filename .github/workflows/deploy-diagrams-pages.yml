@@ -29,6 +29,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Validate diagram viewer HTML
+        run: |
+          node -e '
+            const fs = require("fs");
+            const vm = require("vm");
+            const html = fs.readFileSync("docs/diagrams/diagram-oversigt.html", "utf8");
+            if (/^(<<<<<<<|=======|>>>>>>>)/m.test(html)) {
+              throw new Error("Git merge conflict markers found in docs/diagrams/diagram-oversigt.html");
+            }
+            const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
+            if (scripts.length === 0) {
+              throw new Error("No <script> block found in docs/diagrams/diagram-oversigt.html");
+            }
+            for (const [, code] of scripts) {
+              new vm.Script(code, { filename: "docs/diagrams/diagram-oversigt.html" });
+            }
+            const m = html.match(/const DIAGRAMS = (\[[\s\S]*?\]);/);
+            if (!m) throw new Error("Missing DIAGRAMS payload");
+            const diagrams = JSON.parse(m[1]);
+            if (!Array.isArray(diagrams) || diagrams.length === 0) {
+              throw new Error("DIAGRAMS payload is empty");
+            }
+            console.log(`Validated docs/diagrams/diagram-oversigt.html (${diagrams.length} diagrams, 0 syntax/conflict errors).`);
+          '
+
       - name: Assemble GitHub Pages site artifact
         run: |
           mkdir -p _site/diagrams
