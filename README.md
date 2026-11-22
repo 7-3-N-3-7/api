@@ -145,7 +145,24 @@ npm run sdlc:verify -- --branch feature/<id>-<slug> --dry-run
 
 # 5. Vis lokal SDLC-status
 npm run sdlc:status
+
+# 6. Synkronisér Issue & Projects v2 direkte fra commit-tags (--dry-run understøttes)
+npm run sdlc:commit-sync -- --message "feat: implement flow #42 #tdd" --branch dev --dry-run
 ```
+
+**Commit-message tags til GitHub Issues & Projects v2 (virker i `api`, `backend` & `frontend`):**
+
+| Tag (1:1 eller kort form) | Projects v2 Status | Issue-handling |
+| :--- | :--- | :--- |
+| `#backlog` | `Backlog` | Tilføjer til board & kommenterer |
+| `#spec-ready` / `#spec` | `Spec Ready` | Opdaterer status & kommenterer |
+| `#red-outer-bdd` / `#bdd` / `#red` | `Red (Outer BDD)` | Opdaterer status & kommenterer |
+| `#inner-tdd` / `#tdd` | `Inner TDD` | Opdaterer status & kommenterer |
+| `#green-gate` / `#green` | `Green Gate` | Opdaterer status & kommenterer |
+| *(`#done` ignoreres)* | `Done` | Sættes udelukkende af `sdlc-verify-and-sync.yml` efter grøn CI / merge til `main` |
+| `#regression` | `Regression` | Sætter `Regression`, kommenterer & genåbner hvis lukket |
+
+Eksempler: `feat: auth #42 #tdd`, `fix: endpoint api#42 #green` (fra `backend`/`frontend`), `fix: rollback #42 #regression`.
 
 ---
 

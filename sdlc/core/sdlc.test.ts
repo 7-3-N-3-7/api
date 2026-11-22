@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type SdlcConfig,
+  DEFAULT_COMMIT_STATUS_TAGS,
   buildSeedFieldValues,
   buildStatusOptionInputs,
   deriveSliceFromFeaturePath,
@@ -16,7 +17,9 @@ import {
   injectIssueTags,
   injectSeedIssueTags,
   parseBranchIssueId,
+  parseCommitTagActions,
   parseCucumberJsonReport,
+  parseGithubCommitEvent,
   parseIssueBody,
   parseIstanbulSummaryJson,
   parseJacocoXmlReport,
@@ -33,6 +36,7 @@ import {
   runCli,
   seedExistingFeatures,
   spawnSubIssues,
+  syncCommitTags,
   syncIssueToFeature,
   verifyWorkspaceAndSync,
 } from "./sdlc-github.ts";
@@ -1767,5 +1771,405 @@ describe("sdlc-github adapter, GraphQL live path, --dry-run, and CLI", () => {
         }
       )
     ).rejects.toThrow("Could not parse issue number from gh output");
+  });
+
+  it("parses commit-message status tags across repos, branches, and GitHub event payloads", () => {
+    const multiConfig: SdlcConfig = {
+      ...baseConfig,
+      repositories: {
+        controlPlane: "7-3-N-3-7/api",
+        backend: "7-3-N-3-7/backend",
+        frontend: "7-3-N-3-7/frontend",
+      },
+    };
+
+    expect(DEFAULT_COMMIT_STATUS_TAGS.done).toBeUndefined();
+    expect(DEFAULT_COMMIT_STATUS_TAGS.green).toBe("Green Gate");
+
+    // Uses defaultRepo fallback ("7-3-N-3-7/api") and omitted options parameter; #done is ignored
+    const simple = parseCommitTagActions(
+      [
+        { message: "feat: seed #10 #backlog\n\nupdated #11 #spec-ready" },
+        { message: "feat: attempt close #10 #done" },
+      ],
+      baseConfig
+    );
+    expect(simple.map((a) => [a.repo, a.issueId, a.status, a.commitSha])).toEqual([
+      ["7-3-N-3-7/api", 10, "Backlog", ""],
+      ["7-3-N-3-7/api", 11, "Spec Ready", ""],
+    ]);
+
+    // All non-Done statuses, short aliases, multi-issue line, cross-repo explicit & short alias, overrides in push order
+    const crossRepoActions = parseCommitTagActions(
+      [
+        {
+          sha: "aaa1111",
+          message: [
+            "feat: #42 #43 #bdd and ignore unknown foo#12 #ffffff https://example.com/#green",
+            "fix(be): backend#17 7-3-N-3-7/frontend#5 #tdd",
+            "chore(fe): api#44 #green-gate",
+          ].join("\n"),
+        },
+        {
+          sha: "bbb2222",
+          message: "fix: #42 #43 #regression\n\nfrontend#5 #red-outer-bdd\nadvance #42\n#GREEN\ntry #done",
+        },
+      ],
+      multiConfig
+    );
+    expect(crossRepoActions).toEqual([
+      {
+        repo: "7-3-N-3-7/api",
+        issueId: 42,
+        status: "Green Gate",
+        tag: "#green",
+        commitSha: "bbb2222",
+        commitMessage: "fix: #42 #43 #regression\n\nfrontend#5 #red-outer-bdd\nadvance #42\n#GREEN\ntry #done",
+      },
+      {
+        repo: "7-3-N-3-7/api",
+        issueId: 43,
+        status: "Regression",
+        tag: "#regression",
+        commitSha: "bbb2222",
+        commitMessage: "fix: #42 #43 #regression\n\nfrontend#5 #red-outer-bdd\nadvance #42\n#GREEN\ntry #done",
+      },
+      {
+        repo: "7-3-N-3-7/backend",
+        issueId: 17,
+        status: "Inner TDD",
+        tag: "#tdd",
+        commitSha: "aaa1111",
+        commitMessage: crossRepoActions[2].commitMessage,
+      },
+      {
+        repo: "7-3-N-3-7/frontend",
+        issueId: 5,
+        status: "Red (Outer BDD)",
+        tag: "#red-outer-bdd",
+        commitSha: "bbb2222",
+        commitMessage: crossRepoActions[0].commitMessage,
+      },
+      {
+        repo: "7-3-N-3-7/api",
+        issueId: 44,
+        status: "Green Gate",
+        tag: "#green-gate",
+        commitSha: "aaa1111",
+        commitMessage: crossRepoActions[2].commitMessage,
+      },
+    ]);
+
+    // Subject issue + body status tag fallback, plus branch fallback
+    const bodyFallback = parseCommitTagActions(
+      [{ sha: "ccc3333", message: "fix: handle timeout #55\n\nVerified on local\n#red" }],
+      multiConfig
+    );
+    expect(bodyFallback[0].issueId).toBe(55);
+    expect(bodyFallback[0].status).toBe("Red (Outer BDD)");
+
+    const branchFallback = parseCommitTagActions(
+      [{ sha: "ddd4444", message: "wip #inner-tdd" }],
+      multiConfig,
+      { branch: "feature/77-auth-flow" }
+    );
+    expect(branchFallback[0]).toMatchObject({ issueId: 77, status: "Inner TDD", tag: "#inner-tdd" });
+
+    // Matched line suppresses branch fallback; non-feature branch yields no fallback; untagged & #done commits ignored
+    expect(
+      parseCommitTagActions(
+        [
+          { message: "#88 #spec\nwip #tdd" },
+          { message: "Merge pull request #100 from 7-3-N-3-7/dev" },
+          { message: "chore: try direct close #99 #done" },
+        ],
+        multiConfig,
+        { branch: "feature/77-auth-flow" }
+      ).map((a) => a.issueId)
+    ).toEqual([88]);
+    expect(
+      parseCommitTagActions([{ message: "wip #tdd" }], multiConfig, { branch: "dev" })
+    ).toEqual([]);
+
+    // Custom commitStatusTags filtering (empty key, Done forbidden, invalid status, leading #, repo without slash)
+    const customConfig: SdlcConfig = {
+      ...baseConfig,
+      repositories: {
+        controlPlane: "7-3-N-3-7/api",
+        backend: "local-only",
+        frontend: "7-3-N-3-7/frontend",
+      },
+      projectBoard: {
+        statuses: [...baseConfig.projectBoard.statuses],
+        commitStatusTags: {
+          "": "Green Gate",
+          done: "Done",
+          "#custom-green": "Green Gate",
+          unknown: "NotARealStatus" as SdlcConfig["projectBoard"]["statuses"][number],
+        },
+      },
+    };
+    const customParsed = parseCommitTagActions(
+      [{ message: "feat: #12 #custom-green\r\nignored #unknown\r\n#done" }],
+      customConfig
+    );
+    expect(customParsed).toHaveLength(1);
+    expect(customParsed[0].status).toBe("Green Gate");
+
+    // GitHub event payload parser across repository_dispatch, push, workflow_dispatch, and fallback
+    expect(
+      parseGithubCommitEvent(
+        JSON.stringify({
+          client_payload: {
+            branch: "dev",
+            source_repo: "7-3-N-3-7/backend",
+            commits: [{ id: "111", message: "m1" }, { sha: "222", message: "m2" }, {}],
+          },
+        }),
+        "7-3-N-3-7/api",
+        "main"
+      )
+    ).toEqual({
+      branch: "dev",
+      sourceRepo: "7-3-N-3-7/backend",
+      commits: [
+        { sha: "111", message: "m1" },
+        { sha: "222", message: "m2" },
+        { sha: "", message: "" },
+      ],
+    });
+    expect(
+      parseGithubCommitEvent(
+        JSON.stringify({ client_payload: {} }),
+        "7-3-N-3-7/api",
+        "dev"
+      )
+    ).toEqual({ branch: "dev", sourceRepo: "7-3-N-3-7/api", commits: [] });
+
+    expect(
+      parseGithubCommitEvent(
+        JSON.stringify({
+          ref: "refs/heads/feature/42-demo",
+          repository: { full_name: "7-3-N-3-7/frontend" },
+          commits: [{ id: "abc", message: "push msg" }, {}],
+        }),
+        "7-3-N-3-7/api",
+        "dev"
+      )
+    ).toEqual({
+      branch: "feature/42-demo",
+      sourceRepo: "7-3-N-3-7/frontend",
+      commits: [
+        { sha: "abc", message: "push msg" },
+        { sha: "", message: "" },
+      ],
+    });
+    expect(
+      parseGithubCommitEvent(
+        JSON.stringify({ ref: "", commits: [{ message: "bare" }] }),
+        "7-3-N-3-7/api",
+        "dev"
+      )
+    ).toEqual({ branch: "dev", sourceRepo: "7-3-N-3-7/api", commits: [{ sha: "", message: "bare" }] });
+
+    expect(
+      parseGithubCommitEvent(
+        JSON.stringify({
+          inputs: { branch: "main", source_repo: "7-3-N-3-7/api", sha: "xyz", message: "manual #5 #done" },
+        }),
+        "fallback/repo",
+        "dev"
+      )
+    ).toEqual({
+      branch: "main",
+      sourceRepo: "7-3-N-3-7/api",
+      commits: [{ sha: "xyz", message: "manual #5 #done" }],
+    });
+    expect(
+      parseGithubCommitEvent(
+        JSON.stringify({ inputs: { message: "minimal" } }),
+        "fallback/repo",
+        "dev"
+      )
+    ).toEqual({
+      branch: "dev",
+      sourceRepo: "fallback/repo",
+      commits: [{ sha: "", message: "minimal" }],
+    });
+
+    expect(parseGithubCommitEvent("{}", "7-3-N-3-7/api", "dev")).toEqual({
+      branch: "dev",
+      sourceRepo: "7-3-N-3-7/api",
+      commits: [],
+    });
+  });
+
+  it("executes syncCommitTags and commit-sync CLI in dry-run and live modes while keeping Done CI-only", async () => {
+    const rootDir = trackTempDir();
+    const multiConfig: SdlcConfig = {
+      ...baseConfig,
+      repositories: {
+        controlPlane: "7-3-N-3-7/api",
+        backend: "7-3-N-3-7/backend",
+        frontend: "7-3-N-3-7/frontend",
+      },
+    };
+
+    // 1. Omitted deps parameter + #done / untagged commits -> early exit without closing issues
+    const defaultNoTagRes = await syncCommitTags({
+      rootDir,
+      commits: [{ message: "chore: format code #42 #done" }],
+    });
+    expect(defaultNoTagRes.dryRun).toBe(true);
+    expect(defaultNoTagRes.actions).toEqual([]);
+
+    const noTagLogs: string[] = [];
+    const noTagRes = await syncCommitTags(
+      { rootDir, commits: [{ message: "chore: format code" }] },
+      { dryRun: true, log: (m) => noTagLogs.push(m) }
+    );
+    expect(noTagRes.actions).toEqual([]);
+    expect(noTagLogs[0]).toContain("No SDLC commit status tags found");
+
+    // 2. Dry-run with multiConfig, sha present & absent, sourceRepo different from controlPlaneRepo
+    fs.writeFileSync(path.join(rootDir, "sdlc.config.json"), JSON.stringify(multiConfig, null, 2), "utf8");
+    const dryLogs: string[] = [];
+    const dryRes = await syncCommitTags(
+      {
+        rootDir,
+        branch: "dev",
+        sourceRepo: "7-3-N-3-7/backend",
+        commits: [
+          { sha: "deadbeef1234567", message: "feat: finish backend#17 api#42 #green" },
+          { message: "wip: api#43 #tdd" },
+        ],
+      },
+      { log: (m) => dryLogs.push(m) }
+    );
+    expect(dryRes.dryRun).toBe(true);
+    expect(dryRes.operations.some((o) => o.action === "close_issue")).toBe(false);
+    expect(dryLogs.some((m) => m.includes("[DRY-RUN] SDLC Commit Tag Sync"))).toBe(true);
+
+    // 3. Live mode covering:
+    //    - OPEN #42 #green -> update Project v2 + comment, keep open (Done stays CI-only)
+    //    - CLOSED #44 #regression -> update Project v2 + comment + reopen
+    //    - OPEN #45 #tdd -> update Project v2 (projectNode missing branch) + comment, keep open
+    //    - Missing issue #404 -> skip comment/reopen cleanly
+    //    - Thrown GraphQL error on #500 -> catch & log without throwing
+    const ghCalls: string[][] = [];
+    const liveLogs: string[] = [];
+    const liveRes = await syncCommitTags(
+      {
+        rootDir,
+        branch: "dev",
+        commits: [
+          {
+            sha: "cafe1234567890",
+            message: [
+              "fix: #42 #green",
+              "fix: #44 #regression",
+              "feat: #45 #tdd",
+              "fix: #404 #bdd",
+              "fix: #500 #green",
+            ].join("\n"),
+          },
+        ],
+      },
+      {
+        dryRun: false,
+        token: "tok",
+        log: (m) => liveLogs.push(m),
+        runGh: (args) => {
+          ghCalls.push(args);
+          return "ok";
+        },
+        graphql: async <T>(query: string, vars: Record<string, unknown>) => {
+          if (query.includes("issueRepo: repository")) {
+            const num = vars.issueNumber as number;
+            if (num === 500) {
+              throw new Error("graphql failure");
+            }
+            if (num === 404) {
+              return { issueRepo: { issue: null }, projectRepo: { projectsV2: { nodes: [] } } } as T;
+            }
+            const state = num === 44 ? "CLOSED" : "OPEN";
+            const projectNodes =
+              num === 45
+                ? []
+                : [
+                    {
+                      id: "P_1",
+                      number: 1,
+                      url: "u",
+                      title: multiConfig.projectTitle,
+                      fields: {
+                        nodes: [
+                          {
+                            id: "F_ST",
+                            name: "Status",
+                            options: multiConfig.projectBoard.statuses.map((s, i) => ({ id: `O_${i}`, name: s })),
+                          },
+                          { id: "F_LB", name: "Linked Branch" },
+                        ],
+                      },
+                    },
+                  ];
+            return {
+              issueRepo: { issue: { id: `I_${num}`, state } },
+              projectRepo: { projectsV2: { nodes: projectNodes } },
+            } as T;
+          }
+          if (query.includes("addProjectV2ItemById")) {
+            return { addProjectV2ItemById: { item: { id: "IT_1" } } } as T;
+          }
+          return { updateProjectV2ItemFieldValue: { projectV2Item: { id: "IT_1" } } } as T;
+        },
+      }
+    );
+
+    expect(liveRes.operations.some((o) => o.action === "reopen_issue" && o.details.issueId === 44)).toBe(true);
+    expect(ghCalls.some((c) => c[1] === "close")).toBe(false);
+    expect(ghCalls.some((c) => c[1] === "reopen" && c[2] === "44")).toBe(true);
+    expect(ghCalls.some((c) => c[2] === "404")).toBe(false);
+    expect(liveLogs.some((m) => m.includes("Issue 7-3-N-3-7/api#404 not found"))).toBe(true);
+    expect(liveLogs.some((m) => m.includes("Commit tag sync failed for 7-3-N-3-7/api#500"))).toBe(true);
+
+    // 4. CLI commit-sync via --event-file and --message flags
+    const eventPath = path.join(rootDir, "push-event.json");
+    fs.writeFileSync(
+      eventPath,
+      JSON.stringify({
+        ref: "refs/heads/dev",
+        repository: { full_name: "7-3-N-3-7/frontend" },
+        commits: [{ id: "fe01234", message: "feat: ui #42 #green" }],
+      }),
+      "utf8"
+    );
+    process.env.GITHUB_REPOSITORY = "7-3-N-3-7/api";
+    process.env.GITHUB_REF_NAME = "dev";
+    expect(await runCli(["commit-sync", "--root", rootDir, "--event-file", eventPath, "--dry-run"], { log: () => {} })).toBe(0);
+    delete process.env.GITHUB_REPOSITORY;
+    delete process.env.GITHUB_REF_NAME;
+
+    expect(
+      await runCli(
+        [
+          "commit-sync",
+          "--root",
+          rootDir,
+          "--message",
+          "feat: #42 #tdd",
+          "--sha",
+          "1234567",
+          "--branch",
+          "dev",
+          "--repo",
+          "7-3-N-3-7/api",
+          "--dry-run",
+        ],
+        { log: () => {} }
+      )
+    ).toBe(0);
+    expect(await runCli(["commit-sync", "--root", rootDir, "--dry-run"], { log: () => {} })).toBe(0);
   });
 });

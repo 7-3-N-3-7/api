@@ -4,6 +4,8 @@ import { execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import {
   type BranchPlan,
+  type CommitInput,
+  type CommitTagAction,
   type CucumberReportSummary,
   type IstanbulCoverageMetrics,
   type JacocoCoverageMetrics,
@@ -22,7 +24,9 @@ import {
   formatSeedSubIssueBody,
   injectSeedIssueTags,
   parseBranchIssueId,
+  parseCommitTagActions,
   parseCucumberJsonReport,
+  parseGithubCommitEvent,
   parseIssueBody,
   parseIstanbulSummaryJson,
   parseJacocoXmlReport,
@@ -115,6 +119,21 @@ export interface SeedFeaturesOutput {
   totalParents: number;
   totalSubIssues: number;
   totalItems: number;
+  operations: SdlcDryRunOperation[];
+}
+
+export interface SyncCommitTagsOptions {
+  rootDir: string;
+  commits: CommitInput[];
+  branch?: string;
+  sourceRepo?: string;
+}
+
+export interface SyncCommitTagsOutput {
+  dryRun: boolean;
+  branch: string;
+  sourceRepo: string;
+  actions: CommitTagAction[];
   operations: SdlcDryRunOperation[];
 }
 
@@ -1253,6 +1272,206 @@ export async function seedExistingFeatures(
   };
 }
 
+async function syncCommitIssueOnProjectV2(
+  config: SdlcConfig,
+  ctx: ReturnType<typeof resolveContext>,
+  params: {
+    issueOwner: string;
+    issueRepo: string;
+    issueId: number;
+    projectOwner: string;
+    projectRepo: string;
+    status: ProjectStatus;
+    textFields: Record<string, string>;
+  }
+): Promise<{ found: boolean; state: string | null }> {
+  const data = await ctx.graphql<{
+    issueRepo: { issue: { id: string; state: string } | null };
+    projectRepo: { projectsV2?: { nodes?: RawProjectNode[] } };
+  }>(
+    `query(
+      $issueOwner: String!,
+      $issueRepo: String!,
+      $issueNumber: Int!,
+      $projectOwner: String!,
+      $projectRepo: String!
+    ) {
+      issueRepo: repository(owner: $issueOwner, name: $issueRepo) {
+        issue(number: $issueNumber) { id state }
+      }
+      projectRepo: repository(owner: $projectOwner, name: $projectRepo) {
+        projectsV2(first: 20) {
+          nodes {
+            id
+            number
+            url
+            title
+            fields(first: 50) {
+              nodes {
+                ... on ProjectV2Field { id name }
+                ... on ProjectV2SingleSelectField { id name options { id name } }
+              }
+            }
+          }
+        }
+      }
+    }`,
+    {
+      issueOwner: params.issueOwner,
+      issueRepo: params.issueRepo,
+      issueNumber: params.issueId,
+      projectOwner: params.projectOwner,
+      projectRepo: params.projectRepo,
+    },
+    ctx.token
+  );
+  const issue = data.issueRepo.issue;
+  if (!issue?.id) {
+    return { found: false, state: null };
+  }
+  const projectNode = data.projectRepo.projectsV2?.nodes?.find(
+    (p) => p.title === config.projectTitle
+  );
+  if (projectNode) {
+    await upsertProjectV2ItemWithFields(
+      ctx,
+      extractProjectMeta(projectNode),
+      issue.id,
+      params.status,
+      params.textFields
+    );
+  }
+  return { found: true, state: issue.state };
+}
+
+/**
+ * Synchronizes GitHub Issues and Projects v2 statuses from commit-message tags across all configured repositories.
+ */
+export async function syncCommitTags(
+  options: SyncCommitTagsOptions,
+  deps: SdlcAdapterDeps = {}
+): Promise<SyncCommitTagsOutput> {
+  const config = loadSdlcConfig(options.rootDir);
+  const ctx = resolveContext(options.rootDir, deps);
+  const controlPlaneRepo = config.repositories?.controlPlane || `${ctx.owner}/${ctx.repo}`;
+  const [projectOwner, projectRepo] = controlPlaneRepo.split("/");
+  const branch = options.branch || config.branches.integration;
+  const sourceRepo = options.sourceRepo || controlPlaneRepo;
+
+  const actions = parseCommitTagActions(options.commits, config, {
+    defaultRepo: controlPlaneRepo,
+    branch,
+  });
+
+  if (actions.length === 0) {
+    ctx.log("No SDLC commit status tags found.");
+    return { dryRun: ctx.dryRun, branch, sourceRepo, actions: [], operations: [] };
+  }
+
+  const operations: SdlcDryRunOperation[] = [];
+  const summaryRows: string[] = [];
+
+  for (const action of actions) {
+    const linkedBranch = sourceRepo === controlPlaneRepo ? branch : `${sourceRepo}:${branch}`;
+    const shortSha = action.commitSha ? action.commitSha.slice(0, 7) : "";
+    const shaDisplay = shortSha || "-";
+    const commitRef = shortSha
+      ? `[\`${sourceRepo}@${shortSha}\`](https://github.com/${sourceRepo}/commit/${action.commitSha})`
+      : `\`${sourceRepo}\``;
+    const subject = action.commitMessage.split("\n")[0];
+    const commentBody = `🤖 **SDLC Commit Sync**: Status → **${action.status}** via \`${action.tag}\` (${commitRef} on \`${branch}\`)\n\n> ${subject}`;
+
+    operations.push(
+      {
+        action: "upsert_project_v2_item",
+        details: {
+          repo: action.repo,
+          issueId: action.issueId,
+          status: action.status,
+          tag: action.tag,
+          linkedBranch,
+        },
+      },
+      {
+        action: "comment_issue",
+        details: {
+          repo: action.repo,
+          issueId: action.issueId,
+          body: commentBody,
+        },
+      }
+    );
+
+    let stateAction = "Keep open";
+
+    if (!ctx.dryRun) {
+      const [issueOwner, issueRepo] = action.repo.split("/");
+      try {
+        const syncRes = await syncCommitIssueOnProjectV2(config, ctx, {
+          issueOwner,
+          issueRepo,
+          issueId: action.issueId,
+          projectOwner,
+          projectRepo,
+          status: action.status,
+          textFields: { "Linked Branch": linkedBranch },
+        });
+        if (!syncRes.found) {
+          ctx.log(`Issue ${action.repo}#${action.issueId} not found; skipping commit tag sync.`);
+          summaryRows.push(
+            `| ${action.repo}#${action.issueId} | ${action.status} | \`${action.tag}\` | Not found (skipped) | ${shaDisplay} |`
+          );
+          continue;
+        }
+        ctx.runGh([
+          "issue",
+          "comment",
+          String(action.issueId),
+          "--repo",
+          action.repo,
+          "--body",
+          commentBody,
+        ]);
+        if (syncRes.state === "CLOSED") {
+          operations.push({
+            action: "reopen_issue",
+            details: {
+              repo: action.repo,
+              issueId: action.issueId,
+              status: action.status,
+              tag: action.tag,
+            },
+          });
+          ctx.runGh(["issue", "reopen", String(action.issueId), "--repo", action.repo]);
+          stateAction = "Reopen issue";
+        }
+      } catch (err) {
+        ctx.log(`Commit tag sync failed for ${action.repo}#${action.issueId}: ${String(err)}`);
+        stateAction = "Error";
+      }
+    }
+
+    summaryRows.push(
+      `| ${action.repo}#${action.issueId} | ${action.status} | \`${action.tag}\` | ${stateAction} | ${shaDisplay} |`
+    );
+  }
+
+  recordOperations(options.rootDir, ctx.dryRunLogPath, operations, ctx.dryRun);
+
+  const modeTag = ctx.dryRun ? "[DRY-RUN] " : "";
+  ctx.log(
+    [
+      `${modeTag}SDLC Commit Tag Sync (${sourceRepo} @ ${branch}): ${actions.length} issue(s)`,
+      "",
+      "| Issue | Status | Tag | State Action | Commit |",
+      "| :--- | :--- | :--- | :--- | :--- |",
+      ...summaryRows,
+    ].join("\n")
+  );
+
+  return { dryRun: ctx.dryRun, branch, sourceRepo, actions, operations };
+}
+
 function getArg(args: string[], flag: string, fallback: string): string {
   const idx = args.indexOf(flag);
   return idx >= 0 && idx + 1 < args.length ? args[idx + 1] : fallback;
@@ -1318,8 +1537,36 @@ export async function runCli(
     return 0;
   }
 
+  if (command === "commit-sync") {
+    const fallbackRepo = process.env.GITHUB_REPOSITORY || "";
+    const fallbackBranch = process.env.GITHUB_REF_NAME || "";
+    const eventFile = getArg(rest, "--event-file", "");
+    const event = eventFile
+      ? parseGithubCommitEvent(fs.readFileSync(eventFile, "utf8"), fallbackRepo, fallbackBranch)
+      : {
+          branch: getArg(rest, "--branch", fallbackBranch),
+          sourceRepo: getArg(rest, "--repo", fallbackRepo),
+          commits: [
+            {
+              sha: getArg(rest, "--sha", ""),
+              message: getArg(rest, "--message", ""),
+            },
+          ],
+        };
+    await syncCommitTags(
+      {
+        rootDir,
+        commits: event.commits,
+        branch: event.branch,
+        sourceRepo: event.sourceRepo,
+      },
+      effectiveDeps
+    );
+    return 0;
+  }
+
   (effectiveDeps.log || console.error)(
-    `Unknown SDLC command '${command || ""}'. Use: bootstrap | sync-issue | spawn | verify | status | seed`
+    `Unknown SDLC command '${command || ""}'. Use: bootstrap | sync-issue | spawn | verify | status | seed | commit-sync`
   );
   return 2;
 }

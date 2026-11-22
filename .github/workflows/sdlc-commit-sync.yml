@@ -1,0 +1,49 @@
+name: SDLC Commit Tag Sync
+
+on:
+  push:
+  repository_dispatch:
+    types: [sdlc-commit-sync]
+  workflow_dispatch:
+    inputs:
+      message:
+        description: "Commit message with issue & status tags (e.g. 'feat: x #42 #tdd')"
+        required: true
+        type: string
+      branch:
+        description: "Branch name (defaults to current branch)"
+        required: false
+        type: string
+        default: ""
+      source_repo:
+        description: "Source repository full name (defaults to 7-3-N-3-7/api)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  commit-sync:
+    name: Sync Commit Tags to Issues & Projects v2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout control-plane repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Parse Commit Tags & Sync Issues / GitHub Projects v2
+        env:
+          SDLC_PROJECT_TOKEN: ${{ secrets.SDLC_PROJECT_TOKEN || github.token }}
+          GH_TOKEN: ${{ secrets.SDLC_PROJECT_TOKEN || github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -o pipefail
+          npm run sdlc:commit-sync -- --event-file "$GITHUB_EVENT_PATH" | tee -a "$GITHUB_STEP_SUMMARY"

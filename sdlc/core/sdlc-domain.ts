@@ -100,9 +100,44 @@ export interface SdlcConfig {
   };
   projectBoard: {
     statuses: ProjectStatus[];
+    commitStatusTags?: Record<string, ProjectStatus>;
   };
   declarativeFeatures?: DeclarativeFeatureConfig[];
 }
+
+export interface CommitInput {
+  sha?: string;
+  message: string;
+}
+
+export interface CommitTagAction {
+  repo: string;
+  issueId: number;
+  status: ProjectStatus;
+  tag: string;
+  commitSha: string;
+  commitMessage: string;
+}
+
+export interface ParsedGithubCommitEvent {
+  branch: string;
+  sourceRepo: string;
+  commits: CommitInput[];
+}
+
+export const DEFAULT_COMMIT_STATUS_TAGS: Record<string, ProjectStatus> = {
+  backlog: "Backlog",
+  "spec-ready": "Spec Ready",
+  spec: "Spec Ready",
+  "red-outer-bdd": "Red (Outer BDD)",
+  bdd: "Red (Outer BDD)",
+  red: "Red (Outer BDD)",
+  "inner-tdd": "Inner TDD",
+  tdd: "Inner TDD",
+  "green-gate": "Green Gate",
+  green: "Green Gate",
+  regression: "Regression",
+};
 
 export interface ParsedIssueSpec {
   issueId: number;
@@ -1140,5 +1175,184 @@ export function buildSeedFieldValues(params: {
     "Coverage Gate": !params.hasFeatureFile ? "N/A (Infra)" : "PASS (100%)",
     "Sub-Issues": params.subIssueSummary,
     "Linked Branch": params.linkedBranch,
+  };
+}
+
+interface RawGithubCommit {
+  id?: string;
+  sha?: string;
+  message?: string;
+}
+
+interface RawGithubEventPayload {
+  ref?: string;
+  repository?: { full_name?: string };
+  commits?: RawGithubCommit[];
+  client_payload?: {
+    branch?: string;
+    source_repo?: string;
+    commits?: RawGithubCommit[];
+  };
+  inputs?: {
+    branch?: string;
+    source_repo?: string;
+    sha?: string;
+    message?: string;
+  };
+}
+
+/**
+ * Resolves GitHub Issue & Projects v2 status transitions declared via commit-message tags.
+ */
+export function parseCommitTagActions(
+  commits: CommitInput[],
+  config: SdlcConfig,
+  options: { defaultRepo?: string; branch?: string } = {}
+): CommitTagAction[] {
+  const defaultRepo = options.defaultRepo || config.repositories?.controlPlane || "7-3-N-3-7/api";
+  const rawTags = config.projectBoard.commitStatusTags || DEFAULT_COMMIT_STATUS_TAGS;
+  const tagMap = new Map<string, { status: ProjectStatus; tag: string }>();
+
+  for (const [rawKey, status] of Object.entries(rawTags)) {
+    const key = rawKey.trim().toLowerCase().replace(/^#/, "");
+    if (key && status !== "Done" && config.projectBoard.statuses.includes(status)) {
+      tagMap.set(key, { status, tag: `#${key}` });
+    }
+  }
+
+  const repoAliases = new Map<string, string>();
+  for (const fullRepo of [
+    defaultRepo,
+    config.repositories?.backend,
+    config.repositories?.frontend,
+  ]) {
+    if (fullRepo && fullRepo.includes("/")) {
+      repoAliases.set(fullRepo.split("/")[1].toLowerCase(), fullRepo);
+    }
+  }
+
+  const issueRegex =
+    /(?<=^|[\s(\[,;])(?:([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)|([A-Za-z0-9_.-]+))?#([1-9]\d*)(?=$|[\s)\],.;:!?])/g;
+  const statusTagRegex =
+    /(?<=^|[\s(\[,;])#([A-Za-z][A-Za-z0-9-]*)(?=$|[\s)\],.;:!?])/g;
+
+  const branchIssueId = options.branch ? parseBranchIssueId(options.branch, config) : null;
+  const finalByKey = new Map<string, CommitTagAction>();
+
+  const recordAction = (
+    repo: string,
+    issueId: number,
+    statusMatch: { status: ProjectStatus; tag: string },
+    commitSha: string,
+    commitMessage: string
+  ) => {
+    finalByKey.set(`${repo}#${issueId}`, {
+      repo,
+      issueId,
+      status: statusMatch.status,
+      tag: statusMatch.tag,
+      commitSha,
+      commitMessage,
+    });
+  };
+
+  for (const commit of commits) {
+    const commitSha = commit.sha || "";
+    const commitMessage = commit.message;
+    const lines = commitMessage.replace(/\r\n/g, "\n").split("\n");
+    const unmatchedIssues: Array<{ repo: string; issueId: number }> = [];
+    let lastStatusMatch: { status: ProjectStatus; tag: string } | null = null;
+    let matchedAnyLine = false;
+
+    for (const line of lines) {
+      const lineIssues: Array<{ repo: string; issueId: number }> = [];
+      for (const m of line.matchAll(issueRegex)) {
+        const repo = m[1]
+          ? m[1]
+          : m[2]
+            ? repoAliases.get(m[2].toLowerCase()) || ""
+            : defaultRepo;
+        if (repo) {
+          lineIssues.push({ repo, issueId: Number.parseInt(m[3], 10) });
+        }
+      }
+
+      let lineStatus: { status: ProjectStatus; tag: string } | null = null;
+      for (const m of line.matchAll(statusTagRegex)) {
+        const hit = tagMap.get(m[1].toLowerCase());
+        if (hit) {
+          lineStatus = hit;
+        }
+      }
+
+      if (lineStatus) {
+        lastStatusMatch = lineStatus;
+        if (lineIssues.length > 0) {
+          matchedAnyLine = true;
+          for (const ref of lineIssues) {
+            recordAction(ref.repo, ref.issueId, lineStatus, commitSha, commitMessage);
+          }
+        }
+      } else if (lineIssues.length > 0) {
+        unmatchedIssues.push(...lineIssues);
+      }
+    }
+
+    if (lastStatusMatch) {
+      if (unmatchedIssues.length > 0) {
+        for (const ref of unmatchedIssues) {
+          recordAction(ref.repo, ref.issueId, lastStatusMatch, commitSha, commitMessage);
+        }
+      } else if (!matchedAnyLine && branchIssueId !== null) {
+        recordAction(defaultRepo, branchIssueId, lastStatusMatch, commitSha, commitMessage);
+      }
+    }
+  }
+
+  return [...finalByKey.values()];
+}
+
+/**
+ * Extracts branch, source repository, and commits from GitHub push, repository_dispatch, or workflow_dispatch event JSON.
+ */
+export function parseGithubCommitEvent(
+  rawJson: string,
+  fallbackRepo: string,
+  fallbackBranch: string
+): ParsedGithubCommitEvent {
+  const payload = JSON.parse(rawJson) as RawGithubEventPayload;
+
+  if (payload.client_payload) {
+    const cp = payload.client_payload;
+    return {
+      branch: cp.branch || fallbackBranch,
+      sourceRepo: cp.source_repo || fallbackRepo,
+      commits: Array.isArray(cp.commits)
+        ? cp.commits.map((c) => ({ sha: c.id || c.sha || "", message: c.message || "" }))
+        : [],
+    };
+  }
+
+  if (Array.isArray(payload.commits)) {
+    const refBranch = (payload.ref || "").replace(/^refs\/heads\//, "");
+    return {
+      branch: refBranch || fallbackBranch,
+      sourceRepo: payload.repository?.full_name || fallbackRepo,
+      commits: payload.commits.map((c) => ({ sha: c.id || "", message: c.message || "" })),
+    };
+  }
+
+  if (payload.inputs?.message) {
+    return {
+      branch: payload.inputs.branch || fallbackBranch,
+      sourceRepo: payload.inputs.source_repo || fallbackRepo,
+      commits: [{ sha: payload.inputs.sha || "", message: payload.inputs.message }],
+    };
+  }
+
+  return {
+    branch: fallbackBranch,
+    sourceRepo: fallbackRepo,
+    commits: [],
   };
 }
