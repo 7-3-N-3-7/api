@@ -99,7 +99,7 @@ package "3. Service & JGit Versioning Swimlane" as LaneSvc #F4ECF7 {
 }
 
 package "4. Repository Swimlane" as LaneRepo #E8F8F5 {
-    interface "BaseRepository<E, UUID>" as BaseRepo <<@NoRepositoryBean>> {
+    interface "BaseRepository<Entity, UUID>" as BaseRepo <<@NoRepositoryBean>> {
     }
 
     interface JournalEntryRepository <<@Repository>> {

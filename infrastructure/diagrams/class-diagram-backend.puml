@@ -19,14 +19,14 @@ skinparam class {
 title Backend Klassediagram (com.platform - Java 17 / Spring Boot 3.3 - Generisk Base Arkitektur & Spring IoC DI Swimlanes)
 
 package "Generic Core Base Layer (com.platform.core)" as PkgCore #F9EBEA {
-    abstract class "BaseController<E extends BaseEntity<ID>, D extends BaseDTO<ID>, ID>" as BaseController <<AbstractController>> {
-        #service: BaseService<E, D, ID> <<@Autowired>>
-        +getService(): BaseService<E, D, ID>
-        +setService(service: BaseService<E, D, ID>): void
-        +getAll(): ResponseEntity<List<D>>
-        +getById(id: ID): ResponseEntity<D>
-        +create(dto: D): ResponseEntity<D>
-        +update(id: ID, dto: D): ResponseEntity<D>
+    abstract class "BaseController<Entity extends BaseEntity<ID>, DTO extends BaseDTO<ID>, ID>" as BaseController <<AbstractController>> {
+        #service: BaseService<Entity, DTO, ID> <<@Autowired>>
+        +getService(): BaseService<Entity, DTO, ID>
+        +setService(service: BaseService<Entity, DTO, ID>): void
+        +getAll(): ResponseEntity<List<DTO>>
+        +getById(id: ID): ResponseEntity<DTO>
+        +create(dto: DTO): ResponseEntity<DTO>
+        +update(id: ID, dto: DTO): ResponseEntity<DTO>
         +delete(id: ID): ResponseEntity<Void>
     }
 
@@ -35,46 +35,46 @@ package "Generic Core Base Layer (com.platform.core)" as PkgCore #F9EBEA {
         +setId(id: ID): void
     }
 
-    class "BaseService<E extends BaseEntity<ID>, D extends BaseDTO<ID>, ID>" as BaseService <<@Transactional>> {
-        #repository: BaseRepository<E, ID> <<@Autowired>>
-        #interceptors: List<CrudInterceptor<E, ID>> <<@Autowired>>
-        #entityClass: Class<E>
-        #dtoClass: Class<D>
-        +getRepository(): BaseRepository<E, ID>
-        +setRepository(repository: BaseRepository<E, ID>): void
-        +setInterceptors(interceptors: List<CrudInterceptor<E, ID>>): void
-        +addInterceptor(interceptor: CrudInterceptor<E, ID>): void
-        +toEntity(dto: D): E
-        +toDto(entity: E): D
-        +findAll(): List<E>
-        +findAllDtos(): List<D>
-        +findAllDynamic(page: int, size: int, filters: Map<String, String>, sortParam: String): List<E>
-        +buildSpecification(filters: Map<String, String>): Specification<E>
+    class "BaseService<Entity extends BaseEntity<ID>, DTO extends BaseDTO<ID>, ID>" as BaseService <<@Transactional>> {
+        #repository: BaseRepository<Entity, ID> <<@Autowired>>
+        #interceptors: List<CrudInterceptor<Entity, ID>> <<@Autowired>>
+        #entityClass: Class<Entity>
+        #dtoClass: Class<DTO>
+        +getRepository(): BaseRepository<Entity, ID>
+        +setRepository(repository: BaseRepository<Entity, ID>): void
+        +setInterceptors(interceptors: List<CrudInterceptor<Entity, ID>>): void
+        +addInterceptor(interceptor: CrudInterceptor<Entity, ID>): void
+        +toEntity(dto: DTO): Entity
+        +toDto(entity: Entity): DTO
+        +findAll(): List<Entity>
+        +findAllDtos(): List<DTO>
+        +findAllDynamic(page: int, size: int, filters: Map<String, String>, sortParam: String): List<Entity>
+        +buildSpecification(filters: Map<String, String>): Specification<Entity>
         +buildSort(sortParam: String): Sort
-        +findById(id: ID): Optional<E>
-        +findDtoById(id: ID): Optional<D>
-        +getByIdOrThrow(id: ID): E
-        +create(entity: E): E
-        +createFromDto(dto: D): D
-        +save(entity: E): E
-        +update(id: ID, entity: E): E
-        +updateFromDto(id: ID, dto: D): D
+        +findById(id: ID): Optional<Entity>
+        +findDtoById(id: ID): Optional<DTO>
+        +getByIdOrThrow(id: ID): Entity
+        +create(entity: Entity): Entity
+        +createFromDto(dto: DTO): DTO
+        +save(entity: Entity): Entity
+        +update(id: ID, entity: Entity): Entity
+        +updateFromDto(id: ID, dto: DTO): DTO
         +deleteById(id: ID): void
         +existsById(id: ID): boolean
         +count(): long
     }
 
-    interface "CrudInterceptor<E extends BaseEntity<ID>, ID>" as CrudInterceptor <<LifecycleHook>> {
-        +beforeCreate(entity: E): void
-        +afterCreate(entity: E): void
-        +beforeUpdate(entity: E): void
-        +afterUpdate(entity: E): void
+    interface "CrudInterceptor<Entity extends BaseEntity<ID>, ID>" as CrudInterceptor <<LifecycleHook>> {
+        +beforeCreate(entity: Entity): void
+        +afterCreate(entity: Entity): void
+        +beforeUpdate(entity: Entity): void
+        +afterUpdate(entity: Entity): void
         +beforeDelete(id: ID): void
         +afterDelete(id: ID): void
     }
 
-    interface "BaseRepository<E extends BaseEntity<ID>, ID>" as BaseRepository <<@NoRepositoryBean>> {
-        ' Extends JpaRepository<E, ID> & JpaSpecificationExecutor<E>
+    interface "BaseRepository<Entity extends BaseEntity<ID>, ID>" as BaseRepository <<@NoRepositoryBean>> {
+        ' Extends JpaRepository<Entity, ID> & JpaSpecificationExecutor<Entity>
     }
 
     abstract class "BaseDAO<T extends BaseEntity<ID>, ID>" as BaseDAO <<GenericDAO>> {
@@ -473,7 +473,7 @@ package "Entity & Model Layer (com.platform.entity & crm.model)" as PkgEntity #E
 ' Generic Core Inheritance & DI Wiring
 BaseDTO <|.. BaseEntity
 BaseController --> BaseService : @Autowired generic DI
-BaseService o-- CrudInterceptor : @Autowired List<CrudInterceptor<E,ID>>
+BaseService o-- CrudInterceptor : @Autowired List<CrudInterceptor<Entity,ID>>
 BaseService --> BaseRepository : @Autowired generic DI
 BaseDAO --> BaseEntity
 

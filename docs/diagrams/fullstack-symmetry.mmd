@@ -7,10 +7,10 @@ flowchart TB
             JavaDomainCore["BaseDomainCore.java
 • interface HasId / Identifiable
 • enum ErrorCode & DomainException
-• interface BaseRepository<E>
-• abstract class BaseService<E, D>"]
+• interface BaseRepository<Entity>
+• abstract class BaseService<Entity, DTO>"]
             JavaWebCore["BaseWebCore.java
-• abstract class BaseController<E, D>
+• abstract class BaseController<Entity, DTO>
 • GlobalExceptionHandler (RFC 7807)"]
             JavaWebCore -->|"afhænger af"| JavaDomainCore
         end
@@ -49,10 +49,10 @@ buildLoginUrl() & initiateLogin()"]
             TsDomainCore["baseDomainCore.ts
 • HasId<ID> & UserRole
 • ErrorCode & ProblemDetail (RFC 7807)
-• DomainGuard & BaseApiService<D, ID>"]
+• DomainGuard & BaseApiService<DTO, ID>"]
             TsUiCore["baseUiCore.tsx
 • AuthProvider & RoleGuard
-• useBaseCrud<D, ID>()
+• useBaseCrud<DTO, ID>()
 • ProblemAlert & PortalWorkspaceShell"]
             TsUiCore -->|"afhænger af"| TsDomainCore
         end
