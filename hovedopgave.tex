@@ -65,7 +65,7 @@
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small\textit{Hovedopgave -- Datamatiker}}
+\fancyhead[L]{\small\textit{Hovedopgave på Datamatikerstudiet}}
 \fancyhead[R]{\small\textit{Jesper Oti Vase Kock (cph-jk514@stud.ek.dk)}}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -112,7 +112,7 @@
 
 % Læsbar vektorfigur i brødteksten
 \newcommand{\bodyfigure}[4]{%
-    \begin{figure}[htbp]
+    \begin{figure}[H]
         \centering
         \safeinclude{width=0.94\textwidth, height=0.58\textheight, keepaspectratio}{#1}{#2}%
         \caption{#3}%
@@ -178,8 +178,7 @@
         \small
         Hovedopgaven dokumenterer arkitektur-, design- og udviklingsprocessen bag den containeriserede multi-repository platform EduJournal. Opgaven tager afsæt i en anonymiseret dansk sundheds- og psykoterapistartup, hvor jeg gennemførte mit 11-ugers praktikforløb og oplevede problemerne ved virksomhedens tætkoblede Lovable-prototype. Grundet en underskrevet fortrolighedserklæring (NDA) er alle virksomhedsnavne og forretningsdata anonymiseret.
 
-        For at løse udfordringerne bygger platformen videre på den teori og kodepraksis, jeg har tilegnet mig på datamatikeruddannelsen. Backenden tager udgangspunkt i mit eget abstrakte Java CRUD-studieprojekt (\texttt{BaseEntity}, \texttt{BaseDTO}, \texttt{BaseRepository}, \texttt{BaseService} og \texttt{BaseController}), som under hovedopgaven blev refaktoreret efter Vertical Slice Architecture \cite{bogard2018} og Information Hiding \cite{parnas1972} til en konsolideret 2-fils Core (\texttt{BaseDomainCore.java} og \texttt{BaseWebCore.java}) og otte indkapslede Vertical Feature Slices med \texttt{package-private} lagklasser bag smalle \texttt{Port}-interfaces. Samme opbygning spejles 1:1 i en Dual-App TypeScript/React-frontend (\texttt{apps/landing} og \texttt{apps/dashboard}) og en Next.js 16 Backend-for-Frontend (BFF) proxy \cite{newman2021}. Platformen afvikles på Docker Compose, Traefik v3.1, Keycloak OIDC, PostgreSQL, MongoDB, Redis og Apache Kafka, udbygget med Eclipse JGit \cite{jgit2024} til uforanderlig revisionslogning af patientjournaler og finansbilag, Timefold Solver til booking samt Kill Bill, Apache Fineract og Vipps MobilePay til bogføring.
-
+        For at løse udfordringerne bygger platformen videre på den teori og kodepraksis, jeg har tilegnet mig på datamatikeruddannelsen. Backenden tager udgangspunkt i mit eget abstrakte Java CRUD-studieprojekt (\texttt{BaseEntity}, \texttt{BaseDTO}, \texttt{BaseRepository}, \texttt{BaseService} og \texttt{BaseController}), som under hovedopgaven blev refaktoreret efter Vertical Slice Architecture \cite{bogard2018} og Information Hiding \cite{parnas1972} til en konsolideret 2-fils Core (\texttt{BaseDomainCore.java} og \texttt{BaseWebCore.java}) og otte indkapslede Vertical Feature Slices med \texttt{package-private} lagklasser bag smalle \texttt{Port}-interfaces. Samme opbygning spejles 1:1 i en Dual-App TypeScript/React-frontend (\texttt{apps/landing} og \texttt{apps/dashboard}) og en Next.js 16 Backend-for-Frontend (BFF) proxy \cite{newman2021}. Platformen afvikles på Docker Compose, Traefik v3.1, Keycloak OIDC, PostgreSQL, MongoDB, Redis og Apache Kafka, udbygget med Eclipse JGit \cite{jgit2024} til uforanderlig revisionslogning af patientjournaler og finansbilag, Timefold Solver til booking samt Kill Bill og Apache Fineract til bogføring.
         I procesdelen (struktureret efter Blooms taksonomi \cite{bloom1956}) anvendes Scrum for One \cite{schwaber2020} og Extreme Programming (XP) \cite{beck2004}. Til at skabe tæt samarbejde mellem kodebasen og Software Development Life Cycle (SDLC) valgte jeg at kombinere GitHub Projects v2 og GitHub Issues med delte Gherkin-kontrakter i \texttt{specs/features/}, automatisk commit-tag-synkronisering (\texttt{sdlc-commit-sync.yml}) og et Outside-In BDD/TDD-workflow med automatiserede 100\,\% coverage gates på alle 6 JaCoCo- og 4 Istanbul-tællere.
     \end{minipage}
     \vfill
@@ -201,7 +200,7 @@
 \section{Forord}
 
 \subsection{Formelle rammer og fortrolighed}
-Rapporten udgør den afsluttende hovedopgave på datamatikeruddannelsens 5. semester ved Erhvervsakademi København \cite{ek_studieordning2024}, udarbejdet i perioden 26. oktober 2026 til 5. januar 2027 i forlængelse af et 11-ugers praktikophold. Case-virksomheden er en anonymiseret dansk sundheds- og psykoterapistartup (omtales som case-virksomheden, mens platformen benævnes EduJournal); grundet en underskrevet fortrolighedserklæring (NDA) er alle virksomhedsnavne og forretningsdata anonymiseret i rapport og kode.
+Rapporten udgør den afsluttende hovedopgave på datamatikeruddannelsens 5. semester ved Erhvervsakademi København \cite{ek_studieordning2024}, udarbejdet i perioden 26. oktober 2026 til 5. januar 2027 i forlængelse af et 11-ugers praktikophold. Case-virksomheden er en anonymiseret dansk sundheds- og psykoterapistartup (omtales som case-virksomheden, mens platformen benævnes EduJournal); grundet en underskrevet fortrolighedserklæring (NDA) er alle virksomhedsnavne og forretningsdata anonymiseret i rapport og kode. Alle figurer og tabeller i rapporten er egen tilvirkning, medmindre anden kilde er angivet.
 \begin{itemize}[noitemsep]
     \item Studerende: Jesper Oti Vase Kock (\texttt{cph-jk514@stud.ek.dk})
     \item Hovedopgavevejleder: Kim Melkane
@@ -215,7 +214,7 @@ Fokus for hovedopgaven er at demonstrere, hvordan teoretisk og arkitektonisk vid
 
 Under mit 11-ugers praktikophold i case-virksomheden arbejdede jeg i virksomhedens eksisterende, AI-genererede Lovable-monolit i TypeScript og oplevede her på nært hold, hvordan manglende lagdeling førte til hyppige merge-konflikter, langsom fejlfinding og fravær af revisionssikkerhed. Da hovedopgaveperioden startede i uge 44, valgte jeg derfor at bruge mit abstrakte Java CRUD-projekt fra skolen som inspiration og arkitektonisk afsæt til at nyudvikle hele EduJournal-platformen over fem 1-uges sprints. Undervejs i forløbet viste klassisk lagdeling på tværs af mapper (\textit{Package-by-Layer}) dog stadig at sprede rettelser ud i flere lagpakker ved nye krav, hvilket førte til konsolideringen i Sprint~5: en kompakt 2-fils Core kombineret med Package-by-Feature Vertical Slices og 1:1 frontend-symmetri.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\textwidth}{P{3.6cm} Y}
@@ -223,9 +222,9 @@ Under mit 11-ugers praktikophold i case-virksomheden arbejdede jeg i virksomhede
 \textbf{Fase} & \textbf{Fokusområde, læringsafsæt og centrale leverancer} \\
 \midrule
 Studiefundament\newline (Tidligere skolearbejde) & Skolepensum i MVC og seksdelt lagdeling (Entity, DTO, DAO, Service, Controller, Route) samt OOP's fire søjler (Inheritance, Abstraction, Encapsulation, Polymorphism). Eget valg: Encapsulation via abstrakte superklasser (\texttt{BaseEntity}, \texttt{BaseDTO}, \texttt{BaseDAO}/\texttt{BaseRepository}, \texttt{BaseService}, \texttt{BaseController} og fælles routes) efter Package-by-Layer for at minimere boilerplate-kode. \\
-\addlinespace
+\midrule
 Praktikperiode (11 uger)\newline (Aug.--okt. 2026) & Udvikling i virksomhedens Lovable-prototype i TypeScript; afdækning af tekniske smertepunkter (tæt kobling, blokerende merge-konflikter, manglende tests og revisionsspor) samt indsamling af domæneviden om klinik-onboarding (CVR/IBAN), samtykker, journalisering, bogføring og PCL-5-screening. \\
-\addlinespace
+\midrule
 Hovedopgaveperiode\newline (Okt. 2026--jan. 2027) & Nyudvikling over Sprint~1--5: evolution fra studieprojekt til 2-fils Core (\texttt{BaseDomainCore} + \texttt{BaseWebCore}) med RFC~7807 \texttt{ProblemDetail}, otte \texttt{package-private} Vertical Slices og 1:1 frontend-symmetri; Docker Compose, Traefik, Keycloak OIDC, Eclipse JGit, Timefold Solver, Kill Bill/Fineract/Vipps samt GitHub Projects/Issues SDLC-automatisering med 100\,\% testdækning. \\
 \bottomrule
 \end{tabularx}
@@ -244,7 +243,7 @@ Generative AI-værktøjer som Lovable gør det muligt hurtigt at skabe prototype
 \subsection{Formål, målgruppe og læsevejledning}
 Hovedopgavens formål er todelt:
 \begin{enumerate}[noitemsep]
-    \item Produktmæssigt formål: At analysere, designe, implementere og verificere en containeriseret platform baseret på Separation of Concerns \cite{fowler2002}, Information Hiding \cite{parnas1972} og Vertical Slice Architecture \cite{bogard2018} med Spring Boot 3.3, Next.js 16 BFF, Keycloak OIDC og Eclipse JGit -- samt dokumentere, hvordan mit generiske studieprojekt blev videreudviklet til en 2-fils Core med 1:1 frontend-symmetri, revisionssporbarhed og 100\,\% testdækning.
+    \item Produktmæssigt formål: At analysere, designe, implementere og verificere en containeriseret platform baseret på Separation of Concerns \cite{fowler2002}, Information Hiding \cite{parnas1972} og Vertical Slice Architecture \cite{bogard2018} med Spring Boot 3.3, Next.js 16 BFF, Keycloak OIDC og Eclipse JGit samt dokumentere, hvordan mit generiske studieprojekt blev videreudviklet til en 2-fils Core med 1:1 frontend-symmetri, revisionssporbarhed og 100\,\% testdækning.
     \item Procesmæssigt formål: At bruge Blooms taksonomi \cite{bloom1956} som strukturerende ramme fra forståelse af virksomhedens domæne og anvendelse af designmønstre til systematisk analyse af arkitektur- og teknologivalg samt kritisk vurdering af teknisk gæld og den automatiserede GitHub SDLC-proces.
 \end{enumerate}
 Rapportens primære målgruppe er eksaminator og censor på datamatikeruddannelsen ved Erhvervsakademi København \cite{ek_studieordning2024}, mens case-virksomheden udgør den sekundære målgruppe. Rapporten er inddelt i Del~I: Produktdel (Kap.~1--10), Del~II: Procesdel (Kap.~11--14) samt Afslutning, Litteraturliste og Bilag (Kap.~15--17).
@@ -255,14 +254,15 @@ I overensstemmelse med Erhvervsakademi Københavns regler for brug af generativ 
 % ----------------------------------------------------------------------------
 % KAPITEL 3: VIRKSOMHEDEN – INTRODUKTION OG BEHOVSANALYSE
 % ----------------------------------------------------------------------------
-\section{Virksomheden -- Introduktion og Behovsanalyse}
+\section{Virksomheden}
+Kapitlet introducerer case-virksomheden (3.1), problemstillingerne fra praktikken (3.2) og de målbare forretningsmål (3.3).
 
 \subsection{Organisatorisk struktur og udviklingspraksis}
 Case-virksomheden er en 8 måneder gammel healthtech-startup stiftet af to uddannede psykoterapeuter. Den ene stifter fungerer som administrerende direktør (CEO) med ansvar for investorer og forretningsudvikling, mens den anden bærer titlen teknisk direktør (CTO). Ingen af stifterne har teknisk baggrund i softwarearkitektur, og det første Proof-of-Concept blev derfor genereret i Lovable og videreudviklet af skiftende praktikanter samt AI-agenter. Praktikanterne varetog alle tekniske roller (arkitekt, full-stack udvikler, databaseadministrator og tester), mens stifterne fungerede som Product Owners. Fordi virksomheden manglede formelle User Stories og faste kodestandarder, programmerede nye praktikanter ud fra egne antagelser om forretningsreglerne, hvilket skabte uensartet kodekvalitet og videnstab ved praktikantskifte.
 
 \subsection{Behovsanalyse og tekniske problemstillinger}
 Platformen er målrettet klienter, praktiserende psykoterapeuter, klinikejere og ledelse og skal dække hele den kliniske og administrative værdikæde: oprettelse af klinikker med CVR- og IBAN-validering, publicering af ydelser i en søgbar markedsplads, konfliktfri aftalebooking, samtykkebaseret datadeling (\texttt{ClientTherapistHandshake}), versionsstyret klientjournal med fortrolige behandlernoter (\texttt{INTERNAL\_MEDICAL\_NOTES}), evidensbaseret PCL-5 traumescreening (20 spørgsmål scoret 0--4, samlet 0--80 point), flersproget grænseflade, dobbelt bogholderi/fakturering (Kill Bill, Apache Fineract og Vipps MobilePay) samt ledelses-KPI'er.
-
+\newline
 Netop kombinationen af følsomme helbredsoplysninger (GDPR artikel 9) og økonomisk bogføring stiller skærpede krav sammenlignet med almindelige CRUD-systemer. En terapeut må kun tilgå præcis de journaldele og det tidsrum, som klienten aktivt har godkendt, mens klienten aldrig må se interne behandlernoter. Samtidig må en aftalebooking aldrig kunne dobbeltbooke en terapeut, og enhver ændring af journaler eller bilag skal kunne dokumenteres uforanderligt over tid.
 
 Den tekniske analyse af Lovable-prototypen afdækkede fire grundlæggende flaskehalse:
@@ -278,7 +278,7 @@ Figur~\ref{fig:domain_model} viser den samlede domænemodel over platformens ker
 
 \bodyfigure{domain-model.pdf}{Domænemodel over Bruger, Klient, Terapeut, Organisation, Handshake, Ydelse, Aftale, Journalindlæg, Fortrolig Note, PCL-5, Faktura og JGit.}{Domænemodel for EduJournal-platformens kernebegreber og relationer.}{fig:domain_model}
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\textwidth}{P{3.4cm} Y}
@@ -286,9 +286,9 @@ Figur~\ref{fig:domain_model} viser den samlede domænemodel over platformens ker
 \textbf{Målkategori} & \textbf{Konkrete succeskriterier for case-virksomheden} \\
 \midrule
 Økonomiske mål & Reducere onboarding-tiden for nye udviklere via standardiseret 2-fils Core, selvstændige Vertical Slices og 100\,\% verificerede BDD/TDD-tests; muliggøre international skalering (5 sprog: \texttt{da}, \texttt{en}, \texttt{de}, \texttt{es}, \texttt{fr}) samt automatiseret bogføring via IBAN, Kill Bill og Fineract. \\
-\addlinespace
+\midrule
 Operationelle mål & Eliminere blokerende merge-konflikter mellem frontend og backend via adskilte repositories og indkapslede slices; sikre uforanderlig SHA-1 revisionslogning via Eclipse JGit for både kliniske journaler og finansbilag. \\
-\addlinespace
+\midrule
 Kundemæssige mål & Sikre klienters fulde ejerskab over egne sundhedsdata gennem granulære samtykker; give terapeuter og klinikledelse et overskueligt, rolleopdelt arbejdsområde med høj driftssikkerhed. \\
 \bottomrule
 \end{tabularx}
@@ -302,24 +302,28 @@ Analysen viser, at fysisk opsplitning af monolitten kombineret med genbrugelige 
 % KAPITEL 4: KRAVSPECIFIKATION
 % ----------------------------------------------------------------------------
 \section{Kravspecifikation}
+Kapitlet omsætter forretningsmålene til scope (4.1), funktionelle krav/Use Cases (4.2) og non-funktionelle krav (4.3).
 
 \subsection{Produktets omfang}
 Tabel~\ref{tab:scope} afgrænser hovedopgavens leverancer mellem In Scope og Out of Scope.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\textwidth}{Y Y}
 \toprule
 \textbf{In Scope (En del af hovedopgaven)} & \textbf{Out of Scope (Uden for hovedopgavens rammer)} \\
 \midrule
-Fysisk adskillelse i 3 repos: Frontend (Dual-App Vite + Next.js 16 BFF), Backend (Spring Boot 3.3) og Infrastruktur (Docker/Traefik).\newline
-RBAC-sikkerhed via Keycloak OIDC, OAuth2-Proxy og deklarativ \texttt{<RoleGuard />}.\newline
-2-fils Core (\texttt{BaseDomainCore} + \texttt{BaseWebCore}), 8 \texttt{package-private} Vertical Slices med smalle \texttt{Port}-interfaces og 1:1 frontend-symmetri.\newline
+Fysisk adskillelse i 3 repos: Frontend (Dual-App Vite + Next.js 16 BFF), Backend (Spring Boot 3.3) og Infrastruktur (Docker/Traefik). &
+Direkte integration til offentlige sundhedsregistre (Sundhedsplatformen / MedCom). \\
+\midrule
+RBAC-sikkerhed via Keycloak OIDC, OAuth2-Proxy og deklarativ \texttt{<RoleGuard />}. &
+Native iOS- og Android-applikationer (leveres som responsiv webapplikation). \\
+\midrule
+2-fils Core (\texttt{BaseDomainCore} + \texttt{BaseWebCore}), 8 \texttt{package-private} Vertical Slices med 1:1 frontend-symmetri. &
+Indlejret WebRTC-video (håndteres via ekstern \texttt{videoMeetingUrl}). \\
+\midrule
 Klinik-onboarding (CVR/IBAN), Timefold-booking, Handshakes, JGit-journal, PCL-5, MongoDB/Redis i18n, Kill Bill/Fineract/Vipps og 100\,\% BDD/TDD-gates i GitHub SDLC. &
-Direkte integration til offentlige sundhedsregistre (Sundhedsplatformen / MedCom).\newline
-Native iOS- og Android-applikationer (leveres som responsiv webapplikation).\newline
-Indlejret WebRTC-video (håndteres via ekstern \texttt{videoMeetingUrl}).\newline
 Fysiske betalingskortterminaler i klinikkerne. \\
 \bottomrule
 \end{tabularx}
@@ -340,7 +344,7 @@ De funktionelle krav opdeles i otte domæneområder svarende til platformens mod
     \item FK-08: Generisk 2-fils Base-CRUD (\texttt{BaseDomainCore} og \texttt{BaseWebCore}) med RFC~7807 \texttt{ProblemDetail} og 1:1 frontend-spejling.
 \end{itemize}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \resizebox{0.92\textwidth}{!}{%
 \begin{tikzpicture}[
@@ -391,17 +395,19 @@ Figur~\ref{fig:use_case_diagram} viser samspillet mellem aktørerne (\textit{Kli
     \item UC5--UC6 (Journal \& Fortrolige noter): Klientens journalindlæg på grene som \texttt{main} eller \texttt{trauma-therapy} versionsstyres med SHA-1 hashes, og terapeuten kan læse godkendte indlæg med automatisk filtrering af klientens private booking-commits.
     \item UC7 (Screening, i18n \& Økonomi): Dækker PCL-5 traumescreening, MongoDB-ordbøger, fakturering/bogføring i Kill Bill og Apache Fineract samt ledelses-KPI'er.
 \end{itemize}
-Alle 10 centrale User Stories med formelle Gherkin-acceptkriterier (\texttt{Given/When/Then}) er samlet i Bilag~17.1; Tabel~\ref{tab:user_story_card} viser User Story-kortet for den fælles 2-fils Core-arkitektur.
+Alle 10 funktionelle User Stories med formelle Gherkin-acceptkriterier (\texttt{Given/When/Then}) er samlet i Bilag~17.1; Tabel~\ref{tab:user_story_card} viser den tværgående tekniske User Story for 2-fils Core-arkitekturen.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\textwidth}{P{3.0cm} Y}
 \toprule
 \textbf{Felt} & \textbf{Specifikation} \\
 \midrule
-Titel & US-01: Konsolideret 2-fils Core, Vertical Slices og Automatiseret CRUD \\
+Titel & US-00: Konsolideret 2-fils Core, Vertical Slices og Automatiseret CRUD \\
+\midrule
 User Story & As a Backend Developer, I want alle Vertical Slices til at bygge på \texttt{BaseDomainCore} + \texttt{BaseWebCore} med \texttt{package-private} indkapsling, So that CRUD, Template Method-validering og RFC~7807 fejlhåndtering afvikles ensartet uden duplikering. \\
+\midrule
 Acceptance Criteria & Given gyldig klient og terapeut samt at \texttt{AppointmentService} og \texttt{AppointmentController} nedarver fra \texttt{BaseService<Entity, DTO>} og \texttt{BaseController<Entity, DTO>}, When en aftale oprettes og hentes (eller bryder en regel via \texttt{ErrorCode.require()}), Then returneres \texttt{HTTP 200/201} med uforanderlig \texttt{record}-DTO eller RFC~7807 \texttt{ProblemDetail}. \\
 \bottomrule
 \end{tabularx}
@@ -412,7 +418,7 @@ Acceptance Criteria & Given gyldig klient og terapeut samt at \texttt{Appointmen
 \subsection{Non-funktionelle krav}
 Tabel~\ref{tab:nfr} opstiller projektets målbare non-funktionelle krav og verifikationsmetoder.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\textwidth}{P{1.4cm} P{2.6cm} Y P{3.8cm}}
@@ -420,10 +426,15 @@ Tabel~\ref{tab:nfr} opstiller projektets målbare non-funktionelle krav og verif
 \textbf{ID} & \textbf{Kategori} & \textbf{Målbart krav (Tærskel)} & \textbf{Verifikation} \\
 \midrule
 NFR-01 & Decoupling & Fysisk adskilte repos og \texttt{package-private} Vertical Slices med smalle \texttt{Port}-interfaces og REST/JSON. & \texttt{GenericBase\allowbreak ArchitectureTest}, REST Assured \& Cucumber.js \\
+\midrule
 NFR-02 & Maintainability & 100\,\% testdækning på alle 6 JaCoCo- og 4 Istanbul-tællere (frontend + \texttt{sdlc/core/}). & \texttt{jacoco-check}, Vitest Istanbul (\texttt{100}) \& \texttt{sdlc:verify} \\
+\midrule
 NFR-03 & Security/GDPR & 100\,\% JWT/BFF-validering, \texttt{<RoleGuard />} og 0\,\% terapeutadgang til klienters private booking-commits. & \texttt{SecurityConfig}-, RoleGuard- \& JGit-privatlivstests \\
+\midrule
 NFR-04 & Secrets & 0 adgangskoder i Git eller klartekst-env; read-only Docker Secrets under \texttt{/run/secrets/}. & \texttt{entrypoint-secrets.sh} \& GitHub Actions Secrets \\
+\midrule
 NFR-05 & Auditability & Enhver journal- og bilagsændring lagrer 8-/40-tegns SHA-1 hash, forfatter, tidsstempel og branch-tag. & \texttt{JournalGitService} \& \texttt{FinanceGitService} \\
+\midrule
 NFR-06 & Performance & TLS bag Traefik samt Redis L2-cache (\texttt{PlatformCacheService}) og HTTP-caching (\texttt{max-age=300}). & BFF-tests, \texttt{I18nServiceTest} \& Docker helbredstjek \\
 \bottomrule
 \end{tabularx}
@@ -431,32 +442,45 @@ NFR-06 & Performance & TLS bag Traefik samt Redis L2-cache (\texttt{PlatformCach
 \label{tab:nfr}
 \end{table}
 
+Kravspecifikationen (FK-01--FK-08 og NFR-01--NFR-06) danner grundlag for teknologivalget i Kapitel~5.
+
 % ----------------------------------------------------------------------------
 % KAPITEL 5: VALG AF TEKNOLOGIER
 % ----------------------------------------------------------------------------
 \section{Valg af Teknologier}
+Kapitlet præsenterer teknologistakken (5.1), mit råderum og AI-værktøjer (5.2) samt teknologialternativer (5.3).
 
 \subsection{Systemets teknologistak på tværs af fire domæner}
 Ved erstatningen af Lovable-prototypen blev teknologistakken udvalgt til at sikre lav kobling, reproducerbar containerisering og direkte viderebygning på mit generiske Java-studieprojekt (Tabel~\ref{tab:tech_stack}).
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
-\begin{tabularx}{\textwidth}{P{2.2cm} P{4.0cm} Y P{1.6cm}}
+\begin{tabularx}{\textwidth}{P{2.0cm} P{3.6cm} Y P{2.2cm}}
 \toprule
 \textbf{Domæne} & \textbf{Teknologi} & \textbf{Rolle i platform og livscyklus} & \textbf{Version} \\
 \midrule
 Service & GitHub Projects v2 \& GitHub Issues & Single Source of Truth for backlog, Sub-Issues, delte \texttt{.feature}-kontrakter, commit-tag-synk (\texttt{sdlc-commit-sync.yml}) og 100\,\% CI-gates via \texttt{sdlc/core/}. & v2 / v1 \\
+\midrule
 Service & GitHub Actions \& GHCR & CI/CD-automatisering (\texttt{sdlc-verify-and-sync.yml}), coverage gates samt hosting af Docker-images. & -- \\
-Service & Hetzner Cloud \& nip.io & Linux VPS-hosting (\texttt{157.180.43.151}) og dynamisk DNS til subdomæner (\texttt{platform.*}, \texttt{api.*}, \texttt{login.*}, \texttt{reports.*}) med Let's Encrypt TLS. & -- \\
+\midrule
+Service & Hetzner Cloud \& nip.io & Isoleret studie-VPS (\texttt{<VPS-IP>.nip.io}, uden kundedata) og dynamisk DNS til subdomæner (\texttt{platform.*}, \texttt{api.*}, \texttt{login.*}, \texttt{reports.*}) med Let's Encrypt TLS. & -- \\
+\midrule
 Infra & Docker Engine \& Compose & Container-runtime, secrets i \texttt{/run/secrets/} og 4 isolerede bridge-netværk. & 29.8.1 \\
+\midrule
 Infra & Traefik \& OAuth2-Proxy & Edge Reverse Proxy, TLS-terminering og ForwardAuth-beskyttelse af testrapporter. & 3.1 / 7.6 \\
+\midrule
 Infra & Keycloak \& PostgreSQL (\texttt{auth-db}) & OIDC Identity Provider (realm \texttt{EduJournal}) med signerede JWT-roller (\texttt{client}, \texttt{therapist}, \texttt{admin}). & 24.0 / 16 \\
+\midrule
 Infra & PostgreSQL (\texttt{business-db}), MongoDB \& Redis & Polyglot Persistence: ACID-data (PostgreSQL), flersprogede JSON-ordbøger (MongoDB) og L2-cache (Redis). & 16 / 7.0 / 7.2 \\
+\midrule
 Infra & Apache Kafka & Distribueret event-streaming (\texttt{PlatformEventService}). & 7.6.0 \\
-Backend & Spring Boot, Java, JGit, Timefold & 2-fils Core + 8 Vertical Slices, JGit SHA-1 revisionsmotor og deterministisk AI-booking. & 3.3 / 17 \\
+\midrule
+Backend & Spring Boot, Java, JGit, Timefold & 2-fils Core + 8 Vertical Slices, JGit SHA-1 revisionsmotor og deterministisk AI-booking. & 3.3 / 17 /\newline 6.10 / 1.16 \\
+\midrule
 Backend & Kill Bill, Fineract \& Vipps & Abonnementsfakturering, dobbelt bogholderi og Vipps MobilePay OSGi-plugin. & 0.24 / 1.9 \\
-Frontend & Next.js, Vite, React & Dual-App (\texttt{apps/landing} + \texttt{apps/dashboard}), Next.js 16 BFF-proxy, NextAuth og 2-fils TypeScript Core. & 16.x / 19.x \\
+\midrule
+Frontend & Next.js, Vite, React & Dual-App (\texttt{apps/landing} + \texttt{apps/dashboard}), Next.js 16 BFF-proxy, NextAuth og 2-fils TypeScript Core. & 16.3 / 8.3 /\newline 19.2 \\
 \bottomrule
 \end{tabularx}
 \caption{Samlet teknologistak på tværs af Service-, Infrastructure-, Backend- og Frontend-domænerne.}
@@ -470,10 +494,13 @@ Udrulnings- og udviklingskæden forbinder planlægning, kode, kvalitetssikring o
     \item Defense-in-Depth og Docker Secrets: Containermiljøet er isoleret i fire netværk (\texttt{public-net}, \texttt{backend-net}, \texttt{keycloak-net} og \texttt{kafka-net}). Kun Traefik eksponeres mod internettet på port 80 og 443, så hverken \texttt{auth-db}, \texttt{business-db}, MongoDB eller Redis kan tilgås udefra. Adgangskoder og API-nøgler lagres aldrig i Git eller miljøvariabler, men monteres som read-only filer under \texttt{/run/secrets/} via \texttt{entrypoint-secrets.sh}.
 \end{itemize}
 
+\subsection{Råderum, læringsmål og valg af AI-udviklingsværktøjer}
+Inden for virksomhedens domæne- og NDA-krav (GDPR, journal, bogføring) havde jeg fuldt teknisk råderum og valgte stakken efter mit studieprojekt samt læringsmål i JGit, Timefold, Next.js BFF og kvalitets-gates. Agentisk IDE- og LLM-sparring blev valgt over Lovable, da AI-kode først godkendes efter review, BDD-tests og 100\,\% JaCoCo/Istanbul-dækning.
+
 \subsection{Komparativ analyse af teknologiske alternativer}
 Tabel~\ref{tab:tech_comparison} begrunder valget af platformens kerneteknologier over for relevante alternativer.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \footnotesize
 \begin{tabularx}{\textwidth}{P{2.0cm} P{2.4cm} P{2.1cm} Y Y}
@@ -481,13 +508,13 @@ Tabel~\ref{tab:tech_comparison} begrunder valget af platformens kerneteknologier
 \textbf{Område} & \textbf{Valgt teknologi} & \textbf{Alternativer} & \textbf{Fordele ved valget} & \textbf{Ulemper / Trade-offs} \\
 \midrule
 Backend & Spring Boot 3.3 (Java 17) \cite{springboot2024} & NestJS (TS), .NET 8 & Bygger videre på studieprojektet, understøtter \texttt{package-private} indkapsling af Vertical Slices og giver native Java-integration til JGit og Timefold Solver. & Højere JVM-hukommelsesforbrug (begrænset via container-limits og kompakt kodebase på 14 Java-filer). \\
-\addlinespace
+\midrule
 IAM / OIDC & Keycloak 24.0.4 \cite{keycloak2024} & ZITADEL, Auth0 & Open source kontrol og modent Admin API til automatisk tildeling af \texttt{therapist}-rolle ved CVR-onboarding. & Kræver egen database (\texttt{auth-db}); ZITADEL blev fravalgt pga. friktion ved rolle-sync. \\
-\addlinespace
+\midrule
 Journal-audit & Eclipse JGit \cite{jgit2024} & SQL audit-log, EventStoreDB & Kryptografisk SHA-1 integritet, indbyggede branches (\texttt{[Branch: ...]}), Markdown-snapshots og diff-historik direkte i Java. & Filbaseret \texttt{.git}-lager kræver persistent Docker-volumen ved genstart. \\
-\addlinespace
+\midrule
 Frontend & Dual-App Vite + Next.js 16 BFF \cite{newman2021} & Ren Vite SPA, Angular & Beskytter OAuth2 tokens i HTTP-only server-cookies, isolerer \texttt{apps/landing} fra dashboard-kode og spejler backend 1:1. & Ekstra proxy-routing i \texttt{/api/backend/[...path]} samt vedligehold af \texttt{src/core/}. \\
-\addlinespace
+\midrule
 Persistens & Polyglot (PG + Mongo + Redis) & Kun PostgreSQL & Forener ACID-garanti for klinik/finans med skemafleksible JSON-ordbøger i MongoDB og hurtig Redis-caching. & Orkestrering af tre databasemotorer øger RAM-forbruget i Docker Compose. \\
 \bottomrule
 \end{tabularx}
@@ -495,15 +522,18 @@ Persistens & Polyglot (PG + Mongo + Redis) & Kun PostgreSQL & Forener ACID-garan
 \label{tab:tech_comparison}
 \end{table}
 
+Den valgte teknologistak danner grundlag for systemarkitekturen i Kapitel~6.
+
 % ----------------------------------------------------------------------------
 % KAPITEL 6: VALG AF ARKITEKTUR – SYSTEMDESIGN
 % ----------------------------------------------------------------------------
 \section{Valg af Arkitektur -- Systemdesign}
+Kapitlet vurderer systemarkitekturer (6.1), modulstruktur (6.2) samt netværks- og containertopologi (6.3).
 
 \subsection{Analyse af systemarkitekturalternativer}
 Tabel~\ref{tab:arch_alternatives} sammenligner de tre overordnede arkitekturmuligheder ud fra princippet om Separation of Concerns.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\textwidth}{P{3.6cm} Y Y P{2.9cm}}
@@ -511,9 +541,9 @@ Tabel~\ref{tab:arch_alternatives} sammenligner de tre overordnede arkitekturmuli
 \textbf{Arkitekturmønster} & \textbf{Fordele} & \textbf{Ulemper} & \textbf{Beslutning} \\
 \midrule
 1. Distribuerede Microservices & Uafhængig skalering og udrulning pr. domæne. & Høj netværks- og CI/CD-kompleksitet samt distribuerede transaktioner (Saga) for én udvikler. & Fravalgt -- for høj operationel kompleksitet. \\
-\addlinespace
+\midrule
 2. Klassisk Monolit m. direkte SPA & Simpel lokal opstart i ét samlet projekt. & Eksponerer JWT tokens i browseren og genskaber merge-konflikter mellem UI og backend. & Fravalgt -- bryder NFR-01 og NFR-03. \\
-\addlinespace
+\midrule
 3. Containeriseret Modulær Monolit (2-fils Core, Vertical Slices \& Dual-App BFF) & Adskilte repos for Frontend, Backend og Infra kombineret med \texttt{package-private} Vertical Slices oven på en 2-fils Core, 1:1 frontend-symmetri og 4 Docker-netværk. & Kræver konsekvent disciplin omkring smalle \texttt{Port}-kontrakter mellem domæner. & Valgt -- kombinerer enkel drift med maksimal modulær indkapsling. \\
 \bottomrule
 \end{tabularx}
@@ -531,7 +561,7 @@ Da strukturen fra mit oprindelige Java CRUD-skoleprojekt (\texttt{controller/}, 
 
 Løsningen blev at kombinere den konsoliderede 2-fils Core med Package-by-Feature / Vertical Slice Architecture \cite{bogard2018} og David Parnas' princip om Information Hiding \cite{parnas1972} samt Robert C. Martins Clean Architecture \cite{martin2017} (Tabel~\ref{tab:layer_vs_slice}). Ved at samle hvert forretningsdomænes DTO, Entity, Repository, Service og Controller som indlejrede klasser i én feature-pakke (\texttt{com.platform.features.<slice>.<Name>Feature}) erklæres Repository, Service og Controller \texttt{package-private} (uden \texttt{public}). Dermed tvinges alle afhængigheder til at følge Clean Architectures indadrettede afhængighedsregel: \texttt{BaseWebCore} og slices afhænger af \texttt{BaseDomainCore}, mens \texttt{BaseDomainCore} har nul imports fra web-laget, og tværgående kald mellem domæner kun må gå gennem smalle \texttt{public interface <Name>Port}-kontrakter (\texttt{ProviderProfilePort}, \texttt{ServiceLookupPort}, \texttt{HandshakePort} og \texttt{AppointmentPort}). Samme struktur spejles 1:1 i frontenden med modul-private \texttt{<Name>ApiService}-klasser og fysisk adskillelse mellem den offentlige \texttt{apps/landing} og den rollebeskyttede portal \texttt{apps/dashboard}.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \footnotesize
 \begin{tabularx}{\textwidth}{P{3.0cm} Y Y}
@@ -539,13 +569,13 @@ Løsningen blev at kombinere den konsoliderede 2-fils Core med Package-by-Featur
 \textbf{Arkitektonisk akse} & \textbf{Package-by-Layer (Studieudgangspunkt)} & \textbf{Package-by-Feature / Vertical Slices (Valgt)} \\
 \midrule
 Kodeorganisation & Spredt over tekniske mapper (\texttt{controller/}, \texttt{service/}, \texttt{repository/}, \texttt{entity/}, \texttt{dto/}). & Alt for én forretningskapacitet er samlet lodret i én feature-fil/pakke i backend og frontend. \\
-\addlinespace
+\midrule
 Indkapsling & Alle lagklasser er \texttt{public}; høj risiko for krydskobling mellem domæners repositories. & Repository, Service og Controller er \texttt{package-private} (verificeret af JUnit); frontend \texttt{ApiService} er modul-privat (ingen \texttt{export}). \\
-\addlinespace
+\midrule
 Tværgående kobling & Direkte repository-injektion på tværs af domæner. & Udelukkende via smalle \texttt{Port}-interfaces (Dependency Inversion) og Spring IoC. \\
-\addlinespace
+\midrule
 Clean Architecture \cite{martin2017} & 6 adskilte base-filer med risiko for web-afhængigheder i domænelaget. & Streng 2-fils Core: \texttt{BaseDomainCore} (0 Spring Web-imports) og \texttt{BaseWebCore} spejlet af \texttt{baseDomainCore.ts} og \texttt{baseUiCore.tsx}. \\
-\addlinespace
+\midrule
 Frontend Zero-Trust & Samlet SPA-bundle indlæser alle views samlet. & Dual-App: offentlig \texttt{apps/landing} (:5173) vs. \texttt{<RoleGuard />}-beskyttet \texttt{apps/dashboard} (:5174) og Next.js 16 BFF (:3000). \\
 \bottomrule
 \end{tabularx}
@@ -562,8 +592,8 @@ Figur~\ref{fig:deployment_diagram} illustrerer systemets container- og netværks
   backend:
     build: { context: ./backend, dockerfile: Dockerfile }
     container_name: backend
-    ports: ["8081:8081"]
-    networks: [public-net, backend-net]
+    expose: ["8081"] # Kun internt på backend-net; al ekstern trafik går via Traefik/BFF
+    networks: [backend-net]
     depends_on: [business-db, mongodb, redis, kafka]
     labels:
       - "traefik.enable=true"
@@ -574,23 +604,26 @@ Figur~\ref{fig:deployment_diagram} illustrerer systemets container- og netværks
       - spring_datasource_password
 \end{lstlisting}
 
+Host-portbinding (\texttt{ports: ["8081:8081"]}) bruges kun lokalt; i produktion eksponeres backenden udelukkende internt på \texttt{backend-net} via \texttt{expose: ["8081"]} bag Traefik og Next.js BFF. Den modulære monolit forener enkel drift med klare netværksgrænser, hvilket detaljeres i Kapitel~7.
+
 % ----------------------------------------------------------------------------
 % KAPITEL 7: DESIGN – KODEDESIGN OG DATABASEDESIGN
 % ----------------------------------------------------------------------------
 \section{Design -- Kodedesign og Databasedesign}
+Kapitlet omsætter arkitekturen til superklassedesign (7.1), klassediagram (7.2), EER/tilstandsmodel (7.3) og UX-design (7.4).
 
 \subsection{Fra MVC og 6-lags skoleprojekt til indkapslet 2-fils Base-Core og Vertical Slices}
 I undervisningen på datamatikeruddannelsen blev jeg introduceret til den klassiske MVC-arkitektur (Model, View, Controller), den sekslagede backend-opdeling i Entity, DTO, DAO, Service, Controller og Route samt objektorienteret programmerings fire grundsøjler: Inheritance, Abstraction, Encapsulation og Polymorphism. Med udgangspunkt i denne teori valgte jeg bevidst at sætte Encapsulation i centrum allerede i mit studieprojekt ved at konstruere en samlende superklasse-arkitektur med abstrakte klasser til Entity, DTO, DAO, Service, Controller og Route for at minimere gentagen boilerplate-kode.
 
 Under hovedopgaveforløbet gennemgik denne superklasse-arkitektur en to-trins udvikling fra traditionel lagdeling til en kompakt 2-fils Core kombineret med Vertical Slices:
 \begin{enumerate}[noitemsep]
-    \item Trin 1 (Studieudgangspunkt -- 6 abstrakte superklasser): Skoleprojektet anvendte abstrakte baser (\texttt{BaseEntity}, \texttt{BaseDTO}, \texttt{BaseDAO}/\texttt{BaseRepository}, \texttt{BaseService}, \texttt{BaseController} og fælles routes) organiseret i lagpakker.
-    \item Trin 2 (EduJournal -- 2-fils Core \& Vertical Slices med 1:1 frontend-symmetri): Den fælles CRUD-infrastruktur blev samlet i to container-klasser: \texttt{BaseDomainCore.java} (283 linjer uden Spring Web-imports jf. Clean Architecture \cite{martin2017}) og \texttt{BaseWebCore.java} (183 linjer). Her forbliver Service (\texttt{BaseService<Entity, DTO>}) og Controller/Route (\texttt{BaseController<Entity, DTO>}, der indkapsler alle seks standard-REST-ruter \texttt{GET}, \texttt{GET /paged}, \texttt{GET /\{id\}}, \texttt{POST}, \texttt{PUT /\{id\}} og \texttt{DELETE /\{id\}}) abstrakte superklasser. Til gengæld blev Entity løftet til interfacet \texttt{Identifiable} (så JPA-/MongoDB-entiteter ikke bindes i Javas enkelt-nedarvning), DTO blev løftet til interfacet \texttt{HasId} (så uforanderlige Java 17 \texttt{record}-DTO'er kan bruges, da records ikke må nedarve fra klasser), og DAO blev Spring Data-interfacet \texttt{BaseRepository<Entity>}. Samme struktur spejles 1:1 i TypeScript via \texttt{baseDomainCore.ts} (\texttt{BaseApiService<DTO, ID>}), \texttt{baseUiCore.tsx} (\texttt{useBaseCrud<DTO, ID>()}) og Next.js BFF-ruten \texttt{/api/backend/[...path]/route.ts}.
+    \item Trin 1 (Studieudgangspunktet er i 6 abstrakte superklasser): Skoleprojektet anvendte abstrakte baser (\texttt{BaseEntity}, \texttt{BaseDTO}, \texttt{BaseDAO}/\texttt{BaseRepository}, \texttt{BaseService}, \texttt{BaseController} og fælles routes) organiseret i lagpakker.
+    \item Trin 2 (EduJournal består af et 2-fils Core \& Vertical Slices med 1:1 frontend-symmetri): Den fælles CRUD-infrastruktur blev samlet i to container-klasser: \texttt{BaseDomainCore.java} (283 linjer uden Spring Web-imports jf. Clean Architecture \cite{martin2017}) og \texttt{BaseWebCore.java} (183 linjer). Her forbliver Service (\texttt{BaseService<Entity, DTO>}) og Controller/Route (\texttt{BaseController<Entity, DTO>}, der indkapsler alle seks standard-REST-ruter \texttt{GET}, \texttt{GET /paged}, \texttt{GET /\{id\}}, \texttt{POST}, \texttt{PUT /\{id\}} og \texttt{DELETE /\{id\}}) abstrakte superklasser. Til gengæld blev Entity løftet til interfacet \texttt{Identifiable} (så JPA-/MongoDB-entiteter ikke bindes i Javas enkelt-nedarvning), DTO blev løftet til interfacet \texttt{HasId} (så uforanderlige Java 17 \texttt{record}-DTO'er kan bruges, da records ikke må nedarve fra klasser), og DAO blev Spring Data-interfacet \texttt{BaseRepository<Entity>}. Samme struktur spejles 1:1 i TypeScript via \texttt{baseDomainCore.ts} (\texttt{BaseApiService<DTO, ID>}), \texttt{baseUiCore.tsx} (\texttt{useBaseCrud<DTO, ID>()}) og Next.js BFF-ruten \texttt{/api/backend/[...path]/route.ts}.
 \end{enumerate}
 
 Tabel~\ref{tab:oop_pillars} viser brugen af de fire OOP-søjler, og Tabel~\ref{tab:boilerplate_comparison} dokumenterer, hvor meget gentagen kode superklasse-indkapslingen fjerner i praksis.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\textwidth}{P{3.0cm} P{4.2cm} Y}
@@ -598,11 +631,11 @@ Tabel~\ref{tab:oop_pillars} viser brugen af de fire OOP-søjler, og Tabel~\ref{t
 \textbf{OOP-søjle} & \textbf{Teoretisk formål (Skolepensum)} & \textbf{Konkret realisering i EduJournal (Backend \& Frontend)} \\
 \midrule
 Encapsulation (Hovedfokus) & Beskytte intern tilstand og skjule implementeringsdetaljer bag grænseflader. & \texttt{BaseDomainCore} (283 linjer) og \texttt{BaseWebCore} (183 linjer) indkapsler transaktioner, URI-bygning, HTTP~201 \texttt{Location} og RFC~7807-fejl. I hver slice er Repository, Service og Controller \texttt{package-private} (håndhævet af tests), og frontendens \texttt{ApiService} er modul-privat. \\
-\addlinespace
+\midrule
 Abstraction & Skjule kompleks infrastruktur bag kontrakter og abstrakte arbejdsgange. & Abstrakte superklasser \texttt{BaseService<Entity, DTO>}, \texttt{BaseController<Entity, DTO>} og \texttt{BaseApiService<DTO, ID>} abstraherer transport og CRUD væk fra domænelogik; \texttt{HasId}, \texttt{Identifiable}, \texttt{BaseRepository<Entity>} og \texttt{Port}-interfaces skjuler persistens. \\
-\addlinespace
+\midrule
 Inheritance & Genbruge fælles kode og undgå gentaget implementering i beslægtede klasser. & Alle otte backend-slices nedarver fladt i ét niveau fra \texttt{BaseService} og \texttt{BaseController} samt \texttt{extends BaseRepository<Entity>}, spejlet af \texttt{<Slice>ApiService extends BaseApiService} i TypeScript. \\
-\addlinespace
+\midrule
 Polymorphism & Behandle forskellige subtyper ensartet gennem en fælles supertype. & \texttt{BaseController} kalder polymorft på enhver \texttt{BaseService}-subklasse, mens \textit{Template Method}-hooks (\texttt{toDto}, \texttt{toEntity}, \texttt{validateBeforeCreate/Update}) og \texttt{@Override} specialiserer adfærd ved runtime; \texttt{useBaseCrud()} håndterer alle \texttt{HasId}-typer ensartet. \\
 \bottomrule
 \end{tabularx}
@@ -610,7 +643,7 @@ Polymorphism & Behandle forskellige subtyper ensartet gennem en fælles supertyp
 \label{tab:oop_pillars}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\textwidth}{P{3.0cm} P{4.8cm} Y}
@@ -618,9 +651,13 @@ Polymorphism & Behandle forskellige subtyper ensartet gennem en fælles supertyp
 \textbf{Lag / Komponent} & \textbf{Klassisk 6-lags MVC (Uden fælles superklasser)} & \textbf{EduJournal: Indkapslet 2-fils Base-Core + Vertical Slices} \\
 \midrule
 Fælles Base-Core & Ingen samlet superklasse; hjælpemetoder og fejlhåndtering gentages på tværs af lag. & 466 linjer i alt fordelt på 2 filer (\texttt{BaseDomainCore.java}: 283 linjer, 0 web-imports; \texttt{BaseWebCore.java}: 183 linjer), som driver alle 8 Vertical Slices. \\
+\midrule
 Entity \& DTO & Muterbar DTO-klasse med gentagne getters, setters, \texttt{equals} og \texttt{hashCode}. & \texttt{Entity implements Identifiable} + uforanderlig Java~17 \texttt{record} med \texttt{implements HasId} (f.eks. \texttt{ManagementKpiDto} på 7 linjer). \\
+\midrule
 DAO / Repository & Manuelt DAO-interface plus konkret implementeringsklasse pr. entitet. & 1 linje interface pr. slice (\texttt{extends BaseRepository<Entity>}); nul konkret DAO-boilerplate. \\
+\midrule
 Service & 8 gentagne metoder til opslag, paginering, oprettelse, opdatering, sletning og 404-tjek. & Alle 8 standardmetoder arves fra \texttt{BaseService<Entity, DTO>}; slicen skriver kun mapping og \texttt{validateBefore*}-hooks. \\
+\midrule
 Controller \& Route & 6 endpoint-metoder, \texttt{Location}-kode og \texttt{try/catch}-fejlhåndtering pr. domæne. & Alle 6 REST-ruter arves fra \texttt{BaseController<Entity, DTO>} (f.eks. \texttt{UserController} på 6 linjer) spejlet af \texttt{BaseApiService} og én fælles BFF-rute. \\
 \bottomrule
 \end{tabularx}
@@ -629,10 +666,10 @@ Controller \& Route & 6 endpoint-metoder, \texttt{Location}-kode og \texttt{try/
 \end{table}
 
 \paragraph{Kritisk refleksion: Composition over Inheritance.} Gang of Four anbefaler \textit{Favor Composition over Inheritance} \cite{gamma1994}, fordi dybe nedarvningshierarkier binder subklasser til intern tilstand over flere niveauer. I EduJournal begrænses nedarvning strengt til ét fladt niveau udelukkende til mekanisk CRUD-orkestrering via \textit{Template Method Pattern}. Alt samarbejde mellem lag og på tværs af domæner foregår derimod via komposition og konstruktør-injektion af smalle \texttt{Port}-interfaces, mens Entity (\texttt{Identifiable}) og DTO (\texttt{HasId}) bevidst holdes som interfaces. Derved opnås maksimal boilerplate-reduktion uden risiciene ved dyb nedarvning.
-
+\newline
 Selve backenden består af blot 14 Java-filer: \texttt{BackendApplication.java} (som aktiverer JPA-scanning af indlejrede \texttt{package-private} repositories), de 2 kernefiler (\texttt{BaseDomainCore.java} og \texttt{BaseWebCore.java}), 3 tværgående filer i \texttt{com.platform.config} (\texttt{SecurityConfig}, \texttt{PlatformCacheService} til Redis og \texttt{PlatformEventService} til Kafka) samt de 8 Vertical Feature Slices (\texttt{AppointmentFeature}, \texttt{ClinicPlatformFeature}, \texttt{FinanceFeature}, \texttt{I18nFeature}, \texttt{JournalFeature}, \texttt{ManagementFeature}, \texttt{PsychotraumatologyFeature} og \texttt{UserFeature}). Hver feature-fil følger samme 5-trins skabelon: DTO-record, entitet, \texttt{Port}-interface + repository, service og controller. Tabel~\ref{tab:fullstack_symmetry} viser 1:1-symmetrien til frontenden (se også Figur~\ref{fig:bilag_fullstack_symmetry} i Bilag~17.3), og Tabel~\ref{tab:design_patterns} opsummerer de anvendte Design Patterns.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \footnotesize
 \begin{tabularx}{\textwidth}{P{3.4cm} P{5.0cm} Y}
@@ -640,8 +677,11 @@ Selve backenden består af blot 14 Java-filer: \texttt{BackendApplication.java} 
 \textbf{Arkitekturlag} & \textbf{Backend (Java 17 / Spring Boot 3.3)} & \textbf{Frontend (TypeScript 5 / React 19 / Next.js 16)} \\
 \midrule
 1. Domæne-Core (Zero-Web / Zero-React) & \texttt{BaseDomainCore.java}: \texttt{HasId}, \texttt{Identifiable}, \texttt{BaseRepository<Entity>}, \texttt{ErrorCode\#require()}, \texttt{DomainException}, \texttt{BaseService<Entity, DTO>}. & \texttt{baseDomainCore.ts}: \texttt{HasId<ID>}, \texttt{UserRole}, \texttt{expandRoleAliases()}, \texttt{ErrorCode}, \texttt{ProblemDetail}, \texttt{DomainGuard}, \texttt{BaseApiService<DTO, ID>}. \\
+\midrule
 2. Web- / UI-Core & \texttt{BaseWebCore.java}: \texttt{BaseController<Entity, DTO>} og \texttt{GlobalExceptionHandler} (RFC~7807). & \texttt{baseUiCore.tsx}: \texttt{<AuthProvider />}, \texttt{<RoleGuard />}, \texttt{useBaseCrud<DTO, ID>()}, \texttt{<ProblemAlert />}, \texttt{<PortalWorkspaceShell />}. \\
+\midrule
 3. Security Edge & \texttt{SecurityConfig.java}: \texttt{/api/v1/public/**} vs. OAuth2 JWT + BFF \texttt{X-Auth-*} filter. & \texttt{apps/landing} (:5173) med \texttt{authGateway.ts} samt Next.js 16 BFF-proxy \texttt{route.ts} (:3000). \\
+\midrule
 4. Vertical Slices & 8 Backend-slices med \texttt{package-private} lagklasser bag smalle \texttt{Port}-interfaces. & 10 Frontend-slices (de 8 modsvarende + \texttt{BookingFeature} og \texttt{LandingFeature}) med modul-privat \texttt{ApiService}. \\
 \bottomrule
 \end{tabularx}
@@ -649,7 +689,7 @@ Selve backenden består af blot 14 Java-filer: \texttt{BackendApplication.java} 
 \label{tab:fullstack_symmetry}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\textwidth}{P{3.4cm} P{2.8cm} Y}
@@ -657,9 +697,13 @@ Selve backenden består af blot 14 Java-filer: \texttt{BackendApplication.java} 
 \textbf{Design Pattern} & \textbf{Kategori} & \textbf{Konkret anvendelse i EduJournal} \\
 \midrule
 Template Method & GoF Behavioral & \texttt{BaseService<Entity, DTO>} og \texttt{BaseApiService<DTO, ID>} definerer CRUD-skelettet, mens subklasser overskriver \texttt{validateBeforeCreate/Update} samt \texttt{toDto}/\texttt{toEntity}. \\
+\midrule
 Exception Factory \& Guard & Functional / DbC & \texttt{BaseDomainCore.ErrorCode} binder HTTP-status og fejltekst til \texttt{require(cond, details)}, spejlet 1:1 i \texttt{DomainGuard.require()} på frontenden. \\
+\midrule
 Vertical Slice \& Port & Architectural \cite{bogard2018, parnas1972} & Slice-klasser indkapsles med \texttt{package-private} synlighed og eksponerer kun smalle \texttt{Port}-interfaces og \texttt{record}-DTO'er. \\
+\midrule
 Proxy / BFF Pattern & GoF Structural & Next.js BFF (\texttt{route.ts}) påhæfter Bearer JWT og \texttt{X-Auth-*} headers fra krypterede cookies. \\
+\midrule
 Repository \& Record DTO & Enterprise \cite{fowler2002} & \texttt{BaseRepository<Entity>} indkapsler JPA, mens uforanderlige Java~17 \texttt{record}-DTO'er adskiller API-kontrakter fra JPA-entiteter. \\
 \bottomrule
 \end{tabularx}
@@ -674,7 +718,7 @@ Figur~\ref{fig:core_class_diagram} viser designklassediagrammet for den konsolid
 
 Figur~\ref{fig:sequence_jgit} illustrerer sekvensdiagrammet for oprettelse og Eclipse JGit-versionering af et journalindlæg gennem Next.js BFF-proxyen og \texttt{JournalFeature}.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
@@ -720,10 +764,14 @@ Persistenslaget forener PostgreSQL (3NF), MongoDB og Eclipse JGit i en samlet EE
 
 \bodyfigure{eer-diagram.pdf}{EER-Diagram for PostgreSQL (Identifiable UUID-kontrakt), MongoDB og JGit Fil-Repository.}{Enhanced Entity-Relationship (EER) diagram for det polyglotte persistenslag.}{fig:eer_diagram}
 
+\subsection{Brugergrænsefladedesign og UX-evaluering}
+Brugerfladen adskiller roller via \texttt{PortalWorkspaceShell}, 2-trins kontooprettelse, PCL-5-screening og semantisk zoom (\textit{Macro/Meso/Micro}) på patienttidslinjen (Figur~\ref{fig:bilag_katalog_24_dual_app}). En audit mod 30 UX-love (\texttt{docs/UI\_UX\_TESTRAPPORT\_LAWS\_OF\_UX.md}) viste 12 fulde, 13 delvise (bl.a.\ \textit{Chunking}) og 5 friktionspunkter (\textit{Hick's Law}/\textit{Choice Overload} i dropdowns), hvilket peger mod strammere filtrering før implementeringen i Kapitel~8.
+
 % ----------------------------------------------------------------------------
 % KAPITEL 8: IMPLEMENTERING
 % ----------------------------------------------------------------------------
 \section{Implementering}
+Kapitlet dokumenterer backend-core og Vertical Slices (8.1) samt frontend-spejling, JGit og BFF-sikkerhed (8.2).
 
 \subsection{Konsolideret 2-fils backend-core og Vertical Feature Slice}
 \texttt{BaseDomainCore.java} (Listing~\ref{lst:base_domain_core}) samler identitetskontrakterne \texttt{HasId} (DTO) og \texttt{Identifiable} (Entity), Spring Data-interfacet \texttt{BaseRepository<Entity>}, den funktionelle \texttt{ErrorCode}-enum med \texttt{require()}-guards samt den abstrakte \texttt{BaseService<Entity, DTO>} helt uden afhængigheder til Spring Web. \texttt{BaseWebCore.java} (Listing~\ref{lst:base_web_core}) isolerer weblaget med \texttt{BaseController<Entity, DTO>} og \texttt{GlobalExceptionHandler}, der oversætter både domæne- og valideringsfejl til IETF RFC~7807/9457 \texttt{ProblemDetail} \cite{rfc9457}.
@@ -800,7 +848,7 @@ public static class GlobalExceptionHandler {
 }
 \end{lstlisting}
 
-Listing~\ref{lst:vertical_slice} demonstrerer, hvordan \texttt{AppointmentFeature.java} eksponerer \texttt{AppointmentDto} og \texttt{AppointmentPort}, mens Repository, Service og Controller indkapsles med \texttt{package-private} synlighed og kun tilgår andre slices via \texttt{Port}-kontrakter.
+Listing~\ref{lst:vertical_slice} eksponerer kun \texttt{AppointmentDto} og \texttt{AppointmentPort}; \texttt{package-private} indkapsling gør direkte repository-kald fra andre slices til en compile-fejl. I Listing~\ref{lst:base_domain_core} forhindrer \texttt{entity.setId(null)} i \texttt{BaseService.create()} klientstyret ID-overskrivning.
 
 \begin{lstlisting}[language=Java, caption={Uddrag fra \texttt{AppointmentFeature.java} med \texttt{package-private} lag, \texttt{Port}-kontrakt og \texttt{ErrorCode.require()}.}, label={lst:vertical_slice}]
 // Fra: backend/src/main/java/com/platform/features/appointment/AppointmentFeature.java
@@ -867,7 +915,7 @@ class ManagementApiService extends BaseApiService<ManagementKpiDto, string> {
 }
 \end{lstlisting}
 
-I \texttt{JournalGitService} (Listing~\ref{lst:jgit_service}) committer Eclipse JGit \cite{jgit2024} patientjournaler til \texttt{<patientId>.md} med 8-tegns SHA-1 hash og branch-tag, mens \texttt{getCommitHistory()} cacher pr. \texttt{patientId + ":" + isTherapist} og bortfiltrerer både klientens private booking-commits for terapeuter og \texttt{INTERNAL\_MEDICAL\_NOTES} for klienter.
+I \texttt{JournalGitService} (Listing~\ref{lst:jgit_service}) committer JGit \cite{jgit2024} med \texttt{setSign(false)} (uden GPG-daemon), og \texttt{getCommitHistory()} bruger nøglen \texttt{patientId + ":" + isTherapist} mod rollesammenblanding.
 
 \begin{lstlisting}[language=Java, caption={Uddrag fra \texttt{JournalGitService} med JGit SHA-1 commit og rollebaseret privatlivsfiltrering.}, label={lst:jgit_service}]
 // Fra: backend/src/main/java/com/platform/features/journal/JournalFeature.java
@@ -900,7 +948,7 @@ public List<Map<String, String>> getCommitHistory(
 }
 \end{lstlisting}
 
-Endelig påhæfter Next.js BFF-proxyen i \texttt{route.ts} (Listing~\ref{lst:bff_proxy}) valideret Bearer JWT og \texttt{X-Auth-*} headers fra brugerens serversession, håndterer fallback ved udløbet JWT under aktiv session og synkroniserer \texttt{therapist}-rollen i Keycloak efter CVR-onboarding. Hemmeligheder monteres udelukkende som read-only Docker Secrets under \texttt{/run/secrets/}, mens GHCR hoster kompilerede container-images.
+Next.js BFF i \texttt{route.ts} (Listing~\ref{lst:bff_proxy}) tilføjer Bearer JWT, \texttt{X-Auth-*} fallback og Keycloak \texttt{therapist}-synkronisering; header-tilliden forudsætter isoleret \texttt{backend-net} og bør ved flernode-skalering sikres med HMAC eller mTLS.
 
 \begin{lstlisting}[language=Java, caption={Uddrag fra Next.js 16 BFF Proxy (\texttt{route.ts}) med token-fallback og Keycloak rolle-sync.}, label={lst:bff_proxy}]
 // Fra: frontend/src/app/api/backend/[...path]/route.ts
@@ -920,15 +968,18 @@ if (backendRes.ok && req.method === 'POST' && targetPath === 'clinic/therapist-o
 }
 \end{lstlisting}
 
+Implementeringen verificeres gennem den samlede testpyramide i Kapitel~9.
+
 % ----------------------------------------------------------------------------
 % KAPITEL 9: TEST OG KVALITETSSIKRING
 % ----------------------------------------------------------------------------
 \section{Test og Kvalitetssikring}
+Kapitlet dokumenterer V-Model-teststrategien (9.1), 100\,\% coverage gates (9.2) og konkrete test cases (9.3).
 
 \subsection{Systematisk teststrategi jf. V-Modellen og Double-Loop BDD/TDD}
 Teststrategien kobler V-Modellens specifikationsfaser direkte til automatiserede testniveauer, hvor Gherkin-kontrakter i \texttt{specs/features/} udgør den ydre BDD-løkke (\textit{Outer Loop}), og enhedstests udgør den indre TDD-løkke (\textit{Inner Loop}) (Figur~\ref{fig:v_model} og Tabel~\ref{tab:test_stack}).
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
@@ -975,19 +1026,34 @@ Teststrategien kobler V-Modellens specifikationsfaser direkte til automatiserede
 
 På Figur~\ref{fig:v_model} svarer hvert trin på V-Modellens venstre specifikationstrappe direkte til en automatiseret testfase på højre side: krav og User Stories verificeres end-to-end med Cucumber.js og Playwright, systemkontrakter testes med Cucumber-JVM og REST Assured, database- og JGit-integration testes med H2/Testcontainers, mens kernen og hver Vertical Slice verificeres i bunden af isolerede JUnit~5- og Vitest-enhedstests (Tabel~\ref{tab:test_stack}).
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
-\begin{tabularx}{\textwidth}{P{4.2cm} Y P{2.4cm}}
+\begin{tabularx}{\textwidth}{P{3.0cm} Y P{1.7cm}}
 \toprule
-\textbf{Testværktøj} & \textbf{Rolle i testpyramiden} & \textbf{Version} \\
+\textbf{Testværktøj} & \textbf{Formål i testpyramiden} & \textbf{Version} \\
 \midrule
-JUnit Jupiter \& Mockito & TDD enheds-, arkitektur- og integrationstests (Java) & 5.10.2 / 5.11.0 \\
-Cucumber-JVM \& REST Assured & BDD accepttest og deklarativ HTTP-kontrakttest & 7.18.0 / 5.4.0 \\
-Testcontainers \& H2 & Isolerede database- og MongoDB-testcontainere & 1.19.8 / 2.2.224 \\
-JaCoCo & 6-tæller bytecode-kodedækningskontrol (Java) & 0.8.11 \\
-Cucumber.js \& Playwright & BDD-orkestrering og headless Chromium E2E-tests & 12.9.0 / 1.64.1 \\
-Vitest \& Istanbul & TDD enhedstests og 4-tæller dækning (TS/React/SDLC) & 4.1.11 \\
+JUnit Jupiter & TDD enheds-, arkitektur- og integrationstests (Java) & 5.10.2 \\
+\midrule
+Mockito & Mocking og isolation af afhængigheder i Java-enhedstests & 5.11.0 \\
+\midrule
+Cucumber-JVM & BDD-accepttests mod delte Gherkin-specifikationer (Java) & 7.18.0 \\
+\midrule
+REST Assured & Deklarative HTTP- og API-kontrakttests mod backend & 5.4.0 \\
+\midrule
+Testcontainers & Isolerede Docker-testcontainere til MongoDB-integrationstests & 1.19.8 \\
+\midrule
+H2 & In-memory SQL-database til hurtige JPA-integrationstests & 2.2.224 \\
+\midrule
+JaCoCo & 6-tæller bytecode-kodedækningskontrol (100\,\% gate i Java) & 0.8.11 \\
+\midrule
+Cucumber.js & BDD-orkestrering af full-stack og SDLC Gherkin-scenarier & 12.9.0 \\
+\midrule
+Playwright & Headless Chromium E2E- og UI-browsertests & 1.64.1 \\
+\midrule
+Vitest & TDD enhedstests for TypeScript, React og SDLC-motoren & 4.1.11 \\
+\midrule
+Istanbul & 4-tæller kodedækningskontrol (100\,\% gate i TS/React/SDLC) & 4.1.11 \\
 \bottomrule
 \end{tabularx}
 \caption{Oversigt over test-teknologistak og versionsspecifikationer.}
@@ -1025,7 +1091,7 @@ Vitest \& Istanbul & TDD enhedstests og 4-tæller dækning (TS/React/SDLC) & 4.1
 \subsection{Dokumenterede test cases og fejlrettelser}
 Tabel~\ref{tab:test_cases} dokumenterer fem konkrete fejl, som den automatiserede testsuite afslørede og fik udbedret.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \footnotesize
 \begin{tabularx}{\textwidth}{P{2.2cm} P{2.8cm} P{2.4cm} P{2.5cm} Y}
@@ -1033,19 +1099,21 @@ Tabel~\ref{tab:test_cases} dokumenterer fem konkrete fejl, som den automatisered
 \textbf{Test ID} & \textbf{Testet funktion \& Krav} & \textbf{Forventet resultat} & \textbf{Faktisk (1. kørsel)} & \textbf{Fundet fejl \& Udført rettelse} \\
 \midrule
 TC-01\newline (Arkitektur) & Zero-Web grænse \& \texttt{package-private} slices (FK-08) & \texttt{BaseDomainCore} har 0 web-imports; slices er indkapslede & Tidligere \texttt{public} klasser eksponerede repositories på tværs & Konsoliderede til 2-fils Core og indførte automatisk JUnit-refleksionstjek. Bestået (100\,\%). \\
-\addlinespace
+\midrule
 TC-02\newline (JGit) & Rollebaseret privatlivsfiltrering i \texttt{JournalGitService} (NFR-03) & Terapeuter må aldrig se klientens private booking-commits & Terapeuter så commits med forfatter \texttt{"Klinik Booking"} & Fælles ufiltreret cache-nøgle; tilføjede \texttt{isPrivateClient\allowbreak BookingCommit()} samt \texttt{patientId + ":" + isTherapist}. Bestået. \\
-\addlinespace
+\midrule
 TC-03\newline (Booking) & Kollisionsdetektering i Timefold Solver (FK-04) & Overlappende aftaler afvises med RFC~7807 \texttt{409 Conflict} & Aftaler der startede ved forrige sluttid blev afvist & Intervaltjek brugte $\le$ frem for striks $<$; rettet til \texttt{startA.isBefore(endB) \&\& endA.isAfter(startB)}. Bestået. \\
-\addlinespace
+\midrule
 TC-04\newline (BFF Proxy) & Kald ved udløbet Keycloak JWT under aktiv session (NFR-03) & Request gennemføres uden tvungen udlogning via BFF-session & Backend svarede \texttt{HTTP 401} pga. udløbet Bearer header & Tilføjede retry-fallback med verificerede \texttt{X-Auth-*} headers i \texttt{route.ts}. Bestået. \\
-\addlinespace
+\midrule
 TC-05\newline (Frontend/SDLC) & 1:1 Frontend Core, \texttt{<RoleGuard />} \& global 100\,\% gate (NFR-02) & 100\,\% dækning på alle 12 Vitest-suiter og korrekt rolle-alias & \texttt{sdlc.config.json} tillod \texttt{0.98}, og \texttt{PROVIDER}/\allowbreak\texttt{THERAPIST} manglede alias & Tilføjede \texttt{ROLE\_SYNONYM\_GROUPS} i \texttt{baseDomainCore.ts} og skærpede \texttt{sdlc.config.json} til \texttt{1.0}. Bestået. \\
 \bottomrule
 \end{tabularx}
 \caption{Dokumenterede test cases med forventet resultat, faktisk resultat, fundne fejl og rettelser.}
 \label{tab:test_cases}
 \end{table}
+
+Med 100\,\% testdækning og fem udbedrede fejl evalueres det samlede produkt i Kapitel~10.
 
 % ----------------------------------------------------------------------------
 % KAPITEL 10: EVALUERING OG KONKLUSION PÅ PRODUKTDELEN
@@ -1080,11 +1148,12 @@ På Blooms vurderingsniveau \cite{bloom1956} peger evalueringen på fire konkret
 % KAPITEL 11: PROJEKTKARAKTERISTIKA – BOEHM & TURNER ANALYSE
 % ----------------------------------------------------------------------------
 \section{Projektkarakteristika -- Boehm \& Turner Analyse}
+Kapitlet analyserer projektet efter Boehm \& Turners fem dimensioner samt opgavetype og tidshorisont.
 
 \subsection{Analyse af projektets fem dimensioner}
 Figur~\ref{fig:boehm_turner} og Tabel~\ref{tab:boehm_turner_table} analyserer projektet på Boehm \& Turners fem akser \cite{boehm2003} som grundlag for valg af udviklingsmetode.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \resizebox{0.80\textwidth}{!}{%
 \begin{tikzpicture}[
@@ -1111,7 +1180,7 @@ Figur~\ref{fig:boehm_turner} og Tabel~\ref{tab:boehm_turner_table} analyserer pr
 \label{fig:boehm_turner}
 \end{figure}
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\textwidth}{P{3.0cm} Y Y}
@@ -1119,26 +1188,34 @@ Figur~\ref{fig:boehm_turner} og Tabel~\ref{tab:boehm_turner_table} analyserer pr
 \textbf{Dimension} & \textbf{Vurdering for EduJournal} & \textbf{Metodisk implikation} \\
 \midrule
 Size \& Culture & 1 udvikler (Solo) med høj autonomi og fokus på eksekverbar kvalitet. & Minimalt kommunikationsoverhead; taler for en letvægts agil metode uden mødebureaukrati. \\
-Dynamism & Høj kravdynamik (~25--35\,\%/md) under udbygning af domæne-slices og JGit-filtre. & Kræver korte iterative 1-uges sprints frem for en fastlåst vandfaldsmodel. \\
+\midrule
+Dynamism & Høj kravdynamik (ca.~25--35\,\%/md) under udbygning af domæne-slices og JGit-filtre. & Kræver korte iterative 1-uges sprints frem for en fastlåst vandfaldsmodel. \\
+\midrule
 Personnel & Solidt Java/OOP-studiefundament + nye domæneværktøjer (JGit, Timefold, Kill Bill/Fineract, Next.js BFF). & Kendt base-arkitektur frigør kapacitet til tekniske spikes og hurtig TDD-feedback. \\
+\midrule
 Criticality & Følsomme sundhedsjournaler (GDPR) og dobbelt bogføring. & Kræver strenge kvalitets-gates (BDD/TDD, 100\,\% JaCoCo/Istanbul og Docker Secrets). \\
+\midrule
+Opgavetype \& Tidshorisont & Nyudvikling og arkitektonisk modning over 5 ugers sprints (50\,\% tid parallelt med rapportskrivning frem mod 5.~januar 2027). & Kræver skarp MoSCoW-prioritering, så hvert sprint afslutter et testet inkrement. \\
 \bottomrule
 \end{tabularx}
 \caption{Analyse af projektkarakteristika jf. Boehm \& Turner.}
 \label{tab:boehm_turner_table}
 \end{table}
 
+Lav teamstørrelse og høj datakritikalitet peger mod den hybride procesmodel i Kapitel~12.
+
 % ----------------------------------------------------------------------------
 % KAPITEL 12: VALG AF UDVIKLINGSMETODE OG TEKNIKKER
 % ----------------------------------------------------------------------------
 \section{Valg af Udviklingsmetode og Teknikker}
+Kapitlet begrunder Scrum/XP-metodevalget (12.1) og det 9-trins feature-workflow (12.2).
 
 \subsection{Metodevalg og samarbejde mellem GitHub Projects, Issues og SDLC}
 En plandrevet vandfaldsmodel blev fravalgt pga. kravdynamik, og ren Kanban uden faste sprintrammer blev fravalgt for at undgå tidsskred mod afleveringsfristen. I stedet valgtes Scrum for One \cite{schwaber2020} med 1-uges sprints kombineret med XP's testpraksisser \cite{beck2004} (Tabel~\ref{tab:scrum_xp_choices}).
 
 Samarbejdet mellem kodebasen (\texttt{api}, \texttt{backend} og \texttt{frontend}) og GitHub Projects~v2 styres automatisk gennem commit-beskeder og GitHub Actions: almindelige commits kan flytte aktive board-statusser undervejs, mens statussen \textit{Done} (og lukning af det tilknyttede issue) bevidst kun må udløses af grøn CI og merge til \texttt{main}. Dermed forbliver projektstyringen 100\,\% synkron med den verificerede kodebase uden manuel dobbeltadministration.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\textwidth}{P{3.8cm} P{2.4cm} Y}
@@ -1146,13 +1223,13 @@ Samarbejdet mellem kodebasen (\texttt{api}, \texttt{backend} og \texttt{frontend
 \textbf{Teknik / Ceremoni} & \textbf{Status} & \textbf{Faglig begrundelse} \\
 \midrule
 GitHub Projects v2 \& GitHub Issues (Taiga i Sprint~1--2) & Tilvalgt \& Videreudviklet & Efter Taiga-afprøvning i Sprint~1--2 valgte jeg GitHub Projects sammen med GitHub Issues for at skabe direkte samarbejde mellem kodebasen og hele SDLC via det Generiske GitHub SDLC-Framework (\texttt{sdlc/core/}, Sub-Issues, delte \texttt{.feature}-kontrakter, commit-tag-synk via \texttt{sdlc-commit-sync.yml} og CI-gates i \texttt{sdlc.config.json}). \\
-\addlinespace
+\midrule
 DoR \& DoD (100\,\% Gate) & Tilvalgt & Sikrer klare Gherkin-acceptkriterier før opstart (\textit{Spec Ready}) og 100\,\% JaCoCo/Istanbul-dækning før lukning (\textit{Done}). \\
-\addlinespace
+\midrule
 1-uges Sprints & Tilpasset & Korte 1-uges sprints giver skarp fremdrift og løbende synkronisering mellem kode og rapport. \\
-\addlinespace
+\midrule
 Daily Scrum \& Planning Poker & Fravalgt & Uden værdi for én udvikler; erstattet af automatiseret GitHub Projects-synk via \texttt{sdlc:verify}. \\
-\addlinespace
+\midrule
 Outside-In BDD \& TDD (XP) & Tilvalgt (Kerne) & Delt Gherkin-BDD \cite{smart2023} sikrer, at det rigtige bygges; TDD (JUnit/Vitest) sikrer, at det bygges rigtigt med 100\,\% dækning. \\
 \bottomrule
 \end{tabularx}
@@ -1161,18 +1238,39 @@ Outside-In BDD \& TDD (XP) & Tilvalgt (Kerne) & Delt Gherkin-BDD \cite{smart2023
 \end{table}
 
 \subsection{Sekventielt Outside-In Feature Workflow}
-Figur~\ref{fig:feature_workflow} viser det ni-trins lukkede Outside-In BDD/TDD-workflow gennem GitHub SDLC-frameworket: (1) Krav som GitHub Issue med Gherkin-acceptkriterier $\rightarrow$ (2) Automatisk oprettelse af feature-branch fra \texttt{dev} og delt \texttt{.feature}-fil $\rightarrow$ (3) Backend rød BDD via Cucumber-JVM/REST Assured $\rightarrow$ (4) Backend grøn TDD oven på 2-fils kernen $\rightarrow$ (5) 100\,\% JaCoCo-verifikation $\rightarrow$ (6) Frontend rød BDD via Cucumber.js/Playwright mod samme \texttt{.feature}-kontrakt $\rightarrow$ (7) Frontend grøn TDD med 100\,\% Istanbul $\rightarrow$ (8) Samlet E2E-tjek $\rightarrow$ (9) Pull Request og \texttt{sdlc:verify} \textit{Green Gate}, som eksklusivt flytter opgaven til \textit{Done} ved merge til \texttt{main} (mens daglige commits løbende opdaterer boardet via tags som \texttt{\#spec-ready}, \texttt{\#bdd} og \texttt{\#tdd}).
+Figur~\ref{fig:feature_workflow} viser det ni-trins lukkede Outside-In BDD/TDD-workflow gennem GitHub SDLC-frameworket: 
+\newline
+(1) Krav som GitHub Issue med Gherkin-acceptkriterier.
+\newline 
+(2) Automatisk oprettelse af feature-branch fra \texttt{dev} og delt \texttt{.feature}-fil.
+\newline 
+(3) Backend rød BDD via Cucumber-JVM/REST Assured.
+\newline 
+(4) Backend grøn TDD oven på 2-fils kernen.
+\newline 
+(5) 100\,\% JaCoCo-verifikation.
+\newline 
+(6) Frontend rød BDD via Cucumber.js/Playwright mod samme \texttt{.feature}-kontrakt.
+\newline 
+(7) Frontend grøn TDD med 100\,\% Istanbul. 
+\newline 
+(8) Samlet E2E-tjek.
+\newline 
+(9) Pull Request og \texttt{sdlc:verify} \textit{Green Gate}, som eksklusivt flytter opgaven til \textit{Done} ved merge til \texttt{main} (mens daglige commits løbende opdaterer boardet via tags som \texttt{\#spec-ready}, \texttt{\#bdd} og \texttt{\#tdd}).
 
 \bodyfigure{bdd-tdd-workflow.pdf}{Sekventielt Outside-In BDD/TDD Workflow fra GitHub Projects v2 over Backend og Frontend 100 \% Gates til merge.}{Sekventielt Outside-In BDD/TDD \& SDLC Feature Workflow med 100\,\% coverage gates.}{fig:feature_workflow}
+
+Workflowet omsættes til fem ugesprints i Kapitel~13.
 
 % ----------------------------------------------------------------------------
 % KAPITEL 13: DOKUMENTATION AF PROCESSEN – TIDSMÆSSIGT OVERBLIK
 % ----------------------------------------------------------------------------
-\section{Dokumentation af Processen -- Tidsmæssigt Overblik}
+\section{Dokumentation af Processen}
+Kapitlet dokumenterer tidsforløbet over fem ugesprints med prioriteringer og Story Points.
 
 Efter praktikopholdet forløb udviklingen af EduJournal fra den 26. oktober 2026 (uge 44) over fem fokuserede 1-uges sprints frem til den afsluttende rapportskrivning mod afleveringen den 5. januar 2027. Ved at inddrage mit abstrakte Java CRUD-studieprojekt allerede i Sprint~1 blev der frigjort tid til både kliniske/finansielle moduler og konsolideringen i Sprint~5. Tabel~\ref{tab:sprint_log} dokumenterer leverancer, MoSCoW-prioritering, Git commits og Story Points rekonstrueret fra Git-historikken (suppleret af commit-tidslinjen i Bilag~17.4, Figur~\ref{fig:bilag_katalog_02_commits}).
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \footnotesize
 \begin{tabularx}{\textwidth}{P{2.1cm} P{2.6cm} Y P{1.6cm} P{3.3cm}}
@@ -1180,13 +1278,13 @@ Efter praktikopholdet forløb udviklingen af EduJournal fra den 26. oktober 2026
 \textbf{Sprint} & \textbf{Git Commits} & \textbf{Leverancer \& Prioritet (MoSCoW)} & \textbf{Est./Fakt.} & \textbf{Afvigelse \& Årsag} \\
 \midrule
 Sprint 1\newline (26/10--03/11) & \texttt{c9c320d}, \texttt{f33d296}, \texttt{75eb886} & Must: Tilpasning af generisk Java-studieprojekt (\texttt{com.platform.core}), adskilte repos, Dockerfiles, GHCR og Playwright-skelet. & 13 / 13 SP & 0 SP: Hurtig opstart takket være medbragt studiefundament. \\
-\addlinespace
+\midrule
 Sprint 2\newline (03/11--10/11) & \texttt{c505a5b}, \texttt{d70ec4f}, \texttt{32928f5} & Must: Traefik proxy, Keycloak OIDC + isoleret \texttt{auth-db} samt tidlig Taiga-webhook. & 13 / 16 SP & +3 SP: Opsætning af Keycloak og \texttt{auth-db}. \\
-\addlinespace
+\midrule
 Sprint 3\newline (10/11--17/11) & \texttt{91c9794}, \texttt{fa8b407}, \texttt{21432bf} & Must: Next.js 16 BFF, første \texttt{JournalGitService} (JGit), MongoDB i18n og Docker Secrets. & 15 / 17 SP & +2 SP: Opsætning af \texttt{entrypoint-secrets.sh}. \\
-\addlinespace
+\midrule
 Sprint 4\newline (17/11--24/11) & \texttt{3103cd9}, \texttt{bdc2b79}, \texttt{aa45c1c} & Must: Klinik/CVR, ydelser, Handshake og PCL-5 bygget oven på \texttt{BaseService} og \texttt{BaseController}. & 13 / 13 SP & 0 SP: Høj kadence pga. nedarvet Base-CRUD logik. \\
-\addlinespace
+\midrule
 Sprint 5\newline (24/11--02/12) & \texttt{3124690}, \texttt{403ffb1}, \texttt{d6e731d} & Must/Should: Refaktorering til 2-fils Core, 8 Vertical Slices, Dual-App 1:1 Frontend, Timefold, Finans, GitHub SDLC \& 100\,\% Gates. & 18 / 22 SP & +4 SP: Vertical Slice-migrering og opnåelse af 100\,\% på alle 10 tællere. \\
 \bottomrule
 \end{tabularx}
@@ -1194,18 +1292,21 @@ Sprint 5\newline (24/11--02/12) & \texttt{3124690}, \texttt{403ffb1}, \texttt{d6
 \label{tab:sprint_log}
 \end{table}
 
+Merforbruget (+9 SP) skyldes primært sikkerhed, Keycloak og slutkonsolidering, som evalueres i Kapitel~14.
+
 % ----------------------------------------------------------------------------
 % KAPITEL 14: REFLEKSION OVER PROCESSEN – RETROSPEKTIV OG FEEDFORWARD
 % ----------------------------------------------------------------------------
 \section{Refleksion over Processen}
 
 \subsection{Retrospektiv: Hvad fungerede, og hvad blev tilpasset?}
-Ved en kritisk evaluering af procesforløbet \cite{bloom1956} træder fire centrale læringspunkter frem:
+Ved en kritisk evaluering af procesforløbet \cite{bloom1956} træder fem centrale læringspunkter frem:
 \begin{itemize}[noitemsep]
     \item Brobygning mellem studie og praksis samt GitHub-native SDLC: Den største succesfaktor var muligheden for at videreudvikle mit abstrakte Java CRUD-studieprojekt til den rene 2-fils Core og Vertical Slices, samtidig med at skiftet fra Taiga til GitHub Projects v2 og GitHub Issues koblede backlog, branches, \texttt{.feature}-kontrakter og 100\,\% CI-gates direkte sammen uden tilstandsdrift.
     \item Fra komplekse Git Submodules til uafhængige GHCR-images: I Sprint~1 skabte Git Submodules gentagne synkroniseringsfejl og \textit{detached HEAD}-tilstande i CI/CD. Submodules blev derfor afskaffet til fordel for selvstændige repositories, som publicerer versionerede images til GHCR.
     \item Opdeling af tunge CI-kørsler og brug af spikes: Tunge Docker- og E2E Playwright-builds på enhver feature-branch skabte ventetid tidligt i projektet. Workflowet blev delt op, så hurtige TDD-tests kører lokalt, mens fuld verification og nye teknologier afgrænses til Pull Requests og korte tekniske spikes.
     \item Økonomisk trade-off for cloud- og CI-drift: En containeriseret arkitektur med JVM, Keycloak, Kafka, Kill Bill og Fineract leverer høj sikkerhed, men stiller krav om mærkbare RAM-ressourcer på Hetzner VPS og CI-minutter, hvilket bør balanceres i en tidlig startup.
+    \item Parallelt udviklings- og rapportforløb: Faste udviklings- og rapportdage op mod vejledermøder med Kim Melkane mindskede kontekstskift og skærpede scope.
 \end{itemize}
 
 \subsection{Feedforward: Konkrete anbefalinger til fremtidige projekter}
@@ -1228,10 +1329,10 @@ Ved en kritisk evaluering af procesforløbet \cite{bloom1956} træder fire centr
 % ----------------------------------------------------------------------------
 \section{Samlet Konklusion}
 
-Denne hovedopgave har dokumenteret transformationen af case-virksomhedens oprindelige, tætkoblede Lovable-prototype i TypeScript til EduJournal -- en containeriseret platform til klinisk booking, bogføring, samtykkestyring og journalisering.
-
-På produktsiden er hovedopgavens mål indfriet gennem konsekvent anvendelse af Separation of Concerns \cite{fowler2002}, Information Hiding \cite{parnas1972} og Vertical Slice Architecture \cite{bogard2018}. Ved at tage afsæt i mit abstrakte Java CRUD-studieprojekt med Encapsulation som styrende princip og videreudvikle det til en konsolideret 2-fils Core i Spring Boot 3.3 (\texttt{BaseDomainCore.java} og \texttt{BaseWebCore.java} med RFC~7807 \texttt{ProblemDetail}) samt otte \texttt{package-private} Vertical Feature Slices bag smalle \texttt{Port}-interfaces er både kodeduplikering og utilsigtet krydskobling elimineret. Arkitekturen spejles 1:1 i en Dual-App TypeScript/React-frontend (\texttt{baseDomainCore.ts}, \texttt{baseUiCore.tsx}) og Next.js 16 BFF-proxyen \cite{newman2021}, hvilket fjernede de blokerende merge-konflikter fra praktikforløbet. Samtidig leverer Traefik v3.1, Keycloak OIDC, read-only Docker Secrets, Eclipse JGit \cite{jgit2024}, Timefold Solver \cite{timefold2024}, Polyglot Persistence og Kill Bill/Apache Fineract høj sikkerhed, uforanderlig SHA-1 revisionslogning og konfliktfri skemaplanlægning.
-
+Denne hovedopgave har dokumenteret transformationen af case-virksomhedens oprindelige, tætkoblede Lovable-prototype i TypeScript til EduJournal, en containeriseret platform til klinisk booking, bogføring, samtykkestyring og journalisering.
+\newline
+På produktsiden er hovedopgavens mål indfriet gennem konsekvent anvendelse af Separation of Concerns \cite{fowler2002}, Information Hiding \cite{parnas1972} og Vertical Slice Architecture \cite{bogard2018}. Ved at tage udgangspunkt i mit abstrakte Java CRUD-studieprojekt med Encapsulation som styrende princip og videreudvikle det til en konsolideret 2-fils Core i Spring Boot 3.3 (\texttt{BaseDomainCore.java} og \texttt{BaseWebCore.java} med RFC~7807 \texttt{ProblemDetail}) samt otte \texttt{package-private} Vertical Feature Slices bag smalle \texttt{Port}-interfaces er både kodeduplikering og utilsigtet krydskobling elimineret. Arkitekturen spejles 1:1 i en Dual-App TypeScript/React-frontend (\texttt{baseDomainCore.ts}, \texttt{baseUiCore.tsx}) og Next.js 16 BFF-proxyen \cite{newman2021}, hvilket fjernede de blokerende merge-konflikter fra praktikforløbet. Samtidig leverer Traefik v3.1, Keycloak OIDC, read-only Docker Secrets, Eclipse JGit \cite{jgit2024}, Timefold Solver \cite{timefold2024}, Polyglot Persistence og Kill Bill/Apache Fineract høj sikkerhed, uforanderlig SHA-1 revisionslogning og konfliktfri skemaplanlægning.
+\newline
 På processiden viser opgaven, hvordan Scrum for One \cite{schwaber2020} og Extreme Programming (XP) \cite{beck2004} udledt via Boehm \& Turners model \cite{boehm2003} forener iterativ fleksibilitet med sundhedsdomænets høje kvalitetskrav. Overgangen fra Taiga til GitHub Projects v2 og GitHub Issues koblet direkte med kodebasen via det Generiske GitHub SDLC-Framework og det 9-trins Outside-In BDD/TDD-workflow med automatiserede 100\,\% coverage gates på alle seks JaCoCo- og fire Istanbul-tællere har skabt eksekverbar dokumentation, høj kodekvalitet og et stærkt teknisk fundament for case-virksomhedens videre vækst.
 
 \newpage
@@ -1255,7 +1356,7 @@ Boehm, B. \& Turner, R. (2003). \textit{Balancing Agility and Discipline: A Guid
 Bogard, J. (2018). \textit{Vertical Slice Architecture}. Tilgængelig på: \url{https://www.jimmybogard.com/vertical-slice-architecture/} [Besøgt: november 2026].
 
 \bibitem{jgit2024}
-Eclipse Foundation (2024). \textit{Eclipse JGit: Java Implementation of Git (Version 6.10.0 Documentation)}. Tilgængelig på: \url{https://www.eclipse.org/jgit/} [Besøgt: december 2026].
+Eclipse Foundation (2024). \textit{Eclipse JGit: Java Implementation of Git (Version 6.10.0 Documentation)}. Tilgængelig på: \url{https://www.eclipse.org/jgit/} [Besøgt: november 2026].
 
 \bibitem{ek_studieordning2024}
 Erhvervsakademi København (2024). \textit{Studieordning for erhvervsakademiuddannelsen inden for informationsteknologi (Datamatiker AK)}. Tilgængelig på: \url{https://www.ek.dk/media/5y3ohqiy/dat_cba_studieordning_2024.pdf} [Besøgt: november 2026].
@@ -1293,11 +1394,11 @@ Schwaber, K. \& Sutherland, J. (2020). \textit{The Scrum Guide: The Definitive G
 \bibitem{smart2023}
 Smart, J. F. \& Molak, J. (2023). \textit{BDD in Action: Behavior-Driven Development for the whole software lifecycle} (2. udg.). Manning Publications.
 
-\bibitem{springboot2024}
-VMware / Pivotal (2024). \textit{Spring Boot 3.3 \& Spring Security OAuth2 Resource Server Reference Documentation}. Tilgængelig på: \url{https://docs.spring.io/spring-boot/index.html} [Besøgt: december 2026].
-
 \bibitem{timefold2024}
-Timefold BV (2024). \textit{Timefold Solver Reference Manual: AI Constraint Satisfaction for Java}. Tilgængelig på: \url{https://docs.timefold.ai/} [Besøgt: december 2026].
+Timefold BV (2024). \textit{Timefold Solver Reference Manual: AI Constraint Satisfaction for Java}. Tilgængelig på: \url{https://docs.timefold.ai/} [Besøgt: november 2026].
+
+\bibitem{springboot2024}
+VMware / Pivotal (2024). \textit{Spring Boot 3.3 \& Spring Security OAuth2 Resource Server Reference Documentation}. Tilgængelig på: \url{https://docs.spring.io/spring-boot/index.html} [Besøgt: november 2026].
 
 \end{thebibliography}
 

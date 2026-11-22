@@ -30,28 +30,28 @@ Dette dokument indeholder alle diagrammer til hovedopgaven udarbejdet i **Mermai
 
 # 1. Sprint-rekonstruktion og Commit-Tidslinje baseret på Git Commits
 
-Da udviklingsforløbet primært er drevet og dokumenteret gennem hyppige Git-commits og Pull Requests på tværs af `api` (root), `backend` og `frontend`, er projektets faktiske sprint- og tidsforløb her rekonstrueret direkte fra `git log` (fra første commit `c9c320d` / `f33d296` d. **7. september 2026** frem til aflevering d. **5. januar 2027**).
+Da udviklingsforløbet primært er drevet og dokumenteret gennem hyppige Git-commits og Pull Requests på tværs af `api` (root), `backend` og `frontend`, er projektets faktiske sprint- og tidsforløb her rekonstrueret direkte fra `git log` (fra første commit i hovedopgaveforløbet d. **26. oktober 2026** frem til aflevering d. **5. januar 2027**).
 
 ### 1.1 Visuel Commit-Tidslinje (Flowchart) & Commit-Log Tabel til Procesdelen
 
 ```mermaid
 flowchart LR
-    S1["Sprint 1 (07/09 - 14/09)\n• c9c320d: Spring Boot & JPA init\n• f33d296: Frontend init\n• 75eb886: GHCR & E2E pipeline\n• 89bcf24: Playwright RBAC E2E"]
-    S2["Sprint 2 (14/09 - 25/09)\n• c505a5b: Taiga TG-14 ChatOps\n• 32928f5: Zitadel -> Keycloak OIDC\n• 069386f: feature/journal-crm\n• 33df4da: Taiga BDD webhook"]
-    S3["Sprint 3 (26/09 - 02/10)\n• 91c9794: JGit, Quartz, StateMachine\n• fa8b407: Next.js 16 + next-intl\n• bf32d79: JournalGitService\n• f502ae4: I18n MongoDB modul"]
-    S4["Sprint 4 (03/10 - 12/10)\n• 3103cd9: UUID, Provider & Service\n• bdc2b79: PCL-5 Psychotraumatology\n• efc4357: TherapistClinicalNote\n• aa45c1c: TG-29 Localization PR"]
-    S5["Sprint 5 (13/10 - 25/10)\n• 6b6d01b: MultiWindow & JGit UI\n• 3124690: Timefold AI Solver\n• 403ffb1: Generisk Base-Arkitektur\n• d6e731d: Finans, IBAN & 100% JaCoCo"]
+    S1["Sprint 1 (26/10 - 03/11)\n• c9c320d: Spring Boot & JPA init\n• f33d296: Frontend init\n• 75eb886: GHCR & E2E pipeline\n• 89bcf24: Playwright RBAC E2E"]
+    S2["Sprint 2 (03/11 - 10/11)\n• c505a5b: Taiga TG-14 ChatOps\n• 32928f5: Zitadel til Keycloak OIDC\n• 069386f: feature/journal-crm\n• 33df4da: Taiga BDD webhook"]
+    S3["Sprint 3 (10/11 - 17/11)\n• 91c9794: JGit, Quartz, StateMachine\n• fa8b407: Next.js 16 + next-intl\n• bf32d79: JournalGitService\n• f502ae4: I18n MongoDB modul"]
+    S4["Sprint 4 (17/11 - 24/11)\n• 3103cd9: UUID, Provider & Service\n• bdc2b79: PCL-5 Psychotraumatology\n• efc4357: TherapistClinicalNote\n• aa45c1c: TG-29 Localization PR"]
+    S5["Sprint 5 (24/11 - 02/12)\n• 6b6d01b: MultiWindow & JGit UI\n• 3124690: Timefold AI Solver\n• 403ffb1: Generisk Base-Arkitektur\n• d6e731d: Finans, IBAN & 100% JaCoCo"]
 
     S1 --> S2 --> S3 --> S4 --> S5
 ```
 
 | Sprint & Periode | Centrale Git Commits (`backend` / `frontend` / `api`) | Leveret Funktionalitet & Arkitektur |
 | :--- | :--- | :--- |
-| **Sprint 1**<br>*(07. sep – 14. sep 2026)* | `c9c320d`, `ca5872f`, `f33d296`, `75eb886`, `89bcf24` | Opstart af Spring Boot backend, første Gherkin `.feature`-filer til journal/psykotraumatologi, Dockerisering, GHCR container-pipeline og Playwright E2E-skelet. |
-| **Sprint 2**<br>*(14. sep – 25. sep 2026)* | `46c4615`, `c505a5b` (`TG-14`), `d70ec4f`, `32928f5` (#37), `40af524`, `069386f` (#21), `33df4da` | Opsætning af Traefik reverse proxy, arkitektonisk skift fra Zitadel til **Keycloak 24 OIDC** med dedikeret PostgreSQL `auth-db`, samt automatisk Taiga-til-GitHub BDD synkronisering. |
-| **Sprint 3**<br>*(26. sep – 02. okt 2026)* | `91c9794`, `a17c344` (`TG-26`), `6446311` (`TG-27`), `fa8b407`, `94e7ed1`, `bf32d79`, `f502ae4`, `21432bf` | Skift fra Vite SPA til **Next.js 16 BFF med NextAuth**, implementering af [`JournalGitService`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/features/journal/JournalFeature.java) (Eclipse JGit), `I18nService` (MongoDB) og Docker Compose secrets-håndtering. |
-| **Sprint 4**<br>*(03. okt – 12. okt 2026)* | `3103cd9`, `1d0e7e9`, `bdc2b79`, `efc4357`, `5f22640`, `d118282`, `aa45c1c` (`TG-29`), `28bf632` | Gennemførelse af UUID-identitet på tværs af entiteter, oprettelse af [`PsychotraumatologyFeature`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/features/psychotraumatology/PsychotraumatologyFeature.java) (PCL-5), fortrolige terapeutnoter (`TherapistClinicalNote`) og fuld flersproget lokaliserings-pipeline. |
-| **Sprint 5**<br>*(13. okt – 25. okt 2026)* | `44238d6`, `6b6d01b`, `2da49bb`, `3124690`, `5c87524`, `403ffb1`, `7d6e4ea`, `d6e731d`, `9668e6a` | **Videreudvikling & Arkitektonisk Konsolidering:** `TherapistMultiWindowWorkspace` med JGit diff-tidslinje, **Timefold Solver** booking-optimering, **Konsolideret 2-Fils Core (`BaseDomainCore` + `BaseWebCore`) & Vertical Slice Arkitektur (`features/*`)**, finansmodul (KillBill/Fineract + IBAN) og **100% JaCoCo coverage gate**. |
+| **Sprint 1**<br>*(26. okt – 03. nov 2026)* | `c9c320d`, `ca5872f`, `f33d296`, `75eb886`, `89bcf24` | Opstart af Spring Boot backend, første Gherkin `.feature`-filer til journal/psykotraumatologi, Dockerisering, GHCR container-pipeline og Playwright E2E-skelet. |
+| **Sprint 2**<br>*(03. nov – 10. nov 2026)* | `46c4615`, `c505a5b` (`TG-14`), `d70ec4f`, `32928f5` (#37), `40af524`, `069386f` (#21), `33df4da` | Opsætning af Traefik reverse proxy, arkitektonisk skift fra Zitadel til **Keycloak 24 OIDC** med dedikeret PostgreSQL `auth-db`, samt automatisk Taiga-til-GitHub BDD synkronisering. |
+| **Sprint 3**<br>*(10. nov – 17. nov 2026)* | `91c9794`, `a17c344` (`TG-26`), `6446311` (`TG-27`), `fa8b407`, `94e7ed1`, `bf32d79`, `f502ae4`, `21432bf` | Skift fra Vite SPA til **Next.js 16 BFF med NextAuth**, implementering af [`JournalGitService`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/features/journal/JournalFeature.java) (Eclipse JGit), `I18nService` (MongoDB) og Docker Compose secrets-håndtering. |
+| **Sprint 4**<br>*(17. nov – 24. nov 2026)* | `3103cd9`, `1d0e7e9`, `bdc2b79`, `efc4357`, `5f22640`, `d118282`, `aa45c1c` (`TG-29`), `28bf632` | Gennemførelse af UUID-identitet på tværs af entiteter, oprettelse af [`PsychotraumatologyFeature`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/features/psychotraumatology/PsychotraumatologyFeature.java) (PCL-5), fortrolige terapeutnoter (`TherapistClinicalNote`) og fuld flersproget lokaliserings-pipeline. |
+| **Sprint 5**<br>*(24. nov – 02. dec 2026)* | `44238d6`, `6b6d01b`, `2da49bb`, `3124690`, `5c87524`, `403ffb1`, `7d6e4ea`, `d6e731d`, `9668e6a` | **Videreudvikling & Arkitektonisk Konsolidering:** `TherapistMultiWindowWorkspace` med JGit diff-tidslinje, **Timefold Solver** booking-optimering, **Konsolideret 2-Fils Core (`BaseDomainCore` + `BaseWebCore`) & Vertical Slice Arkitektur (`features/*`)**, finansmodul (KillBill/Fineract + IBAN) og **100% JaCoCo coverage gate**. |
 
 ---
 
@@ -71,7 +71,7 @@ gitGraph
 
     branch feature/keycloak
     checkout feature/keycloak
-    commit id: "32928f5: Zitadel -> Keycloak OIDC"
+    commit id: "32928f5: Zitadel til Keycloak OIDC"
     commit id: "40af524: Keycloak Postgres DB"
     checkout dev
     merge feature/keycloak id: "12dbd9a: PR #44 Keycloak"
@@ -93,10 +93,10 @@ gitGraph
 
     commit id: "3124690: Timefold AI Solver"
     commit id: "403ffb1: Generic Base Architecture" tag: "v2.0-core"
-    commit id: "7d6e4ea: Swimlane Architecture Diagrams"
+    commit id: "7d6e4ea: Swimlane Diagrams"
 
     checkout main
-    merge dev id: "6342150: Release Clean Main"
+    merge dev id: "6342150: Release Main"
     commit id: "d6e731d: Finance, IBAN & 100% JaCoCo" tag: "v2.1-rc"
 ```
 
@@ -104,7 +104,7 @@ gitGraph
 Ud over kildekodens Git-historik bruger systemet **Eclipse JGit** internt i [`JournalGitService.java`](file:///z:/home/work/projects/api/backend/src/main/java/com/platform/service/JournalGitService.java) til at versionsstyre hver enkelt klients journalfil (`./journal-repo/<patientId>.md`) med logiske branches (`[Branch: main]`, `[Branch: trauma-therapy]`, `[Branch: private-diary]`), som styres via klientens `ClientTherapistHandshake.allowedBranches`:
 
 ```mermaid
-gitGraph
+gitGraph TB:
     commit id: "a1b2c3d4: [Branch: main] Aftale oprettet (Klinik Booking)"
     commit id: "e5f6a7b8: [Branch: main] Indledende dagbog (Mood: 5/10)"
 
@@ -170,7 +170,7 @@ Nedenstående Mermaid `erDiagram` modellerer det komplette databaseskema på tv�
 ```mermaid
 erDiagram
     APP_USERS {
-        UUID id PK "Arvet fra BaseEntity"
+        UUID id PK "Identifiable (UUID)"
         VARCHAR username UK "NOT NULL"
         VARCHAR email UK "NOT NULL"
         VARCHAR password "BCrypt / OIDC"
@@ -178,7 +178,7 @@ erDiagram
     }
 
     CLIENT_PROFILES {
-        UUID id PK "Arvet fra BaseEntity"
+        UUID id PK "Identifiable (UUID)"
         UUID user_id FK, UK "Ref -> APP_USERS.id"
         VARCHAR full_name "NOT NULL"
         DATE date_of_birth "NOT NULL"
@@ -189,7 +189,7 @@ erDiagram
     }
 
     ORGANISATIONS {
-        UUID id PK "Arvet fra BaseEntity"
+        UUID id PK "Identifiable (UUID)"
         VARCHAR cvr_number UK "8 cifre, NOT NULL"
         VARCHAR name "NOT NULL"
         VARCHAR address
@@ -202,7 +202,7 @@ erDiagram
     }
 
     PROVIDER_PROFILES {
-        UUID id PK "Arvet fra BaseEntity"
+        UUID id PK "Identifiable (UUID)"
         UUID user_uuid FK, UK "Ref -> APP_USERS.id"
         UUID organisation_id FK "Ref -> ORGANISATIONS.id"
         VARCHAR display_name
@@ -214,7 +214,7 @@ erDiagram
     }
 
     CLIENT_THERAPIST_HANDSHAKES {
-        UUID id PK "Arvet fra BaseEntity"
+        UUID id PK "Identifiable (UUID)"
         UUID client_uuid FK "Ref -> CLIENT_PROFILES.user_id"
         UUID therapist_uuid FK "Ref -> PROVIDER_PROFILES.user_uuid"
         VARCHAR status "PENDING | ACTIVE | REVOKED"
@@ -230,7 +230,7 @@ erDiagram
     }
 
     SERVICES {
-        UUID id PK "Arvet fra BaseEntity"
+        UUID id PK "Identifiable (UUID)"
         UUID organisation_id FK "NULLABLE (Klinik-skabelon)"
         UUID provider_profile_id FK "NULLABLE (Terapeut-ydelse)"
         VARCHAR name "NOT NULL"
@@ -243,7 +243,7 @@ erDiagram
     }
 
     APPOINTMENTS {
-        UUID id PK "Arvet fra BaseEntity"
+        UUID id PK "Identifiable (UUID)"
         UUID client_uuid FK "Ref -> CLIENT_PROFILES.user_id"
         UUID therapist_uuid FK "Ref -> PROVIDER_PROFILES.user_uuid"
         UUID service_id FK "Ref -> SERVICES.id"
@@ -257,7 +257,7 @@ erDiagram
     }
 
     JOURNAL_ENTRIES {
-        UUID id PK "Arvet fra BaseEntity"
+        UUID id PK "Identifiable (UUID)"
         UUID client_uuid FK "Ref -> CLIENT_PROFILES.user_id"
         UUID appointment_id FK "NULLABLE Ref -> APPOINTMENTS.id"
         VARCHAR title "NOT NULL"
@@ -271,7 +271,7 @@ erDiagram
     }
 
     THERAPIST_CLINICAL_NOTES {
-        UUID id PK "Arvet fra BaseEntity"
+        UUID id PK "Identifiable (UUID)"
         UUID client_uuid FK "Ref -> CLIENT_PROFILES.user_id"
         UUID author_therapist_uuid FK "Ref -> PROVIDER_PROFILES.user_uuid"
         UUID journal_entry_id FK "NULLABLE Ref -> JOURNAL_ENTRIES.id"
@@ -282,7 +282,7 @@ erDiagram
     }
 
     PSYCHOTRAUMATOLOGY_TESTS {
-        UUID id PK "Arvet fra BaseEntity"
+        UUID id PK "Identifiable (UUID)"
         UUID client_uuid FK "Ref -> CLIENT_PROFILES.user_id"
         UUID therapist_uuid FK "NULLABLE Ref -> PROVIDER_PROFILES.user_uuid"
         VARCHAR test_type "PCL-5"
@@ -442,7 +442,7 @@ De tre arkitekturdiagrammer [`docs/diagrams/core-and-slice-class-diagram.puml`](
 classDiagram
     direction TB
 
-    namespace Backend_Java21 {
+    namespace Backend_Java17 {
         class BaseDomainCore_Java["BaseDomainCore.java (Pure Java)"] {
             +interface HasId~ID~
             +enum ErrorCode
@@ -855,11 +855,11 @@ flowchart TD
 
         C2 --> S3{"Har brugeren ROLE_THERAPIST\nog gyldigt JWT?"}
         S3 -- "Nej" --> Err403["Kast HTTP 401 / 403 Forbidden"]
-        S3 -- "Ja" --> S4["Indpak notat i '<!-- INTERNAL_MEDICAL_NOTES -->'\nog gem TherapistClinicalNote i PostgreSQL"]
+        S3 -- "Ja" --> S4["Indpak notat i INTERNAL_MEDICAL_NOTES-markør\nog gem TherapistClinicalNote i PostgreSQL"]
 
         C3 --> S5{"Er kalderen Klienten selv\neller en Terapeut?"}
         S5 -- "Terapeut" --> S6["Slå ClientTherapistHandshake op:\nValider status == ACTIVE, validFrom..validTo,\nallowedBranches & historyStartDate..historyEndDate"]
-        S5 -- "Klienten selv" --> S7["Fuld adgang til egne JournalEntries,\nmen strip '<!-- INTERNAL_MEDICAL_NOTES -->' fra JGit-snapshots"]
+        S5 -- "Klienten selv" --> S7["Fuld adgang til egne JournalEntries,\nmen strip INTERNAL_MEDICAL_NOTES-markør fra JGit-snapshots"]
     end
 
     subgraph JGit_DB_Lane["4. Eclipse JGit & PostgreSQL Persistens"]
@@ -970,7 +970,7 @@ sequenceDiagram
     participant BFF as Next.js BFF Proxy
     participant Ctrl as PsychotraumatologyController
     participant Svc as PsychotraumatologyService
-    participant Base as BaseService<PsychotraumatologyTest, Dto, UUID>
+    participant Base as BaseService<PsychotraumatologyTest, PsychotraumatologyTestDto>
     participant Repo as PsychotraumatologyTestRepository
     participant DB as PostgreSQL (psychotraumatology_tests)
 
@@ -1032,7 +1032,7 @@ flowchart TD
         C1 -- "GET /api/v1/profile" --> C3["ProfileController.getUserProfile(authentication)\nUdtrækker sub, preferred_username, email & roller fra Jwt"]
     end
 
-    subgraph SvcLane["3. Service Swimlane: UserService (extends BaseService<UserEntity, UserRequestDto, UUID>)"]
+    subgraph SvcLane["3. Service Swimlane: UserService (extends BaseService<UserEntity, UserDto>)"]
         C2 --> S1{"Matcher role\n'^(CLIENT|ADMIN|THERAPIST)$'?"}
         S1 -- "Nej" --> E400_Role["Kast IllegalArgumentException('invalid role')\n-> HTTP 400 Bad Request"]
         S1 -- "Ja" --> S2{"Findes username allerede?\nuserRepository.existsByUsername()"}
@@ -1100,7 +1100,7 @@ sequenceDiagram
 
 # 7. Frontend 1:1 Symmetri, Dual-App Separation of Concerns (`apps/landing` vs. `apps/dashboard`) & RBAC (`RoleGuard`)
 
-For at opnå 1:1 arkitektonisk symmetri mellem Java 21 / Spring Boot 3-backenden og TypeScript 5 / React 19-frontenden — samtidig med at **Zero-Trust Separation of Concerns (SoC)** håndhæves på klientsiden — er frontenden struktureret som en **Hybrid Dual-App & BFF Arkitektur** med en **2-Fils Core (`baseDomainCore.ts` + `baseUiCore.tsx`)**, et offentligt **Zero-Trust Gateway-lag (`authGateway.ts` + `LandingFeature.tsx`)** i [`apps/landing`](file:///z:/home/work/projects/api/frontend/apps/landing/src/App.tsx) (Port 5173) og en **Rollebaseret Portal (`AuthProvider` + `<RoleGuard />`)** i [`apps/dashboard`](file:///z:/home/work/projects/api/frontend/apps/dashboard/src/App.tsx) (Port 5174) samt Next.js 16 BFF (Port 3000).
+For at opnå 1:1 arkitektonisk symmetri mellem Java 17 / Spring Boot 3-backenden og TypeScript 5 / React 19-frontenden — samtidig med at **Zero-Trust Separation of Concerns (SoC)** håndhæves på klientsiden — er frontenden struktureret som en **Hybrid Dual-App & BFF Arkitektur** med en **2-Fils Core (`baseDomainCore.ts` + `baseUiCore.tsx`)**, et offentligt **Zero-Trust Gateway-lag (`authGateway.ts` + `LandingFeature.tsx`)** i [`apps/landing`](file:///z:/home/work/projects/api/frontend/apps/landing/src/App.tsx) (Port 5173) og en **Rollebaseret Portal (`AuthProvider` + `<RoleGuard />`)** i [`apps/dashboard`](file:///z:/home/work/projects/api/frontend/apps/dashboard/src/App.tsx) (Port 5174) samt Next.js 16 BFF (Port 3000).
 
 ### 7.1 Arkitekturdiagram: Dual-App SoC (`apps/landing` vs. `apps/dashboard`) & RBAC (`RoleGuard`)
 
@@ -1114,8 +1114,8 @@ flowchart TB
 
     subgraph ProtectedZone["Beskyttet Portal-Zone — apps/dashboard (Port 5174) & Next.js 16 BFF (:3000)"]
         subgraph Core2File["2-Fils Core (src/core/)"]
-            DomainCore["baseDomainCore.ts (Pure TypeScript)\n• HasId<ID>, UserRole, AuthenticatedUser\n• expandRoleAliases() & matchesAnyRole()\n• ErrorCode & ProblemDetail (RFC 7807)\n• FrontendDomainException & DomainGuard\n• abstract BaseApiService<D, ID>"]
-            UiCore["baseUiCore.tsx (React Supertype)\n• <AuthProvider /> & useAuth()\n• <RoleGuard allowed={[...]} />\n• useBaseCrud<D, ID>()\n• <ProblemAlert /> & <PortalWorkspaceShell />"]
+            DomainCore["baseDomainCore.ts (Pure TypeScript)\n• HasId<ID>, UserRole, AuthenticatedUser\n• expandRoleAliases() & matchesAnyRole()\n• ErrorCode & ProblemDetail (RFC 7807)\n• FrontendDomainException & DomainGuard\n• abstract BaseApiService<DTO, ID>"]
+            UiCore["baseUiCore.tsx (React Supertype)\n• <AuthProvider /> & useAuth()\n• <RoleGuard allowed={[...]} />\n• useBaseCrud<DTO, ID>()\n• <ProblemAlert /> & <PortalWorkspaceShell />"]
             UiCore -->|depends on| DomainCore
         end
 

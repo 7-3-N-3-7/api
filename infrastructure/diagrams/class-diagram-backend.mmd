@@ -62,6 +62,10 @@ publishEvent(topic, action, payloadId)"]
 /api/v1/i18n
 + MongoDB @Document i18n_dictionaries
 + ClinicDatabaseInitializer"]
+            SliceMgmt["ManagementFeature
+/api/v1/management
++ Ledelses-KPI & Audit-overblik
++ RoleGuard: MANAGEMENT / ADMIN"]
         end
     end
 
@@ -83,6 +87,7 @@ Faktura, Abonnement & Bogholderi"]
     SliceJournal -->|"2. Nedarver BaseController / BaseService"| CoreTier
     SlicePsycho -->|"2. Nedarver BaseController / BaseService"| CoreTier
     SliceUser -->|"2. Nedarver BaseController / BaseService"| CoreTier
+    SliceMgmt -->|"2. Nedarver BaseController / BaseService"| CoreTier
     SliceFinance -->|"3. Bruger ErrorCode & HasId"| DomainCore
     SliceI18n -->|"3. Bruger Identifiable & ErrorCode"| DomainCore
 
@@ -98,7 +103,7 @@ Faktura, Abonnement & Bogholderi"]
     SliceI18n -->|"Spring Data MongoDB"| MongoDb
 
     class WebCore,DomainCore core
-    class SliceApp,SliceClinic,SliceJournal,SlicePsycho,SliceFinance,SliceUser,SliceI18n slice
+    class SliceApp,SliceClinic,SliceJournal,SlicePsycho,SliceFinance,SliceUser,SliceI18n,SliceMgmt slice
     class CacheSvc,EventSvc,PgDb,MongoDb,JGitRepo data
     class SecurityCfg,FinEngines auth
     style ConfigTier fill:#FFFBEB,stroke:#F59E0B
